@@ -17,21 +17,51 @@ namespace Efekt
             Contract.Requires(codeText != null);
 
             code = codeText;
-
+            index = 0;
             var items = new List<Asi>();
-
             while (true)
             {
-                skipWhite();
-                var asi = (Asi) parseInt() ?? parseIdent();
-
+                var asi = parseCombinedAsi();
                 if (asi == null)
                     break;
-
                 items.Add(asi);
             }
 
             return new AsiList(items);
+        }
+
+
+        private Asi parseCombinedAsi()
+        {
+            var asi = parseAsi();
+            if (asi == null)
+                return null;
+            Boolean found;
+            do
+            {
+                found = false;
+                skipWhite();
+                if (matchUntil(isOp))
+                {
+                    asi = parseOpApply(asi);
+                    found = true;
+                }
+            } while (found);
+            return asi;
+        }
+
+
+        private Asi parseAsi()
+        {
+            skipWhite();
+            var asi = (Asi) parseInt() ?? parseIdent();
+            return asi;
+        }
+
+
+        private Int parseInt()
+        {
+            return matchUntil(isDigit) ? new Int(matched) : null;
         }
 
 
@@ -49,9 +79,12 @@ namespace Efekt
         }
 
 
-        private Int parseInt()
+        private Asi parseOpApply(Asi op1)
         {
-            return matchUntil(isDigit) ? new Int(matched) : null;
+            var op = matched;
+            var op2 = parseAsi();
+            Contract.Assume(op2 != null);
+            return new BinOpApply(new Ident(op, IdentType.Op), op1, op2);
         }
 
 

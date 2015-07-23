@@ -9,6 +9,7 @@ namespace Efekt
         T VisitAsiList(AsiList al);
         T VisitInt(Int ii);
         T VisitIdent(Ident ident);
+        T VisitBinOpApply(BinOpApply opa);
     }
 
 
@@ -91,5 +92,27 @@ namespace Efekt
         Value,
         Type,
         Op
+    }
+
+
+    public sealed class BinOpApply : Asi
+    {
+        public Ident Op { get; }
+        public Asi Op1 { get; }
+        public Asi Op2 { get; }
+
+
+        public BinOpApply(Ident op, Asi op1, Asi op2)
+        {
+            Op = op;
+            Op1 = op1;
+            Op2 = op2;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitBinOpApply(this);
+        }
     }
 }

@@ -31,5 +31,11 @@ namespace Efekt
         {
             return (ident.Type == IdentType.Op ? "op" : "") + ident.Value;
         }
+
+
+        public String VisitBinOpApply(BinOpApply opa)
+        {
+            return opa.Op1.Accept(this) + " " + opa.Op.Value + " " + opa.Op2.Accept(this);
+        }
     }
 }

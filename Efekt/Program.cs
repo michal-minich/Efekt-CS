@@ -1,15 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Efekt
 {
-    class Program
+    // ReSharper disable once ClassNeverInstantiated.Global
+    internal sealed class Program
     {
-        static void Main(string[] args)
+        public static Printer DefaultPrinter;
+
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "args")]
+        internal static void Main(String[] args)
         {
+            DefaultPrinter = new Printer();
+            
+            Tests.TestParser();
+
+            Console.WriteLine("Finished");
+            Console.ReadLine();
         }
     }
 }

@@ -10,9 +10,19 @@ namespace Efekt
         {
             parse("");
             parse(" ", "");
+
             parse("123");
             parse(" 123 ", "123");
             parse(" 123 456", "123\n456");
+
+            parse("a");
+            parse(" abc de ", "abc\nde");
+
+            parse("op+");
+            parse(" op-*- op== ", "op-*-\nop==");
+
+            Console.WriteLine("All Tests OK");
+            Console.ReadLine();
         }
 
 

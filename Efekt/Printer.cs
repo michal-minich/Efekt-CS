@@ -25,5 +25,11 @@ namespace Efekt
         {
             return ii.Value;
         }
+
+
+        public String VisitIdent(Ident ident)
+        {
+            return (ident.Type == IdentType.Op ? "op" : "") + ident.Value;
+        }
     }
 }

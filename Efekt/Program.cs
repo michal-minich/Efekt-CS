@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 
 namespace Efekt
@@ -9,15 +10,12 @@ namespace Efekt
         public static Printer DefaultPrinter;
 
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "args")]
+        [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "args")]
         internal static void Main(String[] args)
         {
             DefaultPrinter = new Printer();
-            
-            Tests.TestParser();
 
-            Console.WriteLine("Finished");
-            Console.ReadLine();
+            Tests.TestParser();
         }
     }
 }

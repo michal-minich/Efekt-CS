@@ -23,7 +23,8 @@ namespace Efekt
             while (true)
             {
                 skipWhite();
-                var asi = parseInt();
+                var asi = (Asi) parseInt() ?? parseIdent();
+
                 if (asi == null)
                     break;
 
@@ -31,6 +32,20 @@ namespace Efekt
             }
 
             return new AsiList(items);
+        }
+
+
+        private Ident parseIdent()
+        {
+            var isLetterMatched = matchUntil(isLetter);
+            if (!isLetterMatched)
+                return null;
+
+            if (matched != "op")
+                return new Ident(matched, Char.IsUpper(matched[0]) ? IdentType.Type : IdentType.Value);
+
+            var isOpMatched = matchUntil(isOp);
+            return isOpMatched ? new Ident(matched, IdentType.Op) : null;
         }
 
 
@@ -44,6 +59,25 @@ namespace Efekt
         {
             var ch = code[index];
             return ch >= '0' && ch <= '9';
+        }
+
+
+        private Boolean isLetter()
+        {
+            var ch = code[index];
+            return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+        }
+
+
+        private Boolean isOp()
+        {
+            var ch = code[index];
+            return ch == '.' || ch == '+' || ch == '-' || ch == '*' ||
+                   ch == '%' || ch == '=' || ch == ':' || ch == '!' ||
+                   ch == '~' || ch == '@' || ch == '#' || ch == '^' ||
+                   ch == '&' || ch == '/' || ch == '|' || ch == '<' ||
+                   ch == '>' || ch == '?' || ch == ',' || ch == '$' ||
+                   ch == ';' || ch == '`' || ch == '\\';
         }
 
 

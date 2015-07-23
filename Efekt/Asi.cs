@@ -8,6 +8,7 @@ namespace Efekt
     {
         T VisitAsiList(AsiList al);
         T VisitInt(Int ii);
+        T VisitIdent(Ident ident);
     }
 
 
@@ -62,5 +63,33 @@ namespace Efekt
         {
             return v.VisitInt(this);
         }
+    }
+
+
+    public sealed class Ident : Asi
+    {
+        public String Value { get; }
+        public IdentType Type { get; }
+
+
+        public Ident(String value, IdentType type)
+        {
+            Type = type;
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitIdent(this);
+        }
+    }
+
+
+    public enum IdentType
+    {
+        Value,
+        Type,
+        Op
     }
 }

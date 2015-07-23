@@ -5,12 +5,22 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Efekt", "Efekt\Efekt.csproj", "{7A2150A3-4E6A-4DCD-A462-2086F10AF865}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B7B6C011-D7D3-4037-932A-117157EFF1D0}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		CustomDictionary.xml = CustomDictionary.xml
+		Efekt.ruleset = Efekt.ruleset
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Contracts|Any CPU = Contracts|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7A2150A3-4E6A-4DCD-A462-2086F10AF865}.Contracts|Any CPU.ActiveCfg = Contracts|Any CPU
+		{7A2150A3-4E6A-4DCD-A462-2086F10AF865}.Contracts|Any CPU.Build.0 = Contracts|Any CPU
 		{7A2150A3-4E6A-4DCD-A462-2086F10AF865}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7A2150A3-4E6A-4DCD-A462-2086F10AF865}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A2150A3-4E6A-4DCD-A462-2086F10AF865}.Release|Any CPU.ActiveCfg = Release|Any CPU

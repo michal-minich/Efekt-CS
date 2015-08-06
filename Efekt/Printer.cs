@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Text;
+using JetBrains.Annotations;
 
 
 namespace Efekt
 {
     public sealed class Printer : IAsiVisitor<String>
     {
+        public Boolean PutBracesAroundBinOpApply;
+
+
         public String VisitAsiList(AsiList al)
         {
             var sb = new StringBuilder();
@@ -35,7 +39,20 @@ namespace Efekt
 
         public String VisitBinOpApply(BinOpApply opa)
         {
-            return opa.Op1.Accept(this) + " " + opa.Op.Value + " " + opa.Op2.Accept(this);
+            var str = opa.Op1.Accept(this) + " " + opa.Op.Value + " " + opa.Op2.Accept(this);
+            return PutBracesAroundBinOpApply ? "(" + str + ")" : str;
+        }
+
+
+        public String VisitDeclr(Declr d)
+        {
+            return VisitIdent(d.Ident) + visitOptional(d.Type, " : ") + visitOptional(d.Value, " = ");
+        }
+
+
+        private String visitOptional([CanBeNull] IAsi asi, String prefix)
+        {
+            return asi == null ? "" : prefix + asi.Accept(this);
         }
     }
 }

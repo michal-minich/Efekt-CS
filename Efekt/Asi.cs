@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 
 namespace Efekt
@@ -10,6 +11,7 @@ namespace Efekt
         T VisitInt(Int ii);
         T VisitIdent(Ident ident);
         T VisitBinOpApply(BinOpApply opa);
+        T VisitDeclr(Declr d);
     }
 
 
@@ -99,7 +101,7 @@ namespace Efekt
     {
         public Ident Op { get; }
         public Asi Op1 { get; }
-        public Asi Op2 { get; }
+        public Asi Op2 { get; set; }
 
 
         public BinOpApply(Ident op, Asi op1, Asi op2)
@@ -113,6 +115,32 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v)
         {
             return v.VisitBinOpApply(this);
+        }
+    }
+
+
+    public sealed class Declr : Asi
+    {
+        public Ident Ident { get; }
+
+        [CanBeNull]
+        public Asi Type { get; }
+
+        [CanBeNull]
+        public Asi Value { get; }
+
+
+        public Declr(Ident ident, [CanBeNull] Asi type, [CanBeNull] Asi value)
+        {
+            Ident = ident;
+            Type = type;
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitDeclr(this);
         }
     }
 }

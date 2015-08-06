@@ -12,6 +12,7 @@ namespace Efekt
         T VisitIdent(Ident ident);
         T VisitBinOpApply(BinOpApply opa);
         T VisitDeclr(Declr d);
+        T VisitArr(Arr arr);
     }
 
 
@@ -141,6 +142,24 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v)
         {
             return v.VisitDeclr(this);
+        }
+    }
+
+
+    public sealed class Arr : Asi
+    {
+        public IEnumerable<Asi> Items { get; }
+
+
+        public Arr(IEnumerable<Asi> items)
+        {
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitArr(this);
         }
     }
 }

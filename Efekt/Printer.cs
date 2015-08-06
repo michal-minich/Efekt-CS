@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 
@@ -47,6 +48,12 @@ namespace Efekt
         public String VisitDeclr(Declr d)
         {
             return VisitIdent(d.Ident) + visitOptional(d.Type, " : ") + visitOptional(d.Value, " = ");
+        }
+
+
+        public String VisitArr(Arr arr)
+        {
+            return "[" + String.Join(", ", arr.Items.Select(i => i.Accept(this))) + "]";
         }
 
 

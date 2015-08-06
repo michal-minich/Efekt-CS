@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using JetBrains.Annotations;
 
 
 namespace Efekt
@@ -54,9 +55,10 @@ namespace Efekt
         };
 
 
-        public Asi Parse(String codeText)
+        public AsiList Parse(String codeText)
         {
             Contract.Requires(codeText != null);
+            Contract.Ensures(Contract.Result<AsiList>() != null);
 
             code = codeText;
             index = 0;
@@ -73,6 +75,7 @@ namespace Efekt
         }
 
 
+        [CanBeNull]
         private Asi parseCombinedAsi(Boolean isRight = false)
         {
             var asi = parseAsi();
@@ -84,6 +87,13 @@ namespace Efekt
             {
                 found = false;
                 skipWhite();
+
+                if (matchChar(','))
+                {
+                    ++index;
+                    return asi;
+                }
+
                 var ix = index;
                 if (matchUntil(isOp))
                 {
@@ -135,7 +145,7 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = (Asi) parseInt() ?? parseIdent();
+            var asi = parseInt() ?? parseIdent() ?? (Asi) parseArr();
             return asi;
         }
 
@@ -160,8 +170,28 @@ namespace Efekt
         }
 
 
+        private Arr parseArr()
+        {
+            if (!matchChar('['))
+                return null;
+
+            var items = new List<Asi>();
+            skipWhite();
+            while (!matchChar(']'))
+            {
+                var asi = parseCombinedAsi();
+                items.Add(asi);
+                skipWhite();
+            } 
+
+            return new Arr(items);
+        }
+
+
         private Boolean isDigit()
         {
+            if (index >= code.Length)
+                return false;
             var ch = code[index];
             return ch >= '0' && ch <= '9';
         }
@@ -169,6 +199,8 @@ namespace Efekt
 
         private Boolean isLetter()
         {
+            if (index >= code.Length)
+                return false;
             var ch = code[index];
             return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
         }
@@ -194,8 +226,21 @@ namespace Efekt
 
         private Boolean isWhite()
         {
+            if (index >= code.Length)
+                return false;
             var ch = code[index];
             return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+        }
+
+
+        private Boolean matchChar(Char ch)
+        {
+            if (index < code.Length && code[index] == ch)
+            {
+                ++index;
+                return true;
+            }
+            return false;
         }
 
 

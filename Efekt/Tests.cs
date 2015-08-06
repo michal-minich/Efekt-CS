@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
 
 
 namespace Efekt
@@ -41,6 +40,17 @@ namespace Efekt
             parseWithBraces("a $ b = 1 + 2", "((a $ b) = (1 + 2))");
             parseWithBraces("a : Int = 1 + 2", "(a : Int = (1 + 2))");
             parseWithBraces("a : Bool | Int = 1 + 2", "(a : (Bool | Int) = (1 + 2))");
+
+            parse("[]");
+            parse("[] + []");
+            parse("[[]]");
+            parse("[[] + [[]]]");
+
+            parse("[1]");
+            parse("[1, 2, 3]");
+            parseWithBraces("[1, 2, 3] + [4 + 5]", "([1, 2, 3] + [(4 + 5)])");
+            parseWithBraces("[1 + 2, 3 * 4, 5]", "[(1 + 2), (3 * 4), 5]");
+            parseWithBraces("[1, 2, [3, 4 + 5], 6]", "[1, 2, [3, (4 + 5)], 6]");
 
             Console.WriteLine("All Tests OK");
             Console.ReadLine();

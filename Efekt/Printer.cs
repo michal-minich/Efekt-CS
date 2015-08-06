@@ -57,6 +57,13 @@ namespace Efekt
         }
 
 
+        public String VisitStruct(Struct s)
+        {
+            var b = String.Join(" ", s.Items.Select(i => i.Accept(this)));
+            return b.Length == 0 ? "struct { }" : "struct { " + b + " }";
+        }
+
+
         private String visitOptional([CanBeNull] IAsi asi, String prefix)
         {
             return asi == null ? "" : prefix + asi.Accept(this);

@@ -59,6 +59,11 @@ namespace Efekt
             parseWithBraces("1 + (2 * 3)", "(1 + (2 * 3))");
             parseWithBraces("(1 + (2) * 3)", "(1 + (2 * 3))");
 
+            parse("struct { }");
+            parse("struct { a }");
+            parse("struct { a b }");
+            parseWithBraces("struct { a b + c }", "struct { a (b + c) }");
+
             Console.WriteLine("All Tests OK");
             Console.ReadLine();
         }

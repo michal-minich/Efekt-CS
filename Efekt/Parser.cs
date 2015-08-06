@@ -145,7 +145,7 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = parseInt() ?? parseIdent() ?? parseArr() ?? parseBraced();
+            var asi = parseInt() ?? parseArr() ?? parseStruct() ?? parseIdent() ?? parseBraced();
             return asi;
         }
 
@@ -185,6 +185,29 @@ namespace Efekt
             }
 
             return new Arr(items);
+        }
+
+
+        private Struct parseStruct()
+        {
+            if (!matchWord("struct"))
+                return null;
+
+            skipWhite();
+
+            if (!matchChar('{'))
+                throw new Exception("missing open curly brace after 'struct'");
+
+            var items = new List<Asi>();
+            skipWhite();
+            while (hasChars && !matchChar('}'))
+            {
+                var asi = parseCombinedAsi();
+                items.Add(asi);
+                skipWhite();
+            }
+
+            return new Struct(items);
         }
 
 
@@ -249,12 +272,24 @@ namespace Efekt
 
         private Boolean matchChar(Char ch)
         {
-            if (index < code.Length && code[index] == ch)
-            {
-                ++index;
-                return true;
-            }
-            return false;
+            if (index >= code.Length || code[index] != ch)
+                return false;
+
+            ++index;
+            return true;
+        }
+
+
+        private Boolean matchWord(String w)
+        {
+            if (index + w.Length >= code.Length)
+                return false;
+
+            if (code.Substring(index, w.Length) != w)
+                return false;
+
+            index += w.Length;
+            return true;
         }
 
 
@@ -268,6 +303,12 @@ namespace Efekt
             matched = code.Substring(startIndex, length);
 
             return length != 0;
+        }
+
+
+        public Boolean hasChars
+        {
+            get { return index < code.Length; }
         }
     }
 }

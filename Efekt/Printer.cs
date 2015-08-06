@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
@@ -53,14 +54,34 @@ namespace Efekt
 
         public String VisitArr(Arr arr)
         {
-            return "[" + String.Join(", ", arr.Items.Select(i => i.Accept(this))) + "]";
+            return "[" + joinList(arr.Items) + "]";
         }
 
 
         public String VisitStruct(Struct s)
         {
-            var b = String.Join(" ", s.Items.Select(i => i.Accept(this)));
+            var b = joinStatements(s.Items);
             return b.Length == 0 ? "struct { }" : "struct { " + b + " }";
+        }
+
+
+        public String VisitFn(Fn fn)
+        {
+            var p = joinList(fn.Params);
+            var b = joinStatements(fn.Items);
+            return "fn (" + p + ") " + (b.Length == 0 ? "{ }" : "{ " + b + " }");
+        }
+
+
+        private String joinStatements(IEnumerable<Asi> items)
+        {
+            return String.Join(" ", items.Select(i => i.Accept(this)));
+        }
+
+
+        private String joinList(IEnumerable<Asi> items)
+        {
+            return String.Join(", ", items.Select(i => i.Accept(this)));
         }
 
 

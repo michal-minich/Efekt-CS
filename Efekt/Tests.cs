@@ -64,6 +64,17 @@ namespace Efekt
             parse("struct { a b }");
             parseWithBraces("struct { a b + c }", "struct { a (b + c) }");
 
+            parse("fn () { }");
+            parse("fn (a) { }");
+            parse("fn () { 1 }");
+            parse("fn (a) { 1 }");
+            parse("fn (a) { struct { } }");
+            parse("fn (a = 1) { }");
+            parse("fn (a, b) { }");
+            parseWithBraces("fn (a, b = 2 + 3, c = 4) { }", "fn (a, (b = (2 + 3)), (c = 4)) { }");
+            parse("fn () { fn (a) { b } }");
+            parse("fn (a = fn (b) { c }) { d }");
+
             Console.WriteLine("All Tests OK");
             Console.ReadLine();
         }

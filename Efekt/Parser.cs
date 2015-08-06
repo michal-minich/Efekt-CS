@@ -145,7 +145,7 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = parseInt() ?? parseArr() ?? parseStruct() ?? parseIdent() ?? parseBraced();
+            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseStruct() ?? parseIdent() ?? parseBraced();
             return asi;
         }
 
@@ -153,6 +153,51 @@ namespace Efekt
         private Int parseInt()
         {
             return matchUntil(isDigit) ? new Int(matched) : null;
+        }
+
+
+        private Arr parseArr()
+        {
+            var items = parseBracedList('[', ']');
+            if (items == null)
+                return null;
+            return new Arr(items);
+        }
+
+
+        private Fn parseFn()
+        {
+            if (!matchWord("fn"))
+                return null;
+
+            skipWhite();
+            var p = parseBracedList('(', ')');
+
+            if (p == null)
+                throw new Exception("expected '(...)' after 'fn'");
+
+            skipWhite();
+            var b = parseBracedList('{', '}');
+
+            if (b == null)
+                throw new Exception("expected '{...}' after 'fn (...)'");
+
+            return new Fn(p, b);
+        }
+
+
+        private Struct parseStruct()
+        {
+            if (!matchWord("struct"))
+                return null;
+
+            skipWhite();
+
+            var items = parseBracedList('{', '}');
+            if (items == null)
+                throw new Exception("missing open curly brace after 'struct'");
+
+            return new Struct(items);
         }
 
 
@@ -170,47 +215,6 @@ namespace Efekt
         }
 
 
-        private Arr parseArr()
-        {
-            if (!matchChar('['))
-                return null;
-
-            var items = new List<Asi>();
-            skipWhite();
-            while (!matchChar(']'))
-            {
-                var asi = parseCombinedAsi();
-                items.Add(asi);
-                skipWhite();
-            }
-
-            return new Arr(items);
-        }
-
-
-        private Struct parseStruct()
-        {
-            if (!matchWord("struct"))
-                return null;
-
-            skipWhite();
-
-            if (!matchChar('{'))
-                throw new Exception("missing open curly brace after 'struct'");
-
-            var items = new List<Asi>();
-            skipWhite();
-            while (hasChars && !matchChar('}'))
-            {
-                var asi = parseCombinedAsi();
-                items.Add(asi);
-                skipWhite();
-            }
-
-            return new Struct(items);
-        }
-
-
         private Asi parseBraced()
         {
             if (!matchChar('('))
@@ -222,6 +226,25 @@ namespace Efekt
                 throw new Exception("missing closing brace");
 
             return asi;
+        }
+
+
+        private List<Asi> parseBracedList(Char startBrace, Char endBrace)
+        {
+            if (!matchChar(startBrace))
+                return null;
+
+            var items = new List<Asi>();
+            skipWhite();
+            while (!matchChar(endBrace))
+            {
+                if (!hasChars)
+                    throw new Exception("missing closing brace " + endBrace + " and source end reached");
+                var asi = parseCombinedAsi();
+                items.Add(asi);
+                skipWhite();
+            }
+            return items;
         }
 
 

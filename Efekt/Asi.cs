@@ -14,6 +14,7 @@ namespace Efekt
         T VisitDeclr(Declr d);
         T VisitArr(Arr arr);
         T VisitStruct(Struct s);
+        T VisitFn(Fn fn);
     }
 
 
@@ -179,6 +180,26 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v)
         {
             return v.VisitStruct(this);
+        }
+    }
+
+
+    public sealed class Fn : Asi
+    {
+        public IEnumerable<Asi> Params { get; }
+        public IEnumerable<Asi> Items { get; }
+
+
+        public Fn(IEnumerable<Asi> @params, IEnumerable<Asi> items)
+        {
+            Params = @params;
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitFn(this);
         }
     }
 }

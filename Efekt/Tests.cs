@@ -52,6 +52,13 @@ namespace Efekt
             parseWithBraces("[1 + 2, 3 * 4, 5]", "[(1 + 2), (3 * 4), 5]");
             parseWithBraces("[1, 2, [3, 4 + 5], 6]", "[1, 2, [3, (4 + 5)], 6]");
 
+            parse("(1)", "1");
+            parse("(1 + 2)", "1 + 2");
+            parse("(1) + (2)", "1 + 2");
+            parseWithBraces("(1 + 2) * 3", "((1 + 2) * 3)");
+            parseWithBraces("1 + (2 * 3)", "(1 + (2 * 3))");
+            parseWithBraces("(1 + (2) * 3)", "(1 + (2 * 3))");
+
             Console.WriteLine("All Tests OK");
             Console.ReadLine();
         }

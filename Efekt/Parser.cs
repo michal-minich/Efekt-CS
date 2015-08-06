@@ -145,7 +145,7 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = parseInt() ?? parseIdent() ?? (Asi) parseArr();
+            var asi = parseInt() ?? parseIdent() ?? parseArr() ?? parseBraced();
             return asi;
         }
 
@@ -182,9 +182,23 @@ namespace Efekt
                 var asi = parseCombinedAsi();
                 items.Add(asi);
                 skipWhite();
-            } 
+            }
 
             return new Arr(items);
+        }
+
+
+        private Asi parseBraced()
+        {
+            if (!matchChar('('))
+                return null;
+
+            var asi = parseCombinedAsi();
+
+            if (!matchChar(')'))
+                throw new Exception("missing closing brace");
+
+            return asi;
         }
 
 

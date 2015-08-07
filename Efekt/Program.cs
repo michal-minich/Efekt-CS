@@ -28,7 +28,11 @@ namespace Efekt
                     var al = p.Parse(txt);
 
                     var i = new Interpreter();
-                    i.VisitAsiList(al);
+                    var res = i.VisitAsiList(al);
+
+                    var str = res.Accept(DefaultPrinter);
+
+                    Console.WriteLine(str);
                 }
                 else
                 {

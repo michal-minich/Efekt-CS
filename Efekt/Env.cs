@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using JetBrains.Annotations;
 
 
@@ -14,15 +13,8 @@ namespace Efekt
         private readonly Dictionary<String, Asi> dict = new Dictionary<String, Asi>();
 
 
-        public Env()
+        public Env([CanBeNull] Env parent)
         {
-        }
-
-
-        public Env(Env parent)
-        {
-            Contract.Requires(parent != null);
-
             Parent = parent;
         }
 

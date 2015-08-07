@@ -1,1 +1,4 @@
-var a + 1 + (
+var id = fn (a) { a }
+
+
+id (1)

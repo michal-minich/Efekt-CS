@@ -102,11 +102,11 @@ namespace Efekt
                 ++n;
             }
 
-            visitAsiArray(fn.Items);
+            var res = visitAsiArray(fn.Items);
 
             env = preEnv;
 
-            return null;
+            return res;
         }
 
 
@@ -124,7 +124,7 @@ namespace Efekt
 
         private Asi visitAsiArray(IEnumerable<Asi> items)
         {
-            env = new Env();
+            env = new Env(env);
             Asi res = null;
             foreach (var item in items)
             {

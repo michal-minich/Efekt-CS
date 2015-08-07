@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using JetBrains.Annotations;
 
 
@@ -181,6 +182,8 @@ namespace Efekt
             if (p == null)
                 throw new Exception("expected '(...)' after 'fn'");
 
+            p = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
+
             skipWhite();
             var b = parseBracedList('{', '}');
 
@@ -243,33 +246,70 @@ namespace Efekt
             skipWhite();
             var asi = parseCombinedAsi();
 
+            return expToDeclrOrAssign(asi, true);
+        }
+
+
+        private static Asi expToDeclrOrAssign([CanBeNull] Asi asi, Boolean isVar)
+        {
+            if (asi == null)
+                throw new Exception("expected ident, declaration or assignment");
+
             var i = asi as Ident;
             if (i != null)
-                return new Declr(i, null) {IsVar = true};
+                return new Declr(i, null) {IsVar = isVar};
 
             var o = asi as BinOpApply;
             if (o != null)
             {
-                if (o.Op.Value != "=")
+                if (o.Op.Name != "=")
                     throw new Exception("only assignment can be variable");
                 var i2 = o.Op1 as Ident;
                 if (i2 != null)
                 {
-                    o.Op1 = new Declr(i2, null) {IsVar = true};
+                    o.Op1 = new Declr(i2, null) {IsVar = isVar};
                     return o;
                 }
                 var d2 = o.Op1 as Declr;
                 if (d2 == null)
                     throw new Exception("only identifier or declaration can be assigned");
-                d2.IsVar = true;
+                d2.IsVar = isVar;
                 return o;
             }
 
             var d = asi as Declr;
             if (d == null)
                 throw new Exception("declaration or identifier expected after var");
-            d.IsVar = true;
+            d.IsVar = isVar;
             return d;
+        }
+
+
+        internal static Ident GetIdentFromDeclrLikeAsi(Asi a)
+        {
+            var i = a as Ident;
+            if (i != null)
+                return i;
+            var d = a as Declr;
+            if (d != null)
+                return d.Ident;
+            var o = a as BinOpApply;
+            if (o != null)
+            {
+                if (o.Op.Name == "=")
+                {
+                    var i2 = o.Op1 as Ident;
+                    if (i2 != null)
+                        return i2;
+                    var d2 = o.Op1 as Declr;
+                    if (d2 != null)
+                        return d2.Ident;
+                    throw new Exception("expression of type " + a.GetType().Name +
+                                        " cannot be assigned");
+                }
+                throw new Exception("expected assignment operator");
+            }
+            throw new Exception("expression of type " + a.GetType().Name + "is unexpected");
         }
 
 

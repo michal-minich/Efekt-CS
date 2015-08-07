@@ -25,13 +25,13 @@ namespace Efekt
 
         public String VisitIdent(Ident ident)
         {
-            return (ident.Type == IdentType.Op ? "op" : "") + ident.Value;
+            return (ident.Type == IdentType.Op ? "op" : "") + ident.Name;
         }
 
 
         public String VisitBinOpApply(BinOpApply opa)
         {
-            var str = opa.Op1.Accept(this) + " " + opa.Op.Value + " " + opa.Op2.Accept(this);
+            var str = opa.Op1.Accept(this) + " " + opa.Op.Name + " " + opa.Op2.Accept(this);
             return PutBracesAroundBinOpApply ? "(" + str + ")" : str;
         }
 

@@ -147,6 +147,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Asi.cs" />
+    <Compile Include="Env.cs" />
+    <Compile Include="Interpreter.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Printer.cs" />
     <Compile Include="Program.cs" />

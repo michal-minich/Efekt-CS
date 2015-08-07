@@ -5,7 +5,15 @@ namespace Efekt
 {
     public static class Tests
     {
-        public static void TestParser()
+        public static void Test()
+        {
+            testParser();
+            testInterpreter();
+            Console.WriteLine("All Tests OK");
+        }
+
+
+        private static void testParser()
         {
             parse("");
             parse(" ", "");
@@ -101,9 +109,28 @@ namespace Efekt
             parse("var a : T = 1");
             parse("var a : T = 1 + 2");
             parse("var a : A | B = 1 + 2");
+        }
 
-            Console.WriteLine("All Tests OK");
-            Console.ReadLine();
+
+        private static void testInterpreter()
+        {
+            //eval("");
+            eval("1");
+            eval("var a = 1", "1");
+            eval("var a : T = 1", "1");
+
+            eval("var a a = 1", "1");
+            eval("var a : T a = 1", "1");
+        }
+
+
+        // ReSharper disable once UnusedParameter.Local
+        private static void check(IAsi al, String expected, Printer printer)
+        {
+            var actual = al.Accept(printer);
+
+            if (expected != actual)
+                throw new Exception();
         }
 
 
@@ -119,7 +146,6 @@ namespace Efekt
         }
 
 
-        // ReSharper disable once UnusedParameter.Local
         private static void parse(String code, String expected)
         {
             parse(code, expected, new Printer());
@@ -131,11 +157,37 @@ namespace Efekt
         {
             var p = new Parser();
 
-            var asi = p.Parse(code);
-            var actual = asi.Accept(printer);
+            var al = p.Parse(code);
+            check(al, expected, printer);
+        }
 
-            if (expected != actual)
-                throw new Exception();
+
+        private static void evalWithBraces(String code, String expected)
+        {
+            eval(code, expected, new Printer {PutBracesAroundBinOpApply = true});
+        }
+
+
+        private static void eval(String code)
+        {
+            eval(code, code, new Printer());
+        }
+
+
+        private static void eval(String code, String expected)
+        {
+            eval(code, expected, new Printer());
+        }
+
+
+        private static void eval(String code, String expected, Printer printer)
+        {
+            var p = new Parser();
+            var al = p.Parse(code);
+
+            var i = new Interpreter();
+            var asi = i.VisitAsiList(al);
+            check(asi, expected, printer);
         }
     }
 }

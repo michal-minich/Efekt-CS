@@ -76,14 +76,14 @@ namespace Efekt
 
     public sealed class Ident : Asi
     {
-        public String Value { get; }
+        public String Name { get; }
         public IdentType Type { get; }
 
 
-        public Ident(String value, IdentType type)
+        public Ident(String name, IdentType type)
         {
             Type = type;
-            Value = value;
+            Name = name;
         }
 
 

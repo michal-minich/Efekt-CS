@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 
 namespace Efekt
@@ -14,9 +15,31 @@ namespace Efekt
         // ReSharper disable once UnusedParameter.Global
         internal static void Main(String[] args)
         {
-            DefaultPrinter = new Printer();
+            try
+            {
+                DefaultPrinter = new Printer();
 
-            Tests.TestParser();
+                Tests.Test();
+
+                if (args.Length == 1)
+                {
+                    var p = new Parser();
+                    var txt = File.ReadAllText(args[0]);
+                    var al = p.Parse(txt);
+
+                    var i = new Interpreter();
+                    i.VisitAsiList(al);
+                }
+                else
+                {
+                    Console.WriteLine("Usage: Efekt <file>");
+                    Console.ReadLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.GetType().Name + ": " + ex.Message);
+            }
         }
     }
 }

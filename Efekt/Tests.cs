@@ -89,6 +89,10 @@ namespace Efekt
             parse("(a)(b())", "a(b())");
             parse("a(b()())()");
 
+            parse("new A");
+            parse("a = new A");
+            parse("a = new A()");
+
             Console.WriteLine("All Tests OK");
             Console.ReadLine();
         }

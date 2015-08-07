@@ -147,8 +147,8 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseStruct() ?? parseIdent()
-                      ?? parseBraced();
+            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseNew()
+                      ?? parseStruct() ?? parseIdent() ?? parseBraced();
 
             asi = parseFnApply(asi);
 
@@ -235,6 +235,32 @@ namespace Efekt
         }
 
 
+        private New parseNew()
+        {
+            if (!matchWord("new"))
+                return null;
+            skipWhite();
+            var ident = parseIdent();
+            if (ident == null)
+                throw new Exception("ident required after new");
+            return new New(ident);
+        }
+
+
+        private Asi parseFnApply(Asi asi)
+        {
+            skipWhite();
+            while (matchChar('('))
+            {
+                --index;
+                var args = parseBracedList('(', ')');
+                asi = new FnApply(asi, args);
+                skipWhite();
+            }
+            return asi;
+        }
+
+
         private List<Asi> parseBracedList(Char startBrace, Char endBrace)
         {
             if (!matchChar(startBrace))
@@ -252,20 +278,6 @@ namespace Efekt
                 skipWhite();
             }
             return items;
-        }
-
-
-        private Asi parseFnApply(Asi asi)
-        {
-            skipWhite();
-            while (matchChar('('))
-            {
-                --index;
-                var args = parseBracedList('(', ')');
-                asi = new FnApply(asi, args);
-                skipWhite();
-            }
-            return asi;
         }
 
 

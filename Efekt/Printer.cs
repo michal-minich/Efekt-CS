@@ -68,6 +68,12 @@ namespace Efekt
         }
 
 
+        public String VisitNew(New n)
+        {
+            return "new " + VisitIdent(n.Ident);
+        }
+
+
         private String joinStatementsOneLine(IEnumerable<Asi> items)
         {
             return String.Join(" ", items.Select(i => i.Accept(this)));

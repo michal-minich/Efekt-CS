@@ -116,6 +116,12 @@ namespace Efekt
         }
 
 
+        public Asi VisitVoid(Void v)
+        {
+            return v;
+        }
+
+
         private Asi visitAsiArray(IEnumerable<Asi> items)
         {
             env = new Env();
@@ -124,7 +130,7 @@ namespace Efekt
             {
                 res = item.Accept(this);
             }
-            return res;
+            return res ?? new Void();
         }
     }
 }

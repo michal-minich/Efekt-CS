@@ -150,7 +150,7 @@ namespace Efekt
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
-                      ?? parseStruct() ?? parseIdent() ?? parseBraced();
+                      ?? parseStruct() ?? parseVoid() ?? parseIdent() ?? parseBraced();
 
             asi = parseFnApply(asi);
 
@@ -207,6 +207,9 @@ namespace Efekt
 
             return new Struct(items);
         }
+
+
+        private Void parseVoid() => matchWord("void") ? new Void() : null;
 
 
         private Ident parseIdent()
@@ -416,7 +419,7 @@ namespace Efekt
 
         private Boolean matchWord(String w)
         {
-            if (index + w.Length >= code.Length)
+            if (index + w.Length > code.Length)
                 return false;
 
             if (code.Substring(index, w.Length) != w)

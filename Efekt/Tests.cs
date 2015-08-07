@@ -18,6 +18,8 @@ namespace Efekt
             parse("");
             parse(" ", "");
 
+            parse("void");
+
             parse("123");
             parse(" 123  456 ", "123\n456");
 
@@ -114,10 +116,15 @@ namespace Efekt
 
         private static void testInterpreter()
         {
-            //eval("");
+            eval("", "void");
             eval("1");
             eval("var a = 1", "1");
             eval("var a : T = 1", "1");
+
+            eval("var a = 1 a", "1");
+
+            eval("var a = void", "void");
+            eval("var a = void a", "void");
 
             eval("var a a = 1", "1");
             eval("var a : T a = 1", "1");

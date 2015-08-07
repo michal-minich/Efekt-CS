@@ -74,6 +74,12 @@ namespace Efekt
         }
 
 
+        public String VisitVoid(Void v)
+        {
+            return "void";
+        }
+
+
         private String joinStatementsOneLine(IEnumerable<Asi> items)
         {
             return String.Join(" ", items.Select(i => i.Accept(this)));

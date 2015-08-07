@@ -17,6 +17,7 @@ namespace Efekt
         T VisitFn(Fn fn);
         T VisitFnApply(FnApply fna);
         T VisitNew(New n);
+        T VisitVoid(Void v);
     }
 
 
@@ -238,6 +239,15 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v)
         {
             return v.VisitNew(this);
+        }
+    }
+
+
+    public sealed class Void : Asi
+    {
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitVoid(this);
         }
     }
 }

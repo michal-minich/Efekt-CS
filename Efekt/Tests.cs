@@ -61,8 +61,8 @@ namespace Efekt
 
             parse("struct { }");
             parse("struct { a }");
-            parse("struct { a b }");
-            parseWithBraces("struct { a b + c }", "struct { a (b + c) }");
+            parse("struct { a b }", "struct { a\nb }");
+            parseWithBraces("struct { a b + c }", "struct { a\n(b + c) }");
 
             parse("fn () { }");
             parse("fn (a) { }");
@@ -74,6 +74,20 @@ namespace Efekt
             parseWithBraces("fn (a, b = 2 + 3, c = 4) { }", "fn (a, (b = (2 + 3)), (c = 4)) { }");
             parse("fn () { fn (a) { b } }");
             parse("fn (a = fn (b) { c }) { d }");
+
+            parse("a()");
+            parse("(a)()", "a()");
+            parse("(a)(b)", "a(b)");
+            parseWithBraces("(a + b)()", "(a + b)()");
+            parseWithBraces("a + b()", "(a + b())");
+            parseWithBraces("a + b() + c()", "((a + b()) + c())");
+            parseWithBraces("a() + b() * c()", "(a() + (b() * c()))");
+            parse("fn () { }()");
+            parse("a(fn () { })");
+            parse("fn () { }(fn () { })");
+            parse("(a)()()", "a()()");
+            parse("(a)(b())", "a(b())");
+            parse("a(b()())()");
 
             Console.WriteLine("All Tests OK");
             Console.ReadLine();

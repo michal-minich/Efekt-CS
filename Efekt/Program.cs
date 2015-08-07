@@ -11,6 +11,7 @@ namespace Efekt
 
 
         [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "args")]
+        // ReSharper disable once UnusedParameter.Global
         internal static void Main(String[] args)
         {
             DefaultPrinter = new Printer();

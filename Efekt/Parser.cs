@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using JetBrains.Annotations;
 
-
 namespace Efekt
 {
     public sealed class Parser
@@ -15,44 +14,45 @@ namespace Efekt
         private static readonly List<String> rightAssociativeOps = new List<String>
         {":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|="};
 
-        private static readonly Dictionary<String, Int32> opPrecedence = new Dictionary<String, Int32>
-        {
-            ["."] = 160,
-            [":"] = 140,
-            ["*"] = 130,
-            ["/"] = 130,
-            ["%"] = 130,
-            ["+"] = 120,
-            ["-"] = 120,
-            ["<<"] = 110,
-            [">>"] = 110,
-            ["<"] = 100,
-            [">"] = 100,
-            [">="] = 100,
-            ["<="] = 100,
-            ["=="] = 60,
-            ["!="] = 60,
-            ["&"] = 50,
-            ["^"] = 40,
-            ["|"] = 30,
-            ["$"] = 30,
-            ["&&"] = 20,
-            ["and"] = 20,
-            ["||"] = 10,
-            ["or"] = 10,
-            ["="] = 3,
-            ["*="] = 3,
-            ["/="] = 3,
-            ["%="] = 3,
-            ["+="] = 3,
-            ["-="] = 3,
-            ["<<="] = 3,
-            [">>="] = 3,
-            ["&=="] = 3,
-            ["^="] = 3,
-            ["|="] = 3,
-            ["] ="] = 2
-        };
+        private static readonly Dictionary<String, Int32> opPrecedence
+            = new Dictionary<String, Int32>
+            {
+                ["."] = 160,
+                [":"] = 140,
+                ["*"] = 130,
+                ["/"] = 130,
+                ["%"] = 130,
+                ["+"] = 120,
+                ["-"] = 120,
+                ["<<"] = 110,
+                [">>"] = 110,
+                ["<"] = 100,
+                [">"] = 100,
+                [">="] = 100,
+                ["<="] = 100,
+                ["=="] = 60,
+                ["!="] = 60,
+                ["&"] = 50,
+                ["^"] = 40,
+                ["|"] = 30,
+                ["$"] = 30,
+                ["&&"] = 20,
+                ["and"] = 20,
+                ["||"] = 10,
+                ["or"] = 10,
+                ["="] = 3,
+                ["*="] = 3,
+                ["/="] = 3,
+                ["%="] = 3,
+                ["+="] = 3,
+                ["-="] = 3,
+                ["<<="] = 3,
+                [">>="] = 3,
+                ["&=="] = 3,
+                ["^="] = 3,
+                ["|="] = 3,
+                ["] ="] = 2
+            };
 
 
         public AsiList Parse(String codeText)
@@ -138,6 +138,8 @@ namespace Efekt
                     found = true;
                 }
             } while (found);
+
+
             return asi;
         }
 
@@ -145,7 +147,11 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseStruct() ?? parseIdent() ?? parseBraced();
+            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseStruct() ?? parseIdent()
+                      ?? parseBraced();
+
+            asi = parseFnApply(asi);
+
             return asi;
         }
 
@@ -159,9 +165,7 @@ namespace Efekt
         private Arr parseArr()
         {
             var items = parseBracedList('[', ']');
-            if (items == null)
-                return null;
-            return new Arr(items);
+            return items == null ? null : new Arr(items);
         }
 
 
@@ -208,7 +212,9 @@ namespace Efekt
                 return null;
 
             if (matched != "op")
-                return new Ident(matched, Char.IsUpper(matched[0]) ? IdentType.Type : IdentType.Value);
+                return new Ident(
+                    matched,
+                    Char.IsUpper(matched[0]) ? IdentType.Type : IdentType.Value);
 
             var isOpMatched = matchUntil(isOp);
             return isOpMatched ? new Ident(matched, IdentType.Op) : null;
@@ -239,12 +245,27 @@ namespace Efekt
             while (!matchChar(endBrace))
             {
                 if (!hasChars)
-                    throw new Exception("missing closing brace " + endBrace + " and source end reached");
+                    throw new Exception("missing closing brace " + endBrace +
+                                        " and source end reached");
                 var asi = parseCombinedAsi();
                 items.Add(asi);
                 skipWhite();
             }
             return items;
+        }
+
+
+        private Asi parseFnApply(Asi asi)
+        {
+            skipWhite();
+            while (matchChar('('))
+            {
+                --index;
+                var args = parseBracedList('(', ')');
+                asi = new FnApply(asi, args);
+                skipWhite();
+            }
+            return asi;
         }
 
 
@@ -329,9 +350,6 @@ namespace Efekt
         }
 
 
-        public Boolean hasChars
-        {
-            get { return index < code.Length; }
-        }
+        private Boolean hasChars => index < code.Length;
     }
 }

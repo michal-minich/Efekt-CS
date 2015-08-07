@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using JetBrains.Annotations;
 
 
@@ -14,16 +13,7 @@ namespace Efekt
 
         public String VisitAsiList(AsiList al)
         {
-            var sb = new StringBuilder();
-            var counter = 0;
-            foreach (var item in al.Items)
-            {
-                var itemStr = item.Accept(this);
-                if (++counter != 1)
-                    sb.Append('\n');
-                sb.Append(itemStr);
-            }
-            return sb.ToString();
+            return joinStatements(al.Items);
         }
 
 
@@ -67,15 +57,26 @@ namespace Efekt
 
         public String VisitFn(Fn fn)
         {
-            var p = joinList(fn.Params);
-            var b = joinStatements(fn.Items);
-            return "fn (" + p + ") " + (b.Length == 0 ? "{ }" : "{ " + b + " }");
+            var b = joinStatementsOneLine(fn.Items);
+            return "fn (" + joinList(fn.Params) + ") " + (b.Length == 0 ? "{ }" : "{ " + b + " }");
+        }
+
+
+        public String VisitFnApply(FnApply fna)
+        {
+            return fna.Fn.Accept(this) + "(" + joinList(fna.Args) + ")";
+        }
+
+
+        private String joinStatementsOneLine(IEnumerable<Asi> items)
+        {
+            return String.Join(" ", items.Select(i => i.Accept(this)));
         }
 
 
         private String joinStatements(IEnumerable<Asi> items)
         {
-            return String.Join(" ", items.Select(i => i.Accept(this)));
+            return String.Join("\n", items.Select(i => i.Accept(this)));
         }
 
 

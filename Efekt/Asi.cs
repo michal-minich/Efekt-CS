@@ -15,6 +15,7 @@ namespace Efekt
         T VisitArr(Arr arr);
         T VisitStruct(Struct s);
         T VisitFn(Fn fn);
+        T VisitFnApply(FnApply fna);
     }
 
 
@@ -200,6 +201,26 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v)
         {
             return v.VisitFn(this);
+        }
+    }
+
+
+    public sealed class FnApply : Asi
+    {
+        public Asi Fn { get; }
+        public IEnumerable<Asi> Args { get; }
+
+
+        public FnApply(Asi fn, IEnumerable<Asi> args)
+        {
+            Fn = fn;
+            Args = args;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v)
+        {
+            return v.VisitFnApply(this);
         }
     }
 }

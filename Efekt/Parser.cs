@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using JetBrains.Annotations;
 
+
 namespace Efekt
 {
     public sealed class Parser
@@ -147,7 +148,7 @@ namespace Efekt
         private Asi parseAsi()
         {
             skipWhite();
-            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseNew()
+            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
                       ?? parseStruct() ?? parseIdent() ?? parseBraced();
 
             asi = parseFnApply(asi);
@@ -232,6 +233,23 @@ namespace Efekt
                 throw new Exception("missing closing brace");
 
             return asi;
+        }
+
+
+        private Declr parseVar()
+        {
+            if (!matchWord("var"))
+                return null;
+            skipWhite();
+            var asi = parseCombinedAsi();
+            var i = asi as Ident;
+            if (i != null)
+                return new Declr(i, null, null) {IsVar = true};
+            var d = asi as Declr;
+            if (d == null)
+                throw new Exception("declaration or identifier expected after var");
+            d.IsVar = true;
+            return d;
         }
 
 

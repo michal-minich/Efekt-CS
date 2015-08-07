@@ -105,7 +105,7 @@ namespace Efekt
     public sealed class BinOpApply : Asi
     {
         public Ident Op { get; }
-        public Asi Op1 { get; }
+        public Asi Op1 { get; set; }
         public Asi Op2 { get; set; }
 
 
@@ -131,17 +131,13 @@ namespace Efekt
         [CanBeNull]
         public Asi Type { get; }
 
-        [CanBeNull]
-        public Asi Value { get; }
-
         public Boolean IsVar { get; set; }
 
 
-        public Declr(Ident ident, [CanBeNull] Asi type, [CanBeNull] Asi value)
+        public Declr(Ident ident, [CanBeNull] Asi type)
         {
             Ident = ident;
             Type = type;
-            Value = value;
         }
 
 

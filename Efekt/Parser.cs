@@ -112,7 +112,7 @@ namespace Efekt
                         {
                             var type = parseCombinedAsi(true);
                             Contract.Assume(type != null);
-                            asi = new Declr((Ident) asi, type, null);
+                            asi = new Declr((Ident) asi, type);
                         }
                         else
                         {
@@ -236,15 +236,35 @@ namespace Efekt
         }
 
 
-        private Declr parseVar()
+        private Asi parseVar()
         {
             if (!matchWord("var"))
                 return null;
             skipWhite();
             var asi = parseCombinedAsi();
+
             var i = asi as Ident;
             if (i != null)
-                return new Declr(i, null, null) {IsVar = true};
+                return new Declr(i, null) {IsVar = true};
+
+            var o = asi as BinOpApply;
+            if (o != null)
+            {
+                if (o.Op.Value != "=")
+                    throw new Exception("only assignment can be variable");
+                var i2 = o.Op1 as Ident;
+                if (i2 != null)
+                {
+                    o.Op1 = new Declr(i2, null) {IsVar = true};
+                    return o;
+                }
+                var d2 = o.Op1 as Declr;
+                if (d2 == null)
+                    throw new Exception("only identifier or declaration can be assigned");
+                d2.IsVar = true;
+                return o;
+            }
+
             var d = asi as Declr;
             if (d == null)
                 throw new Exception("declaration or identifier expected after var");

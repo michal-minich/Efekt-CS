@@ -38,8 +38,7 @@ namespace Efekt
 
         public String VisitDeclr(Declr d)
         {
-            return (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ")
-                   + visitOptional(d.Value, " = ");
+            return (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ");
         }
 
 

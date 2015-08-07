@@ -94,13 +94,13 @@ namespace Efekt
             parse("a = new A()");
 
             parse("var a");
-            //parse("var a = 1");
-            //parse("var a = 1 + 2");
+            parse("var a = 1");
+            parse("var a = 1 + 2");
             parse("var a : T");
             parse("var a : A | B");
-            //parse("var a : T = 1");
-            //parse("var a : T = 1 + 2");
-            //parse("var a : A | B = 1 + 2");
+            parse("var a : T = 1");
+            parse("var a : T = 1 + 2");
+            parse("var a : A | B = 1 + 2");
 
             Console.WriteLine("All Tests OK");
             Console.ReadLine();

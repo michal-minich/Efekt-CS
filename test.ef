@@ -5,3 +5,8 @@ var second = fn (a, b) { b }
 id (1)
 first(2, 3)
 second(3, 4)
+
+var op& = fn (a, b) { b }
+op&(5, 6)
+5 & 6 & 7
+var a = fn (c, d) { c } var op^ = a 9 ^ 10

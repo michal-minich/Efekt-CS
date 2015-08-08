@@ -48,8 +48,10 @@ namespace Efekt
                     env.SetValue(i.Name, evaluated);
                     return evaluated;
                 default:
-                    throw new NotSupportedException(
-                        "operator '" + opa.Op.Name + "' is not supported");
+                    var fn = env.GetValue(opa.Op.Name);
+                    var fna = new FnApply(fn, new [] {opa.Op1 ,opa.Op2});
+                    var res = VisitFnApply(fna);
+                    return res;
             }
         }
 

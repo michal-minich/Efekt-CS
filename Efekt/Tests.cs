@@ -143,14 +143,28 @@ namespace Efekt
             eval("var a = 1 fn () { a }()", "1");
             eval("var a = 1 fn (a) { var a = 2 }(3)", "2");
 
-            eval("var id = fn (a) { a } fn () { id(3) }()", "3");
-            eval("var id = fn (a) { a } fn (b) { id(b) }(3)", "3");
-            eval("var id = fn (a) { a } fn (a) { id(a) }(3)", "3");
-            eval("var id = fn (a) { a } fn (b) { id(id(b)) }(3)", "3");
-            eval("var id = fn (a) { a } fn (a) { id(id(a)) }(3)", "3");
+            const String id = "var id = fn (a) { a }";
+            eval(id + " fn () { id(3) }()", "3");
+            eval(id + " fn (b) { id(b) }(3)", "3");
+            eval(id + " fn (a) { id(a) }(3)", "3");
+            eval(id + " fn (b) { id(id(b)) }(3)", "3");
+            eval(id + " fn (a) { id(id(a)) }(3)", "3");
 
+            eval("fn () { fn (a) { a } }()(4)", "4");
+            eval("fn (a) { a(4) }(fn (a) { a })", "4");
+            eval(id + " fn (a = id(4)) { a }()", "4");
+            eval(id + " fn (a = id(4)) { a }(5)", "5");
+            eval(id + " fn (a) { a(4) }(id)", "4");
+            eval(id + " fn () { id }()(4)", "4");
+            eval(id + " fn () { id(id) }()(4)", "4");
+            eval(id + " fn (a = id) { a }()(4)", "4");
 
-            //eval("var x = fn (a) { fn () { a } } x(5)()", "5");
+            const String op1 = "var op& = fn (a, b) { b }";
+            eval(op1 + " op&(5, 6)", "6");
+            eval(op1 + " 5 & 6", "6");
+            eval(op1 + " 5 & 6 & 7", "7");
+            eval(op1 + " var a = op& a(8, 9)", "9");
+            eval("var a = fn (c, d) { c } var op^ = a 9 ^ 10", "9");
         }
 
 

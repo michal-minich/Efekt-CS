@@ -128,6 +128,29 @@ namespace Efekt
 
             eval("var a a = 1", "1");
             eval("var a : T a = 1", "1");
+
+            eval("fn () { 1 }()", "1");
+            eval("fn () { var a = 1 }()", "1");
+
+            eval("fn (a) { a }(1)", "1");
+            eval("fn (a = 1) { a }()", "1");
+            eval("fn (a = 1) { a = 2 }()", "2");
+            eval("fn (a = 1) { a }(2)", "2");
+
+            eval("fn (a) { fn () { a }() }(3)", "3");
+            eval("fn () { fn (a) { a }(3) }()", "3");
+            eval("var a = 1 fn (a) { a }(3)", "3");
+            eval("var a = 1 fn () { a }()", "1");
+            eval("var a = 1 fn (a) { var a = 2 }(3)", "2");
+
+            eval("var id = fn (a) { a } fn () { id(3) }()", "3");
+            eval("var id = fn (a) { a } fn (b) { id(b) }(3)", "3");
+            eval("var id = fn (a) { a } fn (a) { id(a) }(3)", "3");
+            eval("var id = fn (a) { a } fn (b) { id(id(b)) }(3)", "3");
+            eval("var id = fn (a) { a } fn (a) { id(id(a)) }(3)", "3");
+
+
+            //eval("var x = fn (a) { fn () { a } } x(5)()", "5");
         }
 
 

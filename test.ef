@@ -1,4 +1,7 @@
 var id = fn (a) { a }
-
+var first = fn (a, b) { a }
+var second = fn (a, b) { b }
 
 id (1)
+first(2, 3)
+second(3, 4)

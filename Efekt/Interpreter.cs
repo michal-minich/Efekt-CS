@@ -86,19 +86,29 @@ namespace Efekt
             if (fn == null)
                 throw new Exception("cannot apply " + fnAsi.GetType().Name);
 
-            if (fn.Params.Count() != fna.Args.Count())
-                throw new Exception("fn has arguments " + fn.Params.Count() +
-                                    ", but calling with " + fna.Args.Count());
-
             var preEnv = env;
             env = new Env(env);
             var n = 0;
-            foreach (var arg in fna.Args)
+            foreach (var p in fn.Params)
             {
-                var p = fn.Params.ElementAt(n);
-                var i = Parser.GetIdentFromDeclrLikeAsi(p);
-                env.Delare(i.Name);
-                env.SetValue(i.Name, arg.Accept(this));
+                if (fna.Args.Count() <= n)
+                {
+                    p.Accept(this);
+                    if (!(p is BinOpApply))
+                        throw new Exception("fn has " + fn.Params.Count() + "parameters" +
+                                            ", but calling with " + fna.Args.Count());
+                }
+                else
+                {
+                    var arg = fna.Args.ElementAt(n);
+                    var argValue = arg.Accept(this);
+                    var i = Parser.GetIdentFromDeclrLikeAsi(p);
+                    if (p is BinOpApply)
+                        env.Delare(i.Name);
+                    else
+                        p.Accept(this);
+                    env.SetValue(i.Name, argValue);
+                }
                 ++n;
             }
 

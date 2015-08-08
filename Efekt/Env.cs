@@ -29,22 +29,22 @@ namespace Efekt
 
         public void SetValue(String name, Asi value)
         {
-            getEnvDeclaring(name).dict[name] = value;
+            getEnvDeclaring(name, this).dict[name] = value;
         }
 
 
         public Asi GetValue(String name)
         {
-            return getEnvDeclaring(name).dict[name];
+            return getEnvDeclaring(name, this).dict[name];
         }
 
 
-        private Env getEnvDeclaring(String name)
+        private Env getEnvDeclaring(String name, Env env)
         {
-            if (dict.ContainsKey(name))
-                return this;
-            if (Parent != null)
-                return Parent;
+            if (env.dict.ContainsKey(name))
+                return env;
+            if (env.Parent != null)
+                return getEnvDeclaring(name, env.Parent);
             throw new Exception("variable '" + name + "' is not declared");
         }
     }

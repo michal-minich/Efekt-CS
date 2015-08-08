@@ -12,7 +12,7 @@ namespace Efekt
 
         public Asi VisitAsiList(AsiList al)
         {
-            return visitAsiArray(al.Items);
+            return visitAsiArray(al.Items, new Env(env));
         }
 
 
@@ -87,8 +87,7 @@ namespace Efekt
             var fn = fnAsi as Fn;
             if (fn == null)
                 throw new Exception("cannot apply " + fnAsi.GetType().Name);
-
-            var preEnv = env;
+    
             env = new Env(env);
             var n = 0;
             foreach (var p in fn.Params)
@@ -114,10 +113,8 @@ namespace Efekt
                 ++n;
             }
 
-            var res = visitAsiArray(fn.Items);
-
-            env = preEnv;
-
+            var res = visitAsiArray(fn.Items, env);
+            
             return res;
         }
 
@@ -134,14 +131,15 @@ namespace Efekt
         }
 
 
-        private Asi visitAsiArray(IEnumerable<Asi> items)
+        private Asi visitAsiArray(IEnumerable<Asi> items, Env newEnv)
         {
-            env = new Env(env);
+            env = newEnv;
             Asi res = null;
             foreach (var item in items)
             {
                 res = item.Accept(this);
             }
+            env = newEnv.Parent;
             return res ?? new Void();
         }
     }

@@ -141,7 +141,8 @@ namespace Efekt
             eval("fn () { fn (a) { a }(3) }()", "3");
             eval("var a = 1 fn (a) { a }(3)", "3");
             eval("var a = 1 fn () { a }()", "1");
-            eval("var a = 1 fn (a) { var a = 2 }(3)", "2");
+            eval("var a = 1 fn (b) { b = 2 }(3)", "2");
+            eval("var a = 1 fn (b) { var c = 2 }(3)", "2");
 
             const String id = "var id = fn (a) { a }";
             eval(id + " fn () { id(3) }()", "3");

@@ -160,22 +160,54 @@ namespace Efekt
             eval(id + " fn () { id(id) }()(4)", "4");
             eval(id + " fn (a = id) { a }()(4)", "4");
 
+            eval("var a = fn () { var c = 1 } a() a()", "1");
+
             const String op1 = "var op& = fn (a, b) { b }";
             eval(op1 + " op&(5, 6)", "6");
             eval(op1 + " 5 & 6", "6");
             eval(op1 + " 5 & 6 & 7", "7");
             eval(op1 + " var a = op& a(8, 9)", "9");
             eval("var a = fn (c, d) { c } var op^ = a 9 ^ 10", "9");
+
+            const String t = "var t = fn (x) { fn (y) { x } }";
+            const String f = " var f = fn (x) { fn (y) { y } }";
+            const String and = " var and = fn (p) { fn (q) { p(q)(p) } }";
+            const String or = " var or = fn (p) { fn (q) { p(p)(q) } }";
+            const String ifthen = " var ifthen = fn (p) { fn (a) { fn (b) { p(a)(b) } } }";
+            const String not = " var not = fn (b) { ifthen(b)(f)(t) }";
+            const String bools = t + f + and + or + ifthen + not;
+            eval(bools + " and(t)(t)", removeVar(t));
+            eval(bools + " and(t)(f)", removeVar(f));
+            eval(bools + " and(f)(t)", removeVar(f));
+            eval(bools + " and(f)(f)", removeVar(f));
+            eval(bools + " or(t)(t)", removeVar(t));
+            eval(bools + " or(t)(f)", removeVar(t));
+            eval(bools + " or(f)(t)", removeVar(t));
+            eval(bools + " or(f)(f)", removeVar(f));
+            eval(bools + " not(t)", removeVar(f));
+            eval(bools + " not(f)", removeVar(t));
+            eval(bools + " not(and(t)(f))", removeVar(t));
+            eval(bools + " not(or(t)(f))", removeVar(f));
+            eval(bools + " and(not(t))(not(f))", removeVar(f));
+            eval(bools + " or(not(t))(not(f))", removeVar(t));
+
+            const String adder = "var adder = fn (a) { var state = a fn() { state = state + 1 } }";
+            eval(adder + " var a = adder(10) a() a()", "12");
+            eval(adder + " var a = adder(10) var b = adder(100) a() b() a()", "12");
+            eval(adder + " var a = adder(10) var b = adder(100) a() b() a() b()", "102");
         }
+
+
+        private static String removeVar(String t) => t.SubstringAfter("= ");
 
 
         // ReSharper disable once UnusedParameter.Local
         private static void check(IAsi al, String expected, Printer printer)
         {
             var actual = al.Accept(printer);
-
             if (expected != actual)
-                throw new EfektException("Test Failed");
+                throw new EfektException(
+                    "Test Failed - Expected: '" + expected + "' Actual: '" + actual + "'");
         }
 
 
@@ -197,11 +229,9 @@ namespace Efekt
         }
 
 
-        // ReSharper disable once UnusedParameter.Local
         private static void parse(String code, String expected, Printer printer)
         {
             var p = new Parser();
-
             var al = p.Parse(code);
             check(al, expected, printer);
         }
@@ -229,7 +259,6 @@ namespace Efekt
         {
             var p = new Parser();
             var al = p.Parse(code);
-
             var i = new Interpreter();
             var asi = i.VisitAsiList(al);
             check(asi, expected, printer);

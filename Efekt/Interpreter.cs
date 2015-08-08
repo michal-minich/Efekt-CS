@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 
 
@@ -12,7 +13,7 @@ namespace Efekt
 
         public Asi VisitAsiList(AsiList al)
         {
-            return visitAsiArray(al.Items, new Env(env));
+            return visitAsiArray(al.Items, new Env(env), env);
         }
 
 
@@ -47,11 +48,13 @@ namespace Efekt
                     }
                     env.SetValue(i.Name, evaluated);
                     return evaluated;
+                case "+":
+                    var v1 = opa.Op1.Accept(this).Accept(Program.DefaultPrinter).ToInt();
+                    var v2 = opa.Op2.Accept(this).Accept(Program.DefaultPrinter).ToInt();
+                    return new Int((v1 + v2).ToString());
                 default:
-                    var fn = env.GetValue(opa.Op.Name);
-                    var fna = new FnApply(fn, new[] {opa.Op1, opa.Op2});
-                    var res = VisitFnApply(fna);
-                    return res;
+                    var fna = new FnApply(opa.Op, new[] {opa.Op1, opa.Op2});
+                    return VisitFnApply(fna);
             }
         }
 
@@ -77,7 +80,8 @@ namespace Efekt
 
         public Asi VisitFn(Fn fn)
         {
-            return fn;
+            Contract.Assume(fn.Env == null);
+            return new Fn(fn.Params, fn.Items) {Env = env.GetFlat()};
         }
 
 
@@ -88,7 +92,10 @@ namespace Efekt
             if (fn == null)
                 throw new EfektException("cannot apply " + fnAsi.GetType().Name);
 
-            env = new Env(env);
+            Contract.Assume(fn.Env != null);
+
+            var prevEnv = env;
+            env = new Env(env); // for params
             var n = 0;
             foreach (var p in fn.Params)
             {
@@ -97,7 +104,7 @@ namespace Efekt
                 {
                     p.Accept(this);
                     if (opa == null)
-                        throw new EfektException("fn has " + fn.Params.Count() + "parameters" +
+                        throw new EfektException("fn has " + fn.Params.Count() + " parameter(s)" +
                                                  ", but calling with " + fna.Args.Count());
                 }
                 else
@@ -113,9 +120,10 @@ namespace Efekt
                 }
                 ++n;
             }
-
-            var res = visitAsiArray(fn.Items, env);
-
+            var localEnv = new Env(env); // new local env for this fn call
+            localEnv.CopyFrom(env); // make params local variables of fn
+            localEnv.Parent = fn.Env; // reference captured env
+            var res = visitAsiArray(fn.Items, localEnv, prevEnv);
             return res;
         }
 
@@ -132,15 +140,13 @@ namespace Efekt
         }
 
 
-        private Asi visitAsiArray(IEnumerable<Asi> items, Env newEnv)
+        private Asi visitAsiArray(IEnumerable<Asi> items, Env newEnv, Env restoreEnv)
         {
             env = newEnv;
             Asi res = null;
             foreach (var item in items)
-            {
                 res = item.Accept(this);
-            }
-            env = newEnv.Parent;
+            env = restoreEnv;
             return res ?? new Void();
         }
     }

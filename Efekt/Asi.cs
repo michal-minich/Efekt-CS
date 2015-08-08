@@ -193,6 +193,7 @@ namespace Efekt
     {
         public IEnumerable<Asi> Params { get; }
         public IEnumerable<Asi> Items { get; }
+        public Env Env { get; set; }
 
 
         public Fn(IEnumerable<Asi> @params, IEnumerable<Asi> items)

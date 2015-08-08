@@ -11,22 +11,14 @@ namespace Efekt
         public Boolean PutBracesAroundBinOpApply { get; set; }
 
 
-        public String VisitAsiList(AsiList al)
-        {
-            return joinStatements(al.Items);
-        }
+        public String VisitAsiList(AsiList al) => joinStatements(al.Items);
 
 
-        public String VisitInt(Int ii)
-        {
-            return ii.Value;
-        }
+        public String VisitInt(Int ii) => ii.Value;
 
 
         public String VisitIdent(Ident ident)
-        {
-            return (ident.Type == IdentType.Op ? "op" : "") + ident.Name;
-        }
+            => (ident.Type == IdentType.Op ? "op" : "") + ident.Name;
 
 
         public String VisitBinOpApply(BinOpApply opa)
@@ -37,15 +29,10 @@ namespace Efekt
 
 
         public String VisitDeclr(Declr d)
-        {
-            return (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ");
-        }
+            => (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ");
 
 
-        public String VisitArr(Arr arr)
-        {
-            return "[" + joinList(arr.Items) + "]";
-        }
+        public String VisitArr(Arr arr) => "[" + joinList(arr.Items) + "]";
 
 
         public String VisitStruct(Struct s)
@@ -63,21 +50,13 @@ namespace Efekt
 
 
         public String VisitFnApply(FnApply fna)
-        {
-            return fna.Fn.Accept(this) + "(" + joinList(fna.Args) + ")";
-        }
+            => fna.Fn.Accept(this) + "(" + joinList(fna.Args) + ")";
 
 
-        public String VisitNew(New n)
-        {
-            return "new " + VisitIdent(n.Ident);
-        }
+        public String VisitNew(New n) => "new " + VisitIdent(n.Ident);
 
 
-        public String VisitVoid(Void v)
-        {
-            return "void";
-        }
+        public String VisitVoid(Void v) => "void";
 
 
         private String joinStatementsOneLine(IEnumerable<Asi> items)
@@ -99,8 +78,6 @@ namespace Efekt
 
 
         private String visitOptional([CanBeNull] IAsi asi, String prefix)
-        {
-            return asi == null ? "" : prefix + asi.Accept(this);
-        }
+            => asi == null ? "" : prefix + asi.Accept(this);
     }
 }

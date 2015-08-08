@@ -11,22 +11,13 @@ namespace Efekt
         private Env env;
 
 
-        public Asi VisitAsiList(AsiList al)
-        {
-            return visitAsiArray(al.Items, new Env(env), env);
-        }
+        public Asi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(env), env);
 
 
-        public Asi VisitInt(Int ii)
-        {
-            return ii;
-        }
+        public Asi VisitInt(Int ii) => ii;
 
 
-        public Asi VisitIdent(Ident ident)
-        {
-            return env.GetValue(ident.Name);
-        }
+        public Asi VisitIdent(Ident ident) => env.GetValue(ident.Name);
 
 
         public Asi VisitBinOpApply(BinOpApply opa)
@@ -66,16 +57,10 @@ namespace Efekt
         }
 
 
-        public Asi VisitArr(Arr arr)
-        {
-            return arr;
-        }
+        public Asi VisitArr(Arr arr) => arr;
 
 
-        public Asi VisitStruct(Struct s)
-        {
-            return s;
-        }
+        public Asi VisitStruct(Struct s) => s;
 
 
         public Asi VisitFn(Fn fn)
@@ -134,10 +119,7 @@ namespace Efekt
         }
 
 
-        public Asi VisitVoid(Void v)
-        {
-            return v;
-        }
+        public Asi VisitVoid(Void v) => v;
 
 
         private Asi visitAsiArray(IEnumerable<Asi> items, Env newEnv, Env restoreEnv)

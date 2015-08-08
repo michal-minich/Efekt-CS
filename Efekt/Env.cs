@@ -66,10 +66,7 @@ namespace Efekt
         }
 
 
-        public Asi GetValue(String name)
-        {
-            return getEnvDeclaring(name, this).dict[name];
-        }
+        public Asi GetValue(String name) => getEnvDeclaring(name, this).dict[name];
 
 
         private Int32 n;

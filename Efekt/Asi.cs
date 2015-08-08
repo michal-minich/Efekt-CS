@@ -33,10 +33,7 @@ namespace Efekt
         public abstract T Accept<T>(IAsiVisitor<T> v);
 
 
-        public override String ToString()
-        {
-            return GetType().Name + ": " + Accept(Program.DefaultPrinter);
-        }
+        public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);
     }
 
 
@@ -51,10 +48,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitAsiList(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitAsiList(this);
     }
 
 
@@ -69,10 +63,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitInt(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitInt(this);
     }
 
 
@@ -91,10 +82,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitIdent(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitIdent(this);
     }
 
 
@@ -121,10 +109,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitBinOpApply(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitBinOpApply(this);
     }
 
 
@@ -146,10 +131,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitDeclr(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitDeclr(this);
     }
 
 
@@ -164,10 +146,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitArr(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitArr(this);
     }
 
 
@@ -182,10 +161,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitStruct(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitStruct(this);
     }
 
 
@@ -203,10 +179,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitFn(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitFn(this);
     }
 
 
@@ -223,10 +196,7 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitFnApply(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitFnApply(this);
     }
 
 
@@ -244,18 +214,12 @@ namespace Efekt
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitNew(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitNew(this);
     }
 
 
     public sealed class Void : Asi
     {
-        public override T Accept<T>(IAsiVisitor<T> v)
-        {
-            return v.VisitVoid(this);
-        }
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitVoid(this);
     }
 }

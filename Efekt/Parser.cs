@@ -158,10 +158,7 @@ namespace Efekt
         }
 
 
-        private Int parseInt()
-        {
-            return matchUntil(isDigit) ? new Int(matched) : null;
-        }
+        private Int parseInt() => matchUntil(isDigit) ? new Int(matched) : null;
 
 
         private Arr parseArr()
@@ -392,10 +389,7 @@ namespace Efekt
         }
 
 
-        private void skipWhite()
-        {
-            matchUntil(isWhite);
-        }
+        private void skipWhite() => matchUntil(isWhite);
 
 
         private Boolean isWhite()

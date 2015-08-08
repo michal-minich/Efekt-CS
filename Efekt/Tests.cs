@@ -175,7 +175,7 @@ namespace Efekt
             var actual = al.Accept(printer);
 
             if (expected != actual)
-                throw new Exception();
+                throw new EfektException("Test Failed");
         }
 
 

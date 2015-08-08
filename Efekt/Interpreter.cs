@@ -49,7 +49,7 @@ namespace Efekt
                     return evaluated;
                 default:
                     var fn = env.GetValue(opa.Op.Name);
-                    var fna = new FnApply(fn, new [] {opa.Op1 ,opa.Op2});
+                    var fna = new FnApply(fn, new[] {opa.Op1, opa.Op2});
                     var res = VisitFnApply(fna);
                     return res;
             }
@@ -58,7 +58,7 @@ namespace Efekt
 
         public Asi VisitDeclr(Declr d)
         {
-            env.Delare(d.Ident.Name);
+            env.Declare(d.Ident.Name);
             return null;
         }
 
@@ -86,26 +86,27 @@ namespace Efekt
             var fnAsi = fna.Fn.Accept(this);
             var fn = fnAsi as Fn;
             if (fn == null)
-                throw new Exception("cannot apply " + fnAsi.GetType().Name);
-    
+                throw new EfektException("cannot apply " + fnAsi.GetType().Name);
+
             env = new Env(env);
             var n = 0;
             foreach (var p in fn.Params)
             {
+                var opa = p as BinOpApply;
                 if (fna.Args.Count() <= n)
                 {
                     p.Accept(this);
-                    if (!(p is BinOpApply))
-                        throw new Exception("fn has " + fn.Params.Count() + "parameters" +
-                                            ", but calling with " + fna.Args.Count());
+                    if (opa == null)
+                        throw new EfektException("fn has " + fn.Params.Count() + "parameters" +
+                                                 ", but calling with " + fna.Args.Count());
                 }
                 else
                 {
                     var arg = fna.Args.ElementAt(n);
                     var argValue = arg.Accept(this);
                     var i = Parser.GetIdentFromDeclrLikeAsi(p);
-                    if (p is BinOpApply)
-                        env.Delare(i.Name);
+                    if (opa != null)
+                        env.Declare(i.Name);
                     else
                         p.Accept(this);
                     env.SetValue(i.Name, argValue);
@@ -114,7 +115,7 @@ namespace Efekt
             }
 
             var res = visitAsiArray(fn.Items, env);
-            
+
             return res;
         }
 

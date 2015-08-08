@@ -19,10 +19,10 @@ namespace Efekt
         }
 
 
-        public void Delare(String name)
+        public void Declare(String name)
         {
             if (dict.ContainsKey(name))
-                throw new Exception("variable '" + name + "' is already declared");
+                throw new EfektException("variable '" + name + "' is already declared");
             dict.Add(name, null);
         }
 
@@ -45,7 +45,7 @@ namespace Efekt
                 return env;
             if (env.Parent != null)
                 return getEnvDeclaring(name, env.Parent);
-            throw new Exception("variable '" + name + "' is not declared");
+            throw new EfektException("variable '" + name + "' is not declared");
         }
     }
 }

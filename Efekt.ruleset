@@ -583,4 +583,15 @@
     <Rule Id="C6995" Action="Warning" />
     <Rule Id="C6997" Action="Warning" />
   </Rules>
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp" RuleNamespace="Microsoft.CodeAnalysis.CSharp">
+    <Rule Id="CS8019" Action="Info" />
+    <Rule Id="CS8020" Action="Info" />
+  </Rules>
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.Features" RuleNamespace="Microsoft.CodeAnalysis.CSharp.Features">
+    <Rule Id="IDE0001" Action="Info" />
+    <Rule Id="IDE0002" Action="Info" />
+    <Rule Id="IDE0003" Action="Info" />
+    <Rule Id="IDE0004" Action="Info" />
+    <Rule Id="IDE0005" Action="Info" />
+  </Rules>
 </RuleSet>

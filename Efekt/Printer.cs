@@ -8,7 +8,7 @@ namespace Efekt
 {
     public sealed class Printer : IAsiVisitor<String>
     {
-        public Boolean PutBracesAroundBinOpApply;
+        public Boolean PutBracesAroundBinOpApply { get; set; }
 
 
         public String VisitAsiList(AsiList al)

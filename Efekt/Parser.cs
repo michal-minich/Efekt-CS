@@ -180,7 +180,7 @@ namespace Efekt
             var p = parseBracedList('(', ')');
 
             if (p == null)
-                throw new Exception("expected '(...)' after 'fn'");
+                throw new EfektException("expected '(...)' after 'fn'");
 
             p = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
 
@@ -188,7 +188,7 @@ namespace Efekt
             var b = parseBracedList('{', '}');
 
             if (b == null)
-                throw new Exception("expected '{...}' after 'fn (...)'");
+                throw new EfektException("expected '{...}' after 'fn (...)'");
 
             return new Fn(p, b);
         }
@@ -203,7 +203,7 @@ namespace Efekt
 
             var items = parseBracedList('{', '}');
             if (items == null)
-                throw new Exception("missing open curly brace after 'struct'");
+                throw new EfektException("missing open curly brace after 'struct'");
 
             return new Struct(items);
         }
@@ -236,7 +236,7 @@ namespace Efekt
             var asi = parseCombinedAsi();
 
             if (!matchChar(')'))
-                throw new Exception("missing closing brace");
+                throw new EfektException("missing closing brace");
 
             return asi;
         }
@@ -256,7 +256,7 @@ namespace Efekt
         private static Asi expToDeclrOrAssign([CanBeNull] Asi asi, Boolean isVar)
         {
             if (asi == null)
-                throw new Exception("expected ident, declaration or assignment");
+                throw new EfektException("expected ident, declaration or assignment");
 
             var i = asi as Ident;
             if (i != null)
@@ -266,7 +266,7 @@ namespace Efekt
             if (o != null)
             {
                 if (o.Op.Name != "=")
-                    throw new Exception("only assignment can be variable");
+                    throw new EfektException("only assignment can be variable");
                 var i2 = o.Op1 as Ident;
                 if (i2 != null)
                 {
@@ -275,14 +275,14 @@ namespace Efekt
                 }
                 var d2 = o.Op1 as Declr;
                 if (d2 == null)
-                    throw new Exception("only identifier or declaration can be assigned");
+                    throw new EfektException("only identifier or declaration can be assigned");
                 d2.IsVar = isVar;
                 return o;
             }
 
             var d = asi as Declr;
             if (d == null)
-                throw new Exception("declaration or identifier expected after var");
+                throw new EfektException("declaration or identifier expected after var");
             d.IsVar = isVar;
             return d;
         }
@@ -307,12 +307,12 @@ namespace Efekt
                     var d2 = o.Op1 as Declr;
                     if (d2 != null)
                         return d2.Ident;
-                    throw new Exception("expression of type " + a.GetType().Name +
-                                        " cannot be assigned");
+                    throw new EfektException("expression of type " + a.GetType().Name +
+                                             " cannot be assigned");
                 }
-                throw new Exception("expected assignment operator");
+                throw new EfektException("expected assignment operator");
             }
-            throw new Exception("expression of type " + a.GetType().Name + "is unexpected");
+            throw new EfektException("expression of type " + a.GetType().Name + "is unexpected");
         }
 
 
@@ -323,7 +323,7 @@ namespace Efekt
             skipWhite();
             var ident = parseIdent();
             if (ident == null)
-                throw new Exception("ident required after new");
+                throw new EfektException("ident required after new");
             return new New(ident);
         }
 
@@ -352,8 +352,8 @@ namespace Efekt
             while (!matchChar(endBrace))
             {
                 if (!hasChars)
-                    throw new Exception("missing closing brace " + endBrace +
-                                        " and source end reached");
+                    throw new EfektException("missing closing brace " + endBrace +
+                                             " and source end reached");
                 var asi = parseCombinedAsi();
                 items.Add(asi);
                 skipWhite();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 
@@ -78,6 +79,8 @@ namespace Efekt
     public sealed class Ident : Asi
     {
         public String Name { get; }
+
+        [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         public IdentType Type { get; }
 
 
@@ -129,6 +132,7 @@ namespace Efekt
     {
         public Ident Ident { get; }
 
+        [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         [CanBeNull]
         public Asi Type { get; }
 
@@ -225,6 +229,9 @@ namespace Efekt
     }
 
 
+    [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix")]
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "New")]
     public sealed class New : Asi
     {
         public Ident Ident { get; }

@@ -5,10 +5,24 @@
         <Recognized>
             <Word>Efekt</Word>
             <Word>Asi</Word>
+            <Word>Ident</Word>
+            <Word>BinOpApply</Word>
+            <Word>Declr</Word>
+            <Word>Arr</Word>
+            <Word>New</Word>
+            <Word>Fn</Word>
+            <Word>Env</Word>
             <Word>v</Word>
+            <Word>n</Word>
+            <Word>fna</Word>
+            <Word>s</Word>
+            <Word>d</Word>
+            <Word>params</Word>
+            <Word>opa</Word>
+            <Word>p</Word>
         </Recognized>
         <DiscreteExceptions>
-            <Term></Term>
+            <Term>FnApply</Term>
         </DiscreteExceptions>
     </Words>
     <Acronyms>

@@ -146,6 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Asi.cs" />
+    <Compile Include="EfektException.cs" />
     <Compile Include="Env.cs" />
     <Compile Include="Interpreter.cs" />
     <Compile Include="Parser.cs" />

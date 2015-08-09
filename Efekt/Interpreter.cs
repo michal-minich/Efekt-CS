@@ -71,11 +71,11 @@ namespace Efekt
         {
             var s2 = bag as Struct;
             if (s2 == null)
-                throw new Exception(
+                throw new EfektException(
                     "cannot access member '" + member.Accept(Program.DefaultPrinter) + "' of " +
                     bag.GetType().Name);
             if (s2.Env == null)
-                throw new Exception(
+                throw new EfektException(
                     "cannot access member '" + member.Accept(Program.DefaultPrinter) +
                     "'of not constructed struct");
 
@@ -213,9 +213,9 @@ namespace Efekt
                 if (opa == null)
                 {
                     if (declrItem == null)
-                        throw new Exception("struct can contains only variables");
+                        throw new EfektException("struct can contains only variables");
                     if (!declrItem.IsVar)
-                        throw new Exception("declaration must be prefixed with 'var' in struct");
+                        throw new EfektException("declaration must be prefixed with 'var' in struct");
                     declrItem.Accept(this);
                 }
                 else if (opa.Op.Name == "=")
@@ -228,7 +228,7 @@ namespace Efekt
                 }
                 else
                 {
-                    throw new Exception("struct can contains only variables, found: " + opa.Op);
+                    throw new EfektException("struct can contains only variables, found: " + opa.Op);
                 }
             }
 
@@ -268,5 +268,8 @@ namespace Efekt
             env = restoreEnv;
             return copyIfStructInstance(res) ?? new Void();
         }
+
+
+        public Asi VisitChar(Char c) => c;
     }
 }

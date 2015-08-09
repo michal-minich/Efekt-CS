@@ -150,7 +150,7 @@ namespace Efekt
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
-                      ?? parseStruct() ?? parseBool()
+                      ?? parseStruct() ?? parseBool() ?? parseChar() ?? parseString('"')
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
 
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
@@ -220,6 +220,65 @@ namespace Efekt
         }
 
 
+        private Char parseChar()
+        {
+            var str = parseString('\'');
+            if (str == null)
+                return null;
+            if (!str.Items.Any())
+                throw new EfektException("char must have exactly one character, it has 0");
+            if (str.Items.Count() != 1)
+                Console.WriteLine("char must have exactly one character, it has " +
+                                  str.Items.Count());
+            return (Char) str.Items.First();
+        }
+
+
+        private Arr parseString(System.Char quote)
+        {
+            if (!matchChar(quote))
+                return null;
+            var startAt = index;
+            var firstNewLineAt = 0;
+            var isUnterminated = false;
+            while (true)
+            {
+                if (index >= code.Length)
+                {
+                    isUnterminated = true;
+                    /*throw new EfektException*/
+                    Console.WriteLine("Unterminated string constant " +
+                                      "at the end of the file.");
+
+                    break;
+                }
+                var ch = code[index];
+                ++index;
+                if (ch == quote)
+                    break;
+                if (firstNewLineAt == 0 && isNewLine(ch))
+                    firstNewLineAt = index - 1;
+            }
+            Int32 to;
+            if (isUnterminated && firstNewLineAt != 0)
+            {
+                to = firstNewLineAt;
+                index = firstNewLineAt;
+            }
+            else
+            {
+                to = isUnterminated ? index : index - 1;
+                if (to > code.Length)
+                    to = code.Length;
+            }
+            var chars = new List<Char>();
+            for (var i = startAt; i < to; ++i)
+                chars.Add(new Char(code[i]));
+            var arr = new Arr(chars);
+            return isUnterminated ? /*new Err(arr)*/arr : arr;
+        }
+
+
         private Void parseVoid() => matchWord("void") ? new Void() : null;
 
 
@@ -236,7 +295,7 @@ namespace Efekt
                 var name = m1 + matched;
                 return new Ident(
                     name,
-                    Char.IsUpper(name[0]) ? IdentType.Type : IdentType.Value);
+                    System.Char.IsUpper(name[0]) ? IdentType.Type : IdentType.Value);
             }
 
             var isOpMatched = matchUntil(isOp);
@@ -360,7 +419,7 @@ namespace Efekt
         }
 
 
-        private List<Asi> parseBracedList(Char startBrace, Char endBrace)
+        private List<Asi> parseBracedList(System.Char startBrace, System.Char endBrace)
         {
             if (!matchChar(startBrace))
                 return null;
@@ -395,7 +454,7 @@ namespace Efekt
         private Boolean isLetterOrDigit() => isLetter() || isDigit();
 
 
-        private static Boolean isLetter(Char ch)
+        private static Boolean isLetter(System.Char ch)
             => (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
 
 
@@ -466,10 +525,10 @@ namespace Efekt
         }
 
 
-        private static Boolean isNewLine(Char ch) => ch == '\r' || ch == '\n';
+        private static Boolean isNewLine(System.Char ch) => ch == '\r' || ch == '\n';
 
 
-        private Boolean matchChar(Char ch)
+        private Boolean matchChar(System.Char ch)
         {
             if (index >= code.Length || code[index] != ch)
                 return false;

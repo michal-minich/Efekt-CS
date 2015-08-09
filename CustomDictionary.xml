@@ -15,6 +15,8 @@
             <Word>Env</Word>
             <Word>Builtins</Word>
             <Word>Builtin</Word>
+            <Word>Exp</Word>
+            <Word>Dict</Word>
             <Word>v</Word>
             <Word>n</Word>
             <Word>fna</Word>
@@ -24,6 +26,7 @@
             <Word>opa</Word>
             <Word>p</Word>
             <Word>b</Word>
+            <Word>c</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>

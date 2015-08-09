@@ -32,7 +32,12 @@ namespace Efekt
             => (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ");
 
 
-        public String VisitArr(Arr arr) => "[" + joinList(arr.Items) + "]";
+        public String VisitArr(Arr arr)
+        {
+            if (arr.Items.Any() && arr.Items.First() is Char)
+                return "\"" + String.Join("", arr.Items.Cast<Char>().Select(ch => ch.Value)) + "\"";
+            return "[" + joinList(arr.Items) + "]";
+        }
 
 
         public String VisitStruct(Struct s)
@@ -82,5 +87,7 @@ namespace Efekt
 
 
         public String VisitBool(Bool b) => b.Value ? "true" : "false";
+
+        public String VisitChar(Char c) => "'" + c.Value.ToString() + "'";
     }
 }

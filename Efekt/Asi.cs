@@ -20,6 +20,7 @@ namespace Efekt
         T VisitNew(New n);
         T VisitVoid(Void v);
         T VisitBool(Bool b);
+        T VisitChar(Char c);
     }
 
 
@@ -231,7 +232,7 @@ namespace Efekt
 
     public sealed class Bool : Asi
     {
-        public Boolean Value { get; set; }
+        public Boolean Value { get; }
 
 
         public Bool(Boolean value)
@@ -241,5 +242,22 @@ namespace Efekt
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitBool(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "Char")]
+    public sealed class Char : Asi
+    {
+        public System.Char Value { get; }
+
+
+        public Char(System.Char value)
+        {
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitChar(this);
     }
 }

@@ -22,10 +22,20 @@ namespace Efekt
 
         public Asi VisitBinOpApply(BinOpApply opa)
         {
+            Contract.Requires(opa != null);
             switch (opa.Op.Name)
             {
                 case "=":
                     var evaluated = opa.Op2.Accept(this);
+
+                    var s = evaluated as Struct;
+                    if (s?.Env != null)
+                    {
+                        var newEnv = new Env(null);
+                        newEnv.CopyFrom(s.Env);
+                        evaluated = new Struct(Array.Empty<Asi>()) {Env = newEnv};
+                    }
+
                     var ma = opa.Op1 as BinOpApply;
                     if (ma != null && ma.Op.Name == ".")
                     {

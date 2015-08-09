@@ -88,7 +88,15 @@ namespace Efekt
 
         private Env getEnvDeclaring(String name, Env env)
         {
-            if (++n == 20)
+            var e = getEnvDeclaring2(name, env);
+            n = 0;
+            return e;
+        }
+
+
+        private Env getEnvDeclaring2(String name, Env env)
+        {
+            if (++n == 10)
             {
                 n = 0;
                 throw new EfektException("too many nested environments?");
@@ -96,7 +104,7 @@ namespace Efekt
             if (env.dict.ContainsKey(name))
                 return env;
             if (env.Parent != null)
-                return getEnvDeclaring(name, env.Parent);
+                return getEnvDeclaring2(name, env.Parent);
             throw new EfektException("variable '" + name + "' is not declared");
         }
     }

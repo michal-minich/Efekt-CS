@@ -56,6 +56,7 @@ namespace Efekt
             + "var rest = fn(a) { __rest(a) }\n"
             + "var at = fn(a, ix) { __at(a, ix) }\n"
             + "var add = fn(a, item) { __add(a, item) }\n"
-            + "var env = fn(a) { __env(a) }\n";
+            + "var env = fn(a) { __env(a) }\n"
+            + "var print = fn(a) { __print(a) }\n";
     }
 }

@@ -27,6 +27,9 @@ namespace Efekt
 
                 case "env":
                     return printEnvText(args[0]);
+                case "print":
+                    Console.WriteLine(args[0].toString());
+                    return new Void();
 
                 default:
                     throw new EfektException("Unknown builtin: " + fnName);
@@ -53,5 +56,7 @@ namespace Efekt
         private static Boolean asBool(this IAsi asi) => ((Bool) asi).Value;
 
         private static Arr asArr(this IAsi asi) => (Arr) asi;
+
+        private static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter);
     }
 }

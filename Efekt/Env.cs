@@ -11,7 +11,7 @@ namespace Efekt
         [CanBeNull]
         public Env Parent { get; set; }
 
-        private readonly Dictionary<String, Asi> dict = new Dictionary<String, Asi>();
+        public Dictionary<String, Asi> Dict { get; } = new Dictionary<String, Asi>();
 
 
         public Env([CanBeNull] Env parent)
@@ -22,7 +22,7 @@ namespace Efekt
 
         private Env(Dictionary<String, Asi> dictionary)
         {
-            dict = dictionary;
+            Dict = dictionary;
         }
 
 
@@ -33,7 +33,7 @@ namespace Efekt
             var e = this;
             do
             {
-                foreach (var kvp in e.dict)
+                foreach (var kvp in e.Dict)
                     if (!d.ContainsKey(kvp.Key))
                         d.Add(kvp.Key, kvp.Value);
                 e = e.Parent;
@@ -44,29 +44,29 @@ namespace Efekt
 
         public void CopyFrom(Env env)
         {
-            foreach (var kvp in env.dict)
-                if (dict.ContainsKey(kvp.Key))
-                    dict[kvp.Key] = kvp.Value;
+            foreach (var kvp in env.Dict)
+                if (Dict.ContainsKey(kvp.Key))
+                    Dict[kvp.Key] = kvp.Value;
                 else
-                    dict.Add(kvp.Key, kvp.Value);
+                    Dict.Add(kvp.Key, kvp.Value);
         }
 
 
         public void Declare(String name)
         {
-            if (dict.ContainsKey(name))
+            if (Dict.ContainsKey(name))
                 throw new EfektException("variable '" + name + "' is already declared");
-            dict.Add(name, null);
+            Dict.Add(name, null);
         }
 
 
         public void SetValue(String name, Asi value)
         {
-            getEnvDeclaring(name, this).dict[name] = value;
+            getEnvDeclaring(name, this).Dict[name] = value;
         }
 
 
-        public Asi GetValue(String name) => getEnvDeclaring(name, this).dict[name];
+        public Asi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
 
 
         public static void PrintEnv(Env env)
@@ -75,7 +75,7 @@ namespace Efekt
             var e = env;
             do
             {
-                foreach (var d in e.dict)
+                foreach (var d in e.Dict)
                     Console.WriteLine("  var " + d.Key + " = " +
                                       d.Value.Accept(Program.DefaultPrinter));
                 e = env.Parent;
@@ -101,7 +101,7 @@ namespace Efekt
                 n = 0;
                 throw new EfektException("too many nested environments?");
             }
-            if (env.dict.ContainsKey(name))
+            if (env.Dict.ContainsKey(name))
                 return env;
             if (env.Parent != null)
                 return getEnvDeclaring2(name, env.Parent);

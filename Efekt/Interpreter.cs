@@ -27,15 +27,7 @@ namespace Efekt
             {
                 case "=":
                     var evaluated = opa.Op2.Accept(this);
-
-                    var s = evaluated as Struct;
-                    if (s?.Env != null)
-                    {
-                        var newEnv = new Env(null);
-                        newEnv.CopyFrom(s.Env);
-                        evaluated = new Struct(Array.Empty<Asi>()) {Env = newEnv};
-                    }
-
+                    evaluated = copyIfStructInstance(evaluated);
                     var ma = opa.Op1 as BinOpApply;
                     if (ma != null && ma.Op.Name == ".")
                     {
@@ -54,6 +46,19 @@ namespace Efekt
                     var fna = new FnApply(opa.Op, new[] {opa.Op1, opa.Op2});
                     return VisitFnApply(fna);
             }
+        }
+
+
+        private static Asi copyIfStructInstance(Asi asi)
+        {
+            var s = asi as Struct;
+            if (s?.Env == null)
+                return asi;
+            var newEnv = new Env(null);
+            newEnv.CopyFrom(s.Env);
+            foreach (var kvp in newEnv.Dict.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value))
+                newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value));
+            return new Struct(Array.Empty<Asi>()) {Env = newEnv};
         }
 
 
@@ -142,7 +147,7 @@ namespace Efekt
             Contract.Assume(fn.Env != null);
 
             var prevEnv = env;
-            evalParamsAndArgs(fn.Params, fna.Args);
+            evalParamsAndArgs(fn.Params.ToArray(), fna.Args.ToArray());
             var localEnv = new Env(env); // new local env for this fn call
             localEnv.CopyFrom(env); // make params local variables of fn
             localEnv.Parent = fn.Env; // reference captured env
@@ -151,24 +156,25 @@ namespace Efekt
         }
 
 
-        private void evalParamsAndArgs(IEnumerable<Asi> @params, IEnumerable<Asi> args)
+        private void evalParamsAndArgs(ICollection<Asi> @params, ICollection<Asi> args)
         {
             env = new Env(env); // for params
             var n = 0;
             foreach (var p in @params)
             {
                 var opa = p as BinOpApply;
-                if (args.Count() <= n)
+                if (args.Count <= n)
                 {
                     p.Accept(this);
                     if (opa == null)
-                        throw new EfektException("fn has " + @params.Count() + " parameter(s)" +
-                                                 ", but calling with " + args.Count());
+                        throw new EfektException("fn has " + @params.Count + " parameter(s)" +
+                                                 ", but calling with " + args.Count);
                 }
                 else
                 {
                     var arg = args.ElementAt(n);
                     var argValue = arg.Accept(this);
+                    argValue = copyIfStructInstance(argValue);
                     var i = Parser.GetIdentFromDeclrLikeAsi(p);
                     if (opa != null)
                         env.Declare(i.Name);

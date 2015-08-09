@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 
 
@@ -39,10 +40,6 @@ namespace Efekt
                     }
                     env.SetValue(i.Name, evaluated);
                     return evaluated;
-                case "+":
-                    var v1 = opa.Op1.Accept(this).Accept(Program.DefaultPrinter).ToInt();
-                    var v2 = opa.Op2.Accept(this).Accept(Program.DefaultPrinter).ToInt();
-                    return new Int((v1 + v2).ToString());
                 default:
                     var fna = new FnApply(opa.Op, new[] {opa.Op1, opa.Op2});
                     return VisitFnApply(fna);
@@ -72,29 +69,50 @@ namespace Efekt
 
         public Asi VisitFnApply(FnApply fna)
         {
+            var fnIdent = fna.Fn as Ident;
+            if (fnIdent != null && fnIdent.Name.StartsWith("__"))
+            {
+                var prevEnv1 = env;
+                env = new Env(env); // for params
+                var evaluatedArgs = fna.Args.Select(arg => arg.Accept(this)).ToArray();
+                var r =  Builtins.Call(fnIdent.Name.Substring(2), evaluatedArgs);
+                env = prevEnv1;
+                return r;
+            }
+
             var fnAsi = fna.Fn.Accept(this);
             var fn = fnAsi as Fn;
             if (fn == null)
                 throw new EfektException("cannot apply " + fnAsi.GetType().Name);
-
             Contract.Assume(fn.Env != null);
 
             var prevEnv = env;
+            evalParamsAndArgs(fn.Params, fna.Args);
+            var localEnv = new Env(env); // new local env for this fn call
+            localEnv.CopyFrom(env); // make params local variables of fn
+            localEnv.Parent = fn.Env; // reference captured env
+            var res = visitAsiArray(fn.Items, localEnv, prevEnv);
+            return res;
+        }
+
+
+        private void evalParamsAndArgs(IEnumerable<Asi> @params, IEnumerable<Asi> args)
+        {
             env = new Env(env); // for params
             var n = 0;
-            foreach (var p in fn.Params)
+            foreach (var p in @params)
             {
                 var opa = p as BinOpApply;
-                if (fna.Args.Count() <= n)
+                if (args.Count() <= n)
                 {
                     p.Accept(this);
                     if (opa == null)
-                        throw new EfektException("fn has " + fn.Params.Count() + " parameter(s)" +
-                                                 ", but calling with " + fna.Args.Count());
+                        throw new EfektException("fn has " + @params.Count() + " parameter(s)" +
+                                                 ", but calling with " + args.Count());
                 }
                 else
                 {
-                    var arg = fna.Args.ElementAt(n);
+                    var arg = args.ElementAt(n);
                     var argValue = arg.Accept(this);
                     var i = Parser.GetIdentFromDeclrLikeAsi(p);
                     if (opa != null)
@@ -105,11 +123,6 @@ namespace Efekt
                 }
                 ++n;
             }
-            var localEnv = new Env(env); // new local env for this fn call
-            localEnv.CopyFrom(env); // make params local variables of fn
-            localEnv.Parent = fn.Env; // reference captured env
-            var res = visitAsiArray(fn.Items, localEnv, prevEnv);
-            return res;
         }
 
 

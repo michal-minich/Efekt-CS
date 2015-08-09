@@ -91,10 +91,7 @@ namespace Efekt
                 skipWhite();
 
                 if (matchChar(','))
-                {
-                    ++index;
                     return asi;
-                }
 
                 var ix = index;
                 if (matchUntil(isOp))

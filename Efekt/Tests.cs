@@ -191,10 +191,16 @@ namespace Efekt
             eval(bools + " and(not(t))(not(f))", removeVar(f));
             eval(bools + " or(not(t))(not(f))", removeVar(t));
 
-            const String adder = "var adder = fn (a) { var state = a fn() { state = state + 1 } }";
+            const String adder = "var adder = fn (a) { var state = a fn() { state = __plus(state, 1) } }";
             eval(adder + " var a = adder(10) a() a()", "12");
             eval(adder + " var a = adder(10) var b = adder(100) a() b() a()", "12");
             eval(adder + " var a = adder(10) var b = adder(100) a() b() a() b()", "102");
+
+            const String plus = "var op+ = fn(a, b) { __plus(a, b) }";
+            eval("__plus(1, __plus(2, 3))", "6");
+            eval(plus + " 1 + 2 + 3", "6");
+            eval(plus + " var p = op+ p(1, p(2, 3))", "6");
+            eval(plus + " var op^ = op+ 1 ^ 2 ^ 3", "6");
         }
 
 

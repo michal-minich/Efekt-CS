@@ -45,6 +45,8 @@ namespace Efekt
         }
 
 
-        private const String preludeCode = "var id = fn (a) { a }\n";
+        private const String preludeCode =
+            "var id = fn (a) { a }\n"
+            + "var op+ = fn(a, b) { __plus(a, b) }\n";
     }
 }

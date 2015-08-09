@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 
 
 namespace Efekt
@@ -13,8 +12,6 @@ namespace Efekt
         }
 
 
-        [SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames",
-            MessageId = "int")]
         public static Int32 ToInt(this String value) => Convert.ToInt32(value);
     }
 }

@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 
 
 namespace Efekt
 {
-    // ReSharper disable once ClassNeverInstantiated.Global
-    internal sealed class Program
+    internal static class Program
     {
         public static Printer DefaultPrinter;
 
 
-        [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "args")]
-        // ReSharper disable once UnusedParameter.Global
         internal static void Main(String[] args)
         {
             try
@@ -27,17 +24,18 @@ namespace Efekt
                     var txt = File.ReadAllText(args[0]);
                     var al = p.Parse(txt);
 
+                    var prelude = p.Parse(preludeCode);
+                    var code = new AsiList(prelude.Items.Union(al.Items));
+
                     var i = new Interpreter();
-                    var res = i.VisitAsiList(al);
+                    var res = i.VisitAsiList(code);
 
                     var str = res.Accept(DefaultPrinter);
-
                     Console.WriteLine(str);
                 }
                 else
                 {
                     Console.WriteLine("Usage: Efekt <file>");
-                    Console.ReadLine();
                 }
             }
             catch (Exception ex)
@@ -45,5 +43,8 @@ namespace Efekt
                 Console.WriteLine(ex.GetType().Name + ": " + ex.Message);
             }
         }
+
+
+        private const String preludeCode = "var id = fn (a) { a }\n";
     }
 }

@@ -51,6 +51,10 @@ namespace Efekt
             + "var inc = fn(a, b) { __plus(a, 1) }\n"
                 //+ "var dec = fn(a, b) { __plus(a, -1) }\n"
             + "var and = fn(a, b) { __and(a, b) }\n"
-            + "var or = fn(a, b) { __or(a, b) }\n";
+            + "var or = fn(a, b) { __or(a, b) }\n"
+            + "var first = fn(a) { __first(a) }\n"
+            + "var rest = fn(a) { __rest(a) }\n"
+            + "var at = fn(a, ix) { __at(a, ix) }\n"
+            + "var add = fn(a, item) { __add(a, item) }\n";
     }
 }

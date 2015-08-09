@@ -223,6 +223,11 @@ namespace Efekt
             eval(plus + " var c = 1 + 2 [c + 1, c + 1, c + 1]", "[4, 4, 4]");
             eval(plus + " var c = 1 + 2 [c = c + 1, c = c + 1, c = c + 1]", "[4, 5, 6]");
             eval(plus + " var c = 3 var a = [c = c + 1, c = c + 1] c = 5 a a", "[4, 5]");
+
+            eval("__first([1, 2, 3])", "1");
+            eval("__rest([1, 2, 3])", "[2, 3]");
+            eval("__at([1, 2, 3], 2)", "3");
+            eval("__add([1, 2], 3)", "[1, 2, 3]");
         }
 
 
@@ -262,12 +267,6 @@ namespace Efekt
             var p = new Parser();
             var al = p.Parse(code);
             check(al, expected, printer);
-        }
-
-
-        private static void evalWithBraces(String code, String expected)
-        {
-            eval(code, expected, new Printer {PutBracesAroundBinOpApply = true});
         }
 
 

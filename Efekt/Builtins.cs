@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 
 namespace Efekt
@@ -11,10 +12,21 @@ namespace Efekt
             {
                 case "plus":
                     return new Int((args[0].asInt() + args[1].asInt()).ToString());
+
                 case "and":
                     return new Bool(args[0].asBool() && args[1].asBool());
                 case "or":
                     return new Bool(args[0].asBool() || args[1].asBool());
+
+                case "first":
+                    return args[0].asArr().Items.First();
+                case "rest":
+                    return new Arr(args[0].asArr().Items.Skip(1));
+                case "at":
+                    return args[0].asArr().Items.ElementAt(args[1].asInt());
+                case "add":
+                    return new Arr(args[0].asArr().Items.Union(new[] {args[1]}));
+
                 default:
                     throw new EfektException("Unknown builtin: " + fnName);
             }
@@ -25,6 +37,6 @@ namespace Efekt
 
         private static Boolean asBool(this IAsi asi) => ((Bool) asi).Value;
 
-        private static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter);
+        private static Arr asArr(this IAsi asi) => (Arr) asi;
     }
 }

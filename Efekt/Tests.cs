@@ -171,27 +171,28 @@ namespace Efekt
 
             const String t = "var t = fn (x) { fn (y) { x } }";
             const String f = " var f = fn (x) { fn (y) { y } }";
-            const String and = " var and = fn (p) { fn (q) { p(q)(p) } }";
-            const String or = " var or = fn (p) { fn (q) { p(p)(q) } }";
+            const String and = " var andX = fn (p) { fn (q) { p(q)(p) } }";
+            const String or = " var orX = fn (p) { fn (q) { p(p)(q) } }";
             const String ifthen = " var ifthen = fn (p) { fn (a) { fn (b) { p(a)(b) } } }";
             const String not = " var not = fn (b) { ifthen(b)(f)(t) }";
             const String bools = t + f + and + or + ifthen + not;
-            eval(bools + " and(t)(t)", removeVar(t));
-            eval(bools + " and(t)(f)", removeVar(f));
-            eval(bools + " and(f)(t)", removeVar(f));
-            eval(bools + " and(f)(f)", removeVar(f));
-            eval(bools + " or(t)(t)", removeVar(t));
-            eval(bools + " or(t)(f)", removeVar(t));
-            eval(bools + " or(f)(t)", removeVar(t));
-            eval(bools + " or(f)(f)", removeVar(f));
+            eval(bools + " andX(t)(t)", removeVar(t));
+            eval(bools + " andX(t)(f)", removeVar(f));
+            eval(bools + " andX(f)(t)", removeVar(f));
+            eval(bools + " andX(f)(f)", removeVar(f));
+            eval(bools + " orX(t)(t)", removeVar(t));
+            eval(bools + " orX(t)(f)", removeVar(t));
+            eval(bools + " orX(f)(t)", removeVar(t));
+            eval(bools + " orX(f)(f)", removeVar(f));
             eval(bools + " not(t)", removeVar(f));
             eval(bools + " not(f)", removeVar(t));
-            eval(bools + " not(and(t)(f))", removeVar(t));
-            eval(bools + " not(or(t)(f))", removeVar(f));
-            eval(bools + " and(not(t))(not(f))", removeVar(f));
-            eval(bools + " or(not(t))(not(f))", removeVar(t));
+            eval(bools + " not(andX(t)(f))", removeVar(t));
+            eval(bools + " not(orX(t)(f))", removeVar(f));
+            eval(bools + " andX(not(t))(not(f))", removeVar(f));
+            eval(bools + " orX(not(t))(not(f))", removeVar(t));
 
-            const String adder = "var adder = fn (a) { var state = a fn() { state = __plus(state, 1) } }";
+            const String adder =
+                "var adder = fn (a) { var state = a fn() { state = __plus(state, 1) } }";
             eval(adder + " var a = adder(10) a() a()", "12");
             eval(adder + " var a = adder(10) var b = adder(100) a() b() a()", "12");
             eval(adder + " var a = adder(10) var b = adder(100) a() b() a() b()", "102");
@@ -201,6 +202,22 @@ namespace Efekt
             eval(plus + " 1 + 2 + 3", "6");
             eval(plus + " var p = op+ p(1, p(2, 3))", "6");
             eval(plus + " var op^ = op+ 1 ^ 2 ^ 3", "6");
+
+            eval("true");
+            eval("false");
+            eval("var a = true", "true");
+            eval("var a = true a", "true");
+
+            const String bools2 = "var and = fn(a, b) { __and(a, b) }\n"
+                                  + "var or = fn(a, b) { __or(a, b) }\n";
+            eval(bools2 + " true and true", "true");
+            eval(bools2 + " true and false", "false");
+            eval(bools2 + " true or true", "true");
+            eval(bools2 + " true or false", "true");
+            eval(bools2 + " false or false", "false");
+            eval(bools2 + " var t = true var f = false t and f or t", "true");
+            eval(bools2 + " true or false and false", "true");
+            eval(bools2 + " var a = and a(true, false)", "false");
         }
 
 

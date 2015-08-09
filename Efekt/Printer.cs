@@ -79,5 +79,8 @@ namespace Efekt
 
         private String visitOptional([CanBeNull] IAsi asi, String prefix)
             => asi == null ? "" : prefix + asi.Accept(this);
+
+
+        public String VisitBool(Bool b) => b.Value ? "true" : "false";
     }
 }

@@ -56,6 +56,8 @@ namespace Efekt
                 ["] ="] = 2
             };
 
+        private Boolean wasNewLine;
+
 
         public AsiList Parse(String codeText)
         {
@@ -94,7 +96,7 @@ namespace Efekt
                     return asi;
 
                 var ix = index;
-                if (matchUntil(isOp))
+                if (matchUntil(isOp) || matchSpecialOp())
                 {
                     var op = matched;
                     var curOpPrecedence = opPrecedence[op];
@@ -147,9 +149,13 @@ namespace Efekt
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
-                      ?? parseStruct() ?? parseVoid() ?? parseIdent() ?? parseBraced();
+                      ?? parseStruct() ?? parseBool()
+                      ?? parseVoid() ?? parseIdent() ?? parseBraced();
 
-            asi = parseFnApply(asi);
+            //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
+
+            if (asi != null)
+                asi = parseFnApply(asi);
 
             return asi;
         }
@@ -200,6 +206,16 @@ namespace Efekt
                 throw new EfektException("missing open curly brace after 'struct'");
 
             return new Struct(items);
+        }
+
+
+        private Bool parseBool()
+        {
+            if (matchWord("true"))
+                return new Bool(true);
+            if (matchWord("false"))
+                return new Bool(false);
+            return null;
         }
 
 
@@ -325,6 +341,9 @@ namespace Efekt
         private Asi parseFnApply(Asi asi)
         {
             skipWhite();
+            if (wasNewLine)
+                return asi;
+
             while (matchChar('('))
             {
                 --index;
@@ -365,13 +384,11 @@ namespace Efekt
         }
 
 
-        private Boolean isLetter()
-        {
-            if (index >= code.Length)
-                return false;
-            var ch = code[index];
-            return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
-        }
+        private Boolean isLetter() => index < code.Length && isLetter(code[index]);
+
+
+        private static Boolean isLetter(Char ch)
+            => (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
 
 
         private Boolean isOp()
@@ -386,7 +403,14 @@ namespace Efekt
         }
 
 
-        private void skipWhite() => matchUntil(isWhite);
+        private Boolean skipWhite()
+        {
+            wasNewLine = false;
+            var res = matchUntil(isWhite);
+            if (res)
+                wasNewLine = matched.Any(isNewLine);
+            return res;
+        }
 
 
         private Boolean isWhite()
@@ -394,8 +418,11 @@ namespace Efekt
             if (index >= code.Length)
                 return false;
             var ch = code[index];
-            return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+            return ch == ' ' || ch == '\t' || isNewLine(ch);
         }
+
+
+        private static Boolean isNewLine(Char ch) => ch == '\r' || ch == '\n';
 
 
         private Boolean matchChar(Char ch)
@@ -410,12 +437,19 @@ namespace Efekt
 
         private Boolean matchWord(String w)
         {
+            Contract.Ensures(Contract.Result<Boolean>() == (Contract.OldValue(index) < index));
+            Contract.Ensures(Contract.Result<Boolean>() != (Contract.OldValue(index) == index));
+
             if (index + w.Length > code.Length)
                 return false;
-
             if (code.Substring(index, w.Length) != w)
                 return false;
-
+            if (index + w.Length < code.Length)
+            {
+                if (isLetter(code[index + w.Length]))
+                    return false;
+            }
+            matched = code.Substring(index, w.Length);
             index += w.Length;
             return true;
         }
@@ -432,6 +466,9 @@ namespace Efekt
 
             return length != 0;
         }
+
+
+        private Boolean matchSpecialOp() => matchWord("and") || matchWord("or");
 
 
         private Boolean hasChars => index < code.Length;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 
 
@@ -75,7 +74,7 @@ namespace Efekt
                 var prevEnv1 = env;
                 env = new Env(env); // for params
                 var evaluatedArgs = fna.Args.Select(arg => arg.Accept(this)).ToArray();
-                var r =  Builtins.Call(fnIdent.Name.Substring(2), evaluatedArgs);
+                var r = Builtins.Call(fnIdent.Name.Substring(2), evaluatedArgs);
                 env = prevEnv1;
                 return r;
             }
@@ -133,6 +132,8 @@ namespace Efekt
 
 
         public Asi VisitVoid(Void v) => v;
+
+        public Asi VisitBool(Bool b) => b;
 
 
         private Asi visitAsiArray(IEnumerable<Asi> items, Env newEnv, Env restoreEnv)

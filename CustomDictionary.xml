@@ -13,6 +13,8 @@
             <Word>New</Word>
             <Word>Fn</Word>
             <Word>Env</Word>
+            <Word>Builtins</Word>
+            <Word>Builtin</Word>
             <Word>v</Word>
             <Word>n</Word>
             <Word>fna</Word>
@@ -21,6 +23,7 @@
             <Word>params</Word>
             <Word>opa</Word>
             <Word>p</Word>
+            <Word>b</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>

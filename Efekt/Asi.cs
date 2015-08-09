@@ -19,6 +19,7 @@ namespace Efekt
         T VisitFnApply(FnApply fna);
         T VisitNew(New n);
         T VisitVoid(Void v);
+        T VisitBool(Bool b);
     }
 
 
@@ -221,5 +222,20 @@ namespace Efekt
     public sealed class Void : Asi
     {
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitVoid(this);
+    }
+
+
+    public sealed class Bool : Asi
+    {
+        public Boolean Value { get; set; }
+
+
+        public Bool(Boolean value)
+        {
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitBool(this);
     }
 }

@@ -1,0 +1,2 @@
+var S = struct { var a = 1 }
+new S.a

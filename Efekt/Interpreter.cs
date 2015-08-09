@@ -192,7 +192,8 @@ namespace Efekt
 
         public Asi VisitNew(New n)
         {
-            var eExp = n.Exp.Accept(this);
+            var opa2 = n.Exp as BinOpApply; // new has higher priority than any op
+            var eExp = opa2 != null ? opa2.Op1.Accept(this) : n.Exp.Accept(this);
 
             var fna = eExp as FnApply;
             var s = fna == null ? eExp as Struct : fna.Fn as Struct;
@@ -231,21 +232,25 @@ namespace Efekt
                 }
             }
 
+            Struct instance;
             if (fna != null)
             {
                 var c = (Fn) env.GetValue("constructor");
                 var fna2 = new FnApply(c, fna.Args);
                 VisitFnApply(fna2);
-                var instance = new Struct(Array.Empty<Asi>()) {Env = c.Env};
-                env = prevEnv;
-                return instance;
+                instance = new Struct(Array.Empty<Asi>()) {Env = c.Env};
             }
             else
             {
-                var instance = new Struct(Array.Empty<Asi>()) {Env = env};
-                env = prevEnv;
-                return instance;
+                instance = new Struct(Array.Empty<Asi>()) {Env = env};
             }
+            if (opa2 != null)
+            {
+                env = prevEnv;
+                return new BinOpApply(opa2.Op, instance, opa2.Op2).Accept(this);
+            }
+            env = prevEnv;
+            return instance;
         }
 
 

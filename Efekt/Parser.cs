@@ -403,13 +403,50 @@ namespace Efekt
         }
 
 
-        private Boolean skipWhite()
+        private void skipWhite()
+        {
+            var wasAnyNewLine = false;
+            Int32 prevIndex;
+            do
+            {
+                prevIndex = index;
+                skipBlanks();
+                if (wasNewLine)
+                    wasAnyNewLine = true;
+                skipCommentLine();
+                skipCommentMulti();
+            } while (prevIndex != index);
+            wasNewLine = wasAnyNewLine;
+        }
+
+
+        private void skipBlanks()
         {
             wasNewLine = false;
             var res = matchUntil(isWhite);
             if (res)
                 wasNewLine = matched.Any(isNewLine);
-            return res;
+        }
+
+
+        private void skipCommentLine()
+        {
+            if (!matchText("--"))
+                return;
+            while (index < code.Length && !isNewLine(code[index]))
+                ++index;
+            ++index;
+        }
+
+
+        private void skipCommentMulti()
+        {
+            if (!matchText("/*"))
+                return;
+            while (index < code.Length - 1 && !(code[index] == '*' && code[index + 1] == '/'))
+                ++index;
+            ++index;
+            ++index;
         }
 
 
@@ -432,6 +469,16 @@ namespace Efekt
 
             ++index;
             return true;
+        }
+
+
+        private Boolean matchText(String text)
+        {
+            var isMatch = index + text.Length <= code.Length
+                          && code.IndexOf(text, index) == index;
+            if (isMatch)
+                index += text.Length;
+            return isMatch;
         }
 
 

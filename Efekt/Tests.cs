@@ -237,7 +237,7 @@ namespace Efekt
             eval("new struct { var a = 1 }", "struct { }");
             //eval("new struct { var a = 1 }.a", "1");
 
-            eval("var S = struct { var constructor = fn () { } } S()", 
+            eval("var S = struct { var constructor = fn () { } } S()",
                 "struct { var constructor = fn () { } }()"); // is "S()" without new valid code?
             eval("var S = struct { var constructor = fn () { } } new S()", "struct { }");
             //eval("var S = struct { var a = 1 }\n(new S).a", "1"); not yet parsing braces
@@ -257,6 +257,17 @@ namespace Efekt
             eval(struct1 + id + " id(s).a.b", "1");
             eval(struct1 + id + " id(s).a.b = 2 s.a.b", "1");
             eval(struct1 + " fn (a) { a.a.b = 2 } (s) s.a.b", "1");
+
+            eval("var a = 1 /*a = 2*/ a", "1");
+            eval("var a = 1 --a = 2\n a", "1");
+            eval("var a = 1 /*--a = 2*/ a", "1");
+            eval("var a = 1 /*/*a = 2*/ a", "1");
+            eval(id + " id/*(1)*/(2)", "2");
+            eval(id + " id--(1)\n(2)", "2");
+            eval(plus + " 1 + --3 +\n 5", "6");
+            eval(plus + " 1 + /*--3 +*/ 5", "6");
+            eval(plus + " 1 --+ 3\n + 5", "6");
+            eval(plus + " 1 /*+ --3*/ + 5", "6");
         }
 
 

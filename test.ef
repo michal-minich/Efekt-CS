@@ -1,5 +1,7 @@
-var S = struct { var a = new struct { var b = 1 } }
-var s = new S
-var f = fn () { s }
-f().a.b = 2
-s.a.b
+var S = struct {
+    var a = 1
+    var constructor = fn (b) { a = b }
+}
+var x = fn () { S }
+var s = new x()(2)
+s.a

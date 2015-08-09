@@ -23,7 +23,7 @@ namespace Efekt
 
         public Asi VisitBinOpApply(BinOpApply opa)
         {
-            Contract.Requires(opa != null);
+            Contract.Assume(opa != null);
             switch (opa.Op.Name)
             {
                 case "=":
@@ -123,8 +123,7 @@ namespace Efekt
 
         public Asi VisitFn(Fn fn)
         {
-            Contract.Assume(fn.Env == null);
-            return new Fn(fn.Params, fn.Items) {Env = env.GetFlat()};
+            return new Fn(fn.Params, fn.Items) {Env = fn.Env ?? env.GetFlat()};
         }
 
 
@@ -143,8 +142,11 @@ namespace Efekt
 
             var fnAsi = fna.Fn.Accept(this);
             var fn = fnAsi as Fn;
+            if (fnAsi is Struct)
+                return new FnApply(fnAsi, fna.Args);
             if (fn == null)
                 throw new EfektException("cannot apply " + fnAsi.GetType().Name);
+
             Contract.Assume(fn.Env != null);
 
             var prevEnv = env;
@@ -191,52 +193,59 @@ namespace Efekt
         public Asi VisitNew(New n)
         {
             var eExp = n.Exp.Accept(this);
-            var s = eExp as Struct;
-            var fna = eExp as FnApply;
 
-            if (s != null)
-            {
-                Contract.Assume(s.Env == null);
-                var prevEnv = env;
-                env = new Env(null);
-                foreach (var item in s.Items)
-                {
-                    var declrItem = item as Declr;
-                    var opa = item as BinOpApply;
-                    if (opa == null)
-                    {
-                        if (declrItem == null)
-                            throw new Exception("struct can contains only variables");
-                        if (!declrItem.IsVar)
-                            throw new Exception("declaration must be prefixed with 'var' in struct");
-                        declrItem.Accept(this);
-                    }
-                    else if (opa.Op.Name == "=")
-                    {
-                        // provide error as above
-                        Contract.Assume(opa.Op1 is Declr);
-                        var i = getIdentAndDeclareIfDeclr(opa.Op1);
-                        var v = opa.Op2.Accept(this);
-                        env.SetValue(i.Name, v);
-                    }
-                    else
-                    {
-                        throw new Exception("struct can contains only variables, found: " + opa.Op);
-                    }
-                }
-                var instance = new Struct(Array.Empty<Asi>()) {Env = env};
-                env = prevEnv;
-                return instance;
-            }
-            else if (fna != null)
-            {
-                throw new NotImplementedException();
-            }
-            else
-            {
+            var fna = eExp as FnApply;
+            var s = fna == null ? eExp as Struct : fna.Fn as Struct;
+
+            if (s == null)
                 throw new EfektException(
                     "expression after new should evaluate to struct or fn apply, not "
                     + eExp.GetType().Name);
+
+            Contract.Assume(s.Env == null);
+            //var prevEnv = env;
+            env = new Env(null);
+            foreach (var item in s.Items)
+            {
+                var declrItem = item as Declr;
+                var opa = item as BinOpApply;
+                if (opa == null)
+                {
+                    if (declrItem == null)
+                        throw new Exception("struct can contains only variables");
+                    if (!declrItem.IsVar)
+                        throw new Exception("declaration must be prefixed with 'var' in struct");
+                    declrItem.Accept(this);
+                }
+                else if (opa.Op.Name == "=")
+                {
+                    // provide error as above
+                    Contract.Assume(opa.Op1 is Declr);
+                    var i = getIdentAndDeclareIfDeclr(opa.Op1);
+                    var v = opa.Op2.Accept(this);
+                    env.SetValue(i.Name, v);
+                }
+                else
+                {
+                    throw new Exception("struct can contains only variables, found: " + opa.Op);
+                }
+            }
+
+            if (fna != null)
+            {
+                var c = (Fn) env.GetValue("constructor");
+                //env = prevEnv;
+                var fna2 = new FnApply(c, fna.Args);
+                VisitFnApply(fna2);
+                //env = prevEnv;
+                var instance = new Struct(Array.Empty<Asi>()) {Env = c.Env};
+                return instance;
+            }
+            else
+            {
+                // env = prevEnv;
+                var instance = new Struct(Array.Empty<Asi>()) {Env = env};
+                return instance;
             }
         }
 

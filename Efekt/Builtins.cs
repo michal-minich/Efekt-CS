@@ -18,8 +18,6 @@ namespace Efekt
                 case "or":
                     return new Bool(args[0].asBool() || args[1].asBool());
 
-                case "first":
-                    return args[0].asArr().Items.First();
                 case "rest":
                     return new Arr(args[0].asArr().Items.Skip(1));
                 case "at":

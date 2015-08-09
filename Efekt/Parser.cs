@@ -229,9 +229,14 @@ namespace Efekt
                 return null;
 
             if (matched != "op")
+            {
+                var m1 = matched;
+                matchUntil(isLetterOrDigit);
+                var name = m1 + matched;
                 return new Ident(
-                    matched,
-                    Char.IsUpper(matched[0]) ? IdentType.Type : IdentType.Value);
+                    name,
+                    Char.IsUpper(name[0]) ? IdentType.Type : IdentType.Value);
+            }
 
             var isOpMatched = matchUntil(isOp);
             return isOpMatched ? new Ident(matched, IdentType.Op) : null;
@@ -385,6 +390,9 @@ namespace Efekt
 
 
         private Boolean isLetter() => index < code.Length && isLetter(code[index]);
+
+
+        private Boolean isLetterOrDigit() => isLetter() || isDigit();
 
 
         private static Boolean isLetter(Char ch)

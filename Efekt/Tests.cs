@@ -111,6 +111,18 @@ namespace Efekt
             parse("var a : T = 1");
             parse("var a : T = 1 + 2");
             parse("var a : A | B = 1 + 2");
+
+            parse("a1");
+            parse("_a1");
+            parse("a_1");
+            parse("a1_");
+            parse("_a1_");
+            parse("_a_1");
+            parse("_a1_");
+            parse("_a_1_");
+            parse("a_1_");
+            parse("a_1b");
+            parse("a_1_b");
         }
 
 
@@ -143,6 +155,10 @@ namespace Efekt
             eval("var a = 1 fn () { a }()", "1");
             eval("var a = 1 fn (b) { b = 2 }(3)", "2");
             eval("var a = 1 fn (b) { var c = 2 }(3)", "2");
+
+            eval("var a1 = 1 a1", "1");
+            eval("var a_1 = 1 a_1", "1");
+            eval("var _a_1 = 1 _a_1", "1");
 
             const String id = "var id = fn (a) { a }";
             eval(id + " fn () { id(3) }()", "3");

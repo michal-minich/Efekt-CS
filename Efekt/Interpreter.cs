@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using JetBrains.Annotations;
 
 
 namespace Efekt
@@ -49,14 +50,14 @@ namespace Efekt
         }
 
 
-        private static Asi copyIfStructInstance(Asi asi)
+        private static Asi copyIfStructInstance([CanBeNull] Asi asi)
         {
             var s = asi as Struct;
             if (s?.Env == null)
                 return asi;
             var newEnv = new Env(null);
             newEnv.CopyFrom(s.Env);
-            foreach (var kvp in newEnv.Dict.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value))
+            foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
                 newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value));
             return new Struct(Array.Empty<Asi>()) {Env = newEnv};
         }
@@ -252,7 +253,7 @@ namespace Efekt
             foreach (var item in items)
                 res = item.Accept(this);
             env = restoreEnv;
-            return res ?? new Void();
+            return copyIfStructInstance(res) ?? new Void();
         }
     }
 }

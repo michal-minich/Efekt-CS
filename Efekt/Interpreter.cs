@@ -26,24 +26,55 @@ namespace Efekt
             {
                 case "=":
                     var evaluated = opa.Op2.Accept(this);
-                    var i = getIdentAndDeclareIfDeclr(opa.Op1);
-                    env.SetValue(i.Name, evaluated);
+                    var ma = opa.Op1 as BinOpApply;
+                    if (ma != null && ma.Op.Name == ".")
+                    {
+                        var e = getStructEnvOfMember(ma.Op1.Accept(this), ma.Op2);
+                        e.SetValue(((Ident) ma.Op2).Name, evaluated);
+                    }
+                    else
+                    {
+                        var i = getIdentAndDeclareIfDeclr(opa.Op1);
+                        env.SetValue(i.Name, evaluated);
+                    }
                     return evaluated;
                 case ".":
-                    var member = opa.Op2 as Ident;
-                    if (member == null)
-                        throw new EfektException("expected identifier after '.', not "
-                                                 + opa.Op2.GetType().Name);
-                    var sAsi = opa.Op1.Accept(this);
-                    var s = sAsi as Struct;
-                    if (s == null)
-                        throw new EfektException(
-                            "exp before '.' must evaluate to struct, not " + sAsi.GetType().Name);
-                    return s.Env.GetValue(member.Name);
+                    return getStructMember(opa.Op1.Accept(this), opa.Op2);
                 default:
                     var fna = new FnApply(opa.Op, new[] {opa.Op1, opa.Op2});
                     return VisitFnApply(fna);
             }
+        }
+
+
+        private Asi getStructMember(IAsi bag, IAsi member)
+            => getStructEnvOfMember(bag, member).GetValue(((Ident) member).Name);
+
+
+        private Env getStructEnvOfMember(IAsi bag, IAsi member)
+        {
+            var s2 = bag as Struct;
+            if (s2 == null)
+                throw new Exception(
+                    "cannot access member '" + member.Accept(Program.DefaultPrinter) + "' of " +
+                    bag.GetType().Name);
+            if (s2.Env == null)
+                throw new Exception(
+                    "cannot access member '" + member.Accept(Program.DefaultPrinter) +
+                    "'of not constructed struct");
+
+            var m = member as Ident;
+            if (m == null)
+                throw new EfektException(
+                    "expected identifier or member access after '.', not "
+                    + member.GetType().Name);
+            var sAsi = bag.Accept(this);
+            var s = sAsi as Struct;
+            if (s == null)
+                throw new EfektException(
+                    "exp before '." + member.Accept(Program.DefaultPrinter)
+                    + "'must evaluate to struct, not " + sAsi.GetType().Name);
+            return s.Env;
         }
 
 

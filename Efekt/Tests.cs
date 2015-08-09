@@ -218,6 +218,12 @@ namespace Efekt
             eval(plus + " 1 + 2 + 3", "6");
             eval(plus + " var p = op+ p(1, p(2, 3))", "6");
             eval(plus + " var op^ = op+ 1 ^ 2 ^ 3", "6");
+            
+            const String mul = " var op* = fn(a, b) { __multiply(a, b) }\n ";
+            eval(plus + mul + "(1 + 2) * 10", "30");
+            eval(plus + mul + "10 * (1 + 2)", "30");
+            eval(plus + mul + "(1 + (2 * 10))", "21");
+            eval(plus + mul + "(10 * 1) + 2))", "12");
 
             eval("true");
             eval("false");

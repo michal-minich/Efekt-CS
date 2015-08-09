@@ -12,6 +12,8 @@ namespace Efekt
             {
                 case "plus":
                     return new Int((args[0].asInt() + args[1].asInt()).ToString());
+                case "multiply":
+                    return new Int((args[0].asInt() * args[1].asInt()).ToString());
 
                 case "and":
                     return new Bool(args[0].asBool() && args[1].asBool());

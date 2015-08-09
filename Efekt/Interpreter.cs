@@ -203,7 +203,7 @@ namespace Efekt
                     + eExp.GetType().Name);
 
             Contract.Assume(s.Env == null);
-            //var prevEnv = env;
+            var prevEnv = env;
             env = new Env(null);
             foreach (var item in s.Items)
             {
@@ -234,17 +234,16 @@ namespace Efekt
             if (fna != null)
             {
                 var c = (Fn) env.GetValue("constructor");
-                //env = prevEnv;
                 var fna2 = new FnApply(c, fna.Args);
                 VisitFnApply(fna2);
-                //env = prevEnv;
                 var instance = new Struct(Array.Empty<Asi>()) {Env = c.Env};
+                env = prevEnv;
                 return instance;
             }
             else
             {
-                // env = prevEnv;
                 var instance = new Struct(Array.Empty<Asi>()) {Env = env};
+                env = prevEnv;
                 return instance;
             }
         }

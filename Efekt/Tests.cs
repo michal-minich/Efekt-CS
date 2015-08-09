@@ -228,6 +228,35 @@ namespace Efekt
             eval("__at([1, 2, 3], 0)", "1");
             eval("__at([1, 2, 3], 2)", "3");
             eval("__add([1, 2], 3)", "[1, 2, 3]");
+
+            eval("struct { }");
+            eval("struct { var a = 1 }");
+            eval("var S = struct { var a = 1 }", "struct { var a = 1 }");
+            eval("var S = struct { var a = 1 } S", "struct { var a = 1 }");
+            eval("var S = struct { var a = 1 } new S", "struct { }");
+            eval("new struct { var a = 1 }", "struct { }");
+            //eval("new struct { var a = 1 }.a", "1");
+
+            eval("var S = struct { var constructor = fn () { } } S()", 
+                "struct { var constructor = fn () { } }()"); // is "S()" without new valid code?
+            eval("var S = struct { var constructor = fn () { } } new S()", "struct { }");
+            //eval("var S = struct { var a = 1 }\n(new S).a", "1"); not yet parsing braces
+            //eval("new struct { var a = 1 var constructor = fn (b) { a = b } } (2).a", "2"); 
+            eval("var S = struct { var a = 1 } var s = new S s.a", "1");
+            eval("var S = struct { var a = 1 } var s = new S s.a", "1");
+
+            const String struct1 = "var s = new struct { var a = new struct { var b = 1 } } ";
+            eval(struct1 + "s.a.b", "1");
+            eval(struct1 + "s.a.b = 2", "2");
+            eval(struct1 + "var sa = s.a sa.b", "1");
+            eval(struct1 + "var sa = s.a sa.b = 2", "2");
+            eval(struct1 + "var sa = s.a sa.b = 2 s.a.b", "1");
+            eval(struct1 + "var ss = s s.a.b = 2 ss.a.b", "1");
+            eval(struct1 + "var ss = s ss.a.b = 2 s.a.b", "1");
+
+            eval(struct1 + id + " id(s).a.b", "1");
+            eval(struct1 + id + " id(s).a.b = 2 s.a.b", "1");
+            eval(struct1 + " fn (a) { a.a.b = 2 } (s) s.a.b", "1");
         }
 
 

@@ -1,7 +1,0 @@
-var S = struct {
-    var a = 1
-    var constructor = fn (b) { a = b }
-}
-var x = fn () { S }
-var s = new x()(2)
-s.a

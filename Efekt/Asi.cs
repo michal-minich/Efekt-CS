@@ -140,6 +140,8 @@ namespace Efekt
     {
         public IEnumerable<Asi> Items { get; }
 
+        public Boolean IsEvaluated { get; set; }
+
 
         public Arr(IEnumerable<Asi> items)
         {

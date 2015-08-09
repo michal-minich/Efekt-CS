@@ -218,6 +218,11 @@ namespace Efekt
             eval(bools2 + " var t = true var f = false t and f or t", "true");
             eval(bools2 + " true or false and false", "true");
             eval(bools2 + " var a = and a(true, false)", "false");
+            eval("[1, 2]");
+            eval(plus + " var c = 1 + 2 [1, 2, c]", "[1, 2, 3]");
+            eval(plus + " var c = 1 + 2 [c + 1, c + 1, c + 1]", "[4, 4, 4]");
+            eval(plus + " var c = 1 + 2 [c = c + 1, c = c + 1, c = c + 1]", "[4, 5, 6]");
+            eval(plus + " var c = 3 var a = [c = c + 1, c = c + 1] c = 5 a a", "[4, 5]");
         }
 
 

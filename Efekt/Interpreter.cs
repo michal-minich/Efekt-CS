@@ -53,7 +53,11 @@ namespace Efekt
         }
 
 
-        public Asi VisitArr(Arr arr) => arr;
+        public Asi VisitArr(Arr arr)
+        {
+            Contract.Assume(arr.IsEvaluated == false);
+            return new Arr(arr.Items.Select(i => i.Accept(this)).ToList()) {IsEvaluated = true};
+        }
 
 
         public Asi VisitStruct(Struct s) => s;

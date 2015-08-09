@@ -21,6 +21,7 @@ namespace Efekt
         T VisitVoid(Void v);
         T VisitBool(Bool b);
         T VisitChar(Char c);
+        T VisitIf(If ii);
     }
 
 
@@ -259,5 +260,29 @@ namespace Efekt
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitChar(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "If")]
+    public sealed class If : Asi
+    {
+        public Asi Test { get; }
+
+        public Asi Then { get; }
+
+        [CanBeNull]
+        public Asi Otherwise { get; }
+
+
+        public If(Asi test, Asi then, [CanBeNull] Asi otherwise)
+        {
+            Test = test;
+            Then = then;
+            Otherwise = otherwise;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitIf(this);
     }
 }

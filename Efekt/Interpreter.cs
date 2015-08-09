@@ -271,5 +271,18 @@ namespace Efekt
 
 
         public Asi VisitChar(Char c) => c;
+
+
+        public Asi VisitIf(If ii)
+        {
+            var t = ii.Test.Accept(this);
+            var b = t as Bool;
+            if (b == null)
+                throw new EfektException("test in if must evaluated to bool, not to: " +
+                                         t.GetType().Name);
+            return b.Value
+                ? ii.Then.Accept(this)
+                : ii.Otherwise.Accept(this);
+        }
     }
 }

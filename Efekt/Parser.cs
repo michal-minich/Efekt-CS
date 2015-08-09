@@ -150,7 +150,8 @@ namespace Efekt
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
-                      ?? parseStruct() ?? parseBool() ?? parseChar() ?? parseString('"')
+                      ?? parseStruct() ?? parseBool() ?? parseIf()
+                      ?? parseChar() ?? parseString('"')
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
 
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
@@ -217,6 +218,38 @@ namespace Efekt
             if (matchWord("false"))
                 return new Bool(false);
             return null;
+        }
+
+
+        private If parseIf()
+        {
+            if (!matchWord("if"))
+                return null;
+            var t = parseCombinedAsi();
+
+            if (t == null)
+                throw new EfektException("expected expression after then");
+
+            Asi then;
+            if (matchWord("then"))
+            {
+                then = parseCombinedAsi();
+                if (then == null)
+                    throw new EfektException("expected expression after then");
+            }
+            else
+                throw new EfektException("expected then after if");
+
+
+            Asi o = null;
+            if (matchWord("else"))
+            {
+                o = parseCombinedAsi();
+                if (o == null)
+                    throw new EfektException("expected expression after else");
+            }
+
+            return new If(t, then, o);
         }
 
 

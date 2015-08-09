@@ -89,5 +89,12 @@ namespace Efekt
         public String VisitBool(Bool b) => b.Value ? "true" : "false";
 
         public String VisitChar(Char c) => "'" + c.Value.ToString() + "'";
+
+
+        public String VisitIf(If ii)
+        {
+            return "if " + ii.Test.Accept(this) + " then " + ii.Test.Accept(this)
+                   + (ii.Otherwise == null ? "" : " else " + ii.Otherwise.Accept(this));
+        }
     }
 }

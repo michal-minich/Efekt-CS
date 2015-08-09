@@ -298,6 +298,9 @@ namespace Efekt
             //eval("\"abc", "\"abc\"");
             //eval("\"abc\n", "\"abc\"");
             //eval("var a = 1\"abc\na=2 a", "2");
+
+            eval("if true then 1 else 2", "1");
+            eval(id + " var a = true if id(a) then a = false else a = true a", "false");
         }
 
 

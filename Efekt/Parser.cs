@@ -72,6 +72,7 @@ namespace Efekt
                 var asi = parseCombinedAsi();
                 if (asi == null)
                     break;
+                wasNewLine = false;
                 items.Add(asi);
             }
 
@@ -348,7 +349,6 @@ namespace Efekt
             skipWhite();
             if (wasNewLine)
                 return asi;
-
             while (matchChar('('))
             {
                 --index;
@@ -430,10 +430,9 @@ namespace Efekt
 
         private void skipBlanks()
         {
-            wasNewLine = false;
             var res = matchUntil(isWhite);
             if (res)
-                wasNewLine = matched.Any(isNewLine);
+                wasNewLine = wasNewLine || matched.Any(isNewLine);
         }
 
 

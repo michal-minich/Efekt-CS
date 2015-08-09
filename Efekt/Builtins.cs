@@ -25,9 +25,26 @@ namespace Efekt
                 case "add":
                     return new Arr(args[0].asArr().Items.Union(new[] {args[1]}));
 
+                case "env":
+                    return printEnvText(args[0]);
+
                 default:
                     throw new EfektException("Unknown builtin: " + fnName);
             }
+        }
+
+
+        private static Void printEnvText(Asi asi)
+        {
+            var fn = asi as Fn;
+            if (fn != null)
+                Env.PrintEnv(fn.Env);
+
+            var s = asi as Struct;
+            if (s != null)
+                Env.PrintEnv(s.Env);
+
+            return new Void();
         }
 
 

@@ -53,7 +53,7 @@ namespace Efekt
             => fna.Fn.Accept(this) + "(" + joinList(fna.Args) + ")";
 
 
-        public String VisitNew(New n) => "new " + VisitIdent(n.Ident);
+        public String VisitNew(New n) => "new " + n.Exp.Accept(this);
 
 
         public String VisitVoid(Void v) => "void";

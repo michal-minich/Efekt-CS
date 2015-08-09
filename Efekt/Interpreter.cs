@@ -26,23 +26,34 @@ namespace Efekt
             {
                 case "=":
                     var evaluated = opa.Op2.Accept(this);
-                    var d = opa.Op1 as Declr;
-                    Ident i;
-                    if (d != null)
-                    {
-                        d.Accept(this);
-                        i = d.Ident;
-                    }
-                    else
-                    {
-                        i = (Ident) opa.Op1;
-                    }
+                    var i = getIdentAndDeclareIfDeclr(opa.Op1);
                     env.SetValue(i.Name, evaluated);
                     return evaluated;
+                case ".":
+                    var member = opa.Op2 as Ident;
+                    if (member == null)
+                        throw new EfektException("expected identifier after '.', not "
+                                                 + opa.Op2.GetType().Name);
+                    var sAsi = opa.Op1.Accept(this);
+                    var s = sAsi as Struct;
+                    if (s == null)
+                        throw new EfektException(
+                            "exp before '.' must evaluate to struct, not " + sAsi.GetType().Name);
+                    return s.Env.GetValue(member.Name);
                 default:
                     var fna = new FnApply(opa.Op, new[] {opa.Op1, opa.Op2});
                     return VisitFnApply(fna);
             }
+        }
+
+
+        private Ident getIdentAndDeclareIfDeclr(Asi declrOrIdent)
+        {
+            var d = declrOrIdent as Declr;
+            if (d == null)
+                return (Ident) declrOrIdent;
+            d.Accept(this);
+            return d.Ident;
         }
 
 
@@ -131,7 +142,54 @@ namespace Efekt
 
         public Asi VisitNew(New n)
         {
-            throw new NotImplementedException();
+            var eExp = n.Exp.Accept(this);
+            var s = eExp as Struct;
+            var fna = eExp as FnApply;
+
+            if (s != null)
+            {
+                Contract.Assume(s.Env == null);
+                var prevEnv = env;
+                env = new Env(null);
+                foreach (var item in s.Items)
+                {
+                    var declrItem = item as Declr;
+                    var opa = item as BinOpApply;
+                    if (opa == null)
+                    {
+                        if (declrItem == null)
+                            throw new Exception("struct can contains only variables");
+                        if (!declrItem.IsVar)
+                            throw new Exception("declaration must be prefixed with 'var' in struct");
+                        declrItem.Accept(this);
+                    }
+                    else if (opa.Op.Name == "=")
+                    {
+                        // provide error as above
+                        Contract.Assume(opa.Op1 is Declr);
+                        var i = getIdentAndDeclareIfDeclr(opa.Op1);
+                        var v = opa.Op2.Accept(this);
+                        env.SetValue(i.Name, v);
+                    }
+                    else
+                    {
+                        throw new Exception("struct can contains only variables, found: " + opa.Op);
+                    }
+                }
+                var instance = new Struct(Array.Empty<Asi>()) {Env = env};
+                env = prevEnv;
+                return instance;
+            }
+            else if (fna != null)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                throw new EfektException(
+                    "expression after new should evaluate to struct or fn apply, not "
+                    + eExp.GetType().Name);
+            }
         }
 
 

@@ -1,1 +1,3 @@
-id(1)
+var S = struct { var a = 1 }
+var s = new S
+s.a

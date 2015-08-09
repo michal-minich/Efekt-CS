@@ -331,10 +331,10 @@ namespace Efekt
             if (!matchWord("new"))
                 return null;
             skipWhite();
-            var ident = parseIdent();
-            if (ident == null)
-                throw new EfektException("ident required after new");
-            return new New(ident);
+            var asi = parseCombinedAsi();
+            if (asi == null)
+                throw new EfektException("expression required after new");
+            return new New(asi);
         }
 
 

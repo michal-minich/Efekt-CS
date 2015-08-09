@@ -69,6 +69,20 @@ namespace Efekt
         public Asi GetValue(String name) => getEnvDeclaring(name, this).dict[name];
 
 
+        public static void PrintEnv(Env env)
+        {
+            Console.WriteLine("Env:");
+            var e = env;
+            do
+            {
+                foreach (var d in e.dict)
+                    Console.WriteLine("  var " + d.Key + " = " +
+                                      d.Value.Accept(Program.DefaultPrinter));
+                e = env.Parent;
+            } while (e != null);
+        }
+
+
         private Int32 n;
 
 

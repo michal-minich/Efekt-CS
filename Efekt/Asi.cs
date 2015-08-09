@@ -157,6 +157,8 @@ namespace Efekt
     {
         public IEnumerable<Asi> Items { get; }
 
+        public Env Env { get; set; }
+
 
         public Struct(IEnumerable<Asi> items)
         {
@@ -208,12 +210,12 @@ namespace Efekt
         MessageId = "New")]
     public sealed class New : Asi
     {
-        public Ident Ident { get; }
+        public Asi Exp { get; }
 
 
-        public New(Ident ident)
+        public New(Asi exp)
         {
-            Ident = ident;
+            Exp = exp;
         }
 
 

@@ -10,6 +10,7 @@ namespace Efekt
     public sealed class Interpreter : IAsiVisitor<Asi>
     {
         private Env env;
+        private Asi current;
 
 
         public Asi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(env), env);
@@ -18,7 +19,16 @@ namespace Efekt
         public Asi VisitInt(Int ii) => ii;
 
 
-        public Asi VisitIdent(Ident i) => env.GetValue(i.Name);
+        public Asi VisitIdent(Ident i)
+        {
+            var v = env.GetValueOrNull(i.Name);
+            if (v != null)
+                return v;
+            Contract.Assume(current != null);
+            var ie = current as IHasImportedEnv;
+            Contract.Assume(ie != null);
+            return ie.ImportedEnv.GetValue(i.Name);
+        }
 
 
         public Asi VisitBinOpApply(BinOpApply opa)
@@ -38,7 +48,15 @@ namespace Efekt
                     else
                     {
                         var i = getIdentAndDeclareIfDeclr(opa.Op1);
-                        env.SetValue(i.Name, evaluated);
+                        if (env.IsDeclared(i.Name))
+                        {
+                            env.SetValue(i.Name, evaluated);
+                        }
+                        else
+                        {
+                            var e = (IHasImportedEnv) current;
+                            e.ImportedEnv.SetValue(i.Name, evaluated);
+                        }
                     }
                     return evaluated;
                 case ".":
@@ -118,7 +136,11 @@ namespace Efekt
         }
 
 
-        public Asi VisitStruct(Struct s) => s;
+        public Asi VisitStruct(Struct s)
+        {
+            current = s;
+            return s;
+        }
 
 
         public Asi VisitFn(Fn fn)
@@ -148,6 +170,8 @@ namespace Efekt
                 throw new EfektException("cannot apply " + fnAsi.GetType().Name);
 
             Contract.Assume(fn.Env != null);
+            Contract.Assume(fn.ImportedEnv == null);
+            current = fn;
 
             var prevEnv = env;
             evalParamsAndArgs(fn.Params.ToArray(), fna.Args.ToArray());
@@ -283,6 +307,26 @@ namespace Efekt
             return b.Value
                 ? iff.Then.Accept(this)
                 : iff.Otherwise == null ? new Void() : iff.Otherwise.Accept(this);
+        }
+
+
+        public Asi VisitImport(Import imp)
+        {
+            var asi = imp.QualifiedIdent.Accept(this);
+            var s = asi as Struct;
+            if (s == null)
+                throw new EfektException("only constructed struct or fn can be imported, not " +
+                                         asi.GetType().Name);
+
+            var hasIe = current as IHasImportedEnv;
+            if (hasIe == null)
+                throw new EfektException("import can be present only in struct or fn, not " +
+                                         asi.GetType().Name);
+
+            if (hasIe.ImportedEnv == null)
+                hasIe.ImportedEnv = new Env(null);
+            hasIe.ImportedEnv = s.Env;
+            return new Void();
         }
     }
 }

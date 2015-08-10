@@ -153,7 +153,7 @@ namespace Efekt
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
                       ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
-                      ?? parseChar() ?? parseString('"')
+                      ?? parseChar() ?? parseString('"') ?? parseImport()
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
             if (asi != null)
@@ -315,6 +315,15 @@ namespace Efekt
                 chars.Add(new Char(code[i]));
             var arr = new Arr(chars);
             return isUnterminated ? /*new Err(arr)*/arr : arr;
+        }
+
+
+        private Import parseImport()
+        {
+            if (!matchWord("import"))
+                return null;
+            var asi = parseAsi();
+            return new Import(asi);
         }
 
 

@@ -68,6 +68,11 @@ namespace Efekt
 
         public Asi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
 
+        public Asi GetValueOrNull(String name) => getEnvDeclaringOrNull(name, this)?.Dict[name];
+
+
+        public Boolean IsDeclared(String name) => getEnvDeclaringOrNull(name, this) != null;
+
 
         public static void PrintEnv(Env env)
         {
@@ -83,10 +88,8 @@ namespace Efekt
         }
 
 
-        private Int32 n;
-
-
-        private Env getEnvDeclaring(String name, Env env)
+        [CanBeNull]
+        private Env getEnvDeclaringOrNull(String name, Env env)
         {
             var e = getEnvDeclaring2(name, env);
             n = 0;
@@ -94,6 +97,20 @@ namespace Efekt
         }
 
 
+        private Int32 n;
+
+
+        private Env getEnvDeclaring(String name, Env env)
+        {
+            var e = getEnvDeclaring2(name, env);
+            if (e == null)
+                throw new EfektException("variable '" + name + "' is not declared");
+            n = 0;
+            return e;
+        }
+
+
+        [CanBeNull]
         private Env getEnvDeclaring2(String name, Env env)
         {
             if (++n == 10)
@@ -105,7 +122,7 @@ namespace Efekt
                 return env;
             if (env.Parent != null)
                 return getEnvDeclaring2(name, env.Parent);
-            throw new EfektException("variable '" + name + "' is not declared");
+            return null;
         }
     }
 }

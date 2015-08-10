@@ -96,5 +96,8 @@ namespace Efekt
             return "if " + iff.Test.Accept(this) + " then " + iff.Test.Accept(this)
                    + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
         }
+
+
+        public String VisitImport(Import imp) => "import " + imp.QualifiedIdent.Accept(this);
     }
 }

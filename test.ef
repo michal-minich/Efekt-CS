@@ -1,3 +1,12 @@
-var a = true
-if id(a) then { print(a) a = 2} else { print(a)  a = 3}
-a
+var s1 = new struct {
+ var s = new struct {
+    var a = 1
+ }
+ var p = fn () {
+  import s
+  a = 2
+  s.a
+  }
+}
+var x = s1.p
+x()

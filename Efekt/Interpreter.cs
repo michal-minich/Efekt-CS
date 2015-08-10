@@ -282,7 +282,7 @@ namespace Efekt
                                          t.GetType().Name);
             return b.Value
                 ? ii.Then.Accept(this)
-                : ii.Otherwise.Accept(this);
+                : ii.Otherwise == null ? new Void() : ii.Otherwise.Accept(this);
         }
     }
 }

@@ -150,7 +150,7 @@ namespace Efekt
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
-                      ?? parseStruct() ?? parseBool() ?? parseIf()
+                      ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
                       ?? parseChar() ?? parseString('"')
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
 
@@ -250,6 +250,13 @@ namespace Efekt
             }
 
             return new If(t, then, o);
+        }
+
+
+        private Asi parseAsiList()
+        {
+            var b = parseBracedList('{', '}');
+            return b == null ? null : new AsiList(b);
         }
 
 

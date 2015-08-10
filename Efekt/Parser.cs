@@ -141,6 +141,8 @@ namespace Efekt
                 }
             } while (found);
 
+            if (asi != null)
+                asi = parseFnApply(asi);
 
             return asi;
         }
@@ -153,12 +155,9 @@ namespace Efekt
                       ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
                       ?? parseChar() ?? parseString('"')
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
-
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
-
             if (asi != null)
                 asi = parseFnApply(asi);
-
             return asi;
         }
 
@@ -471,6 +470,8 @@ namespace Efekt
                 if (!hasChars)
                     throw new EfektException("missing closing brace " + endBrace +
                                              " and source end reached");
+
+                wasNewLine = false;
                 var asi = parseCombinedAsi();
                 items.Add(asi);
                 skipWhite();

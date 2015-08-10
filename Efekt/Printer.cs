@@ -17,8 +17,8 @@ namespace Efekt
         public String VisitInt(Int ii) => ii.Value;
 
 
-        public String VisitIdent(Ident ident)
-            => (ident.Type == IdentType.Op ? "op" : "") + ident.Name;
+        public String VisitIdent(Ident i)
+            => (i.Type == IdentType.Op ? "op" : "") + i.Name;
 
 
         public String VisitBinOpApply(BinOpApply opa)
@@ -91,10 +91,10 @@ namespace Efekt
         public String VisitChar(Char c) => "'" + c.Value.ToString() + "'";
 
 
-        public String VisitIf(If ii)
+        public String VisitIf(If iff)
         {
-            return "if " + ii.Test.Accept(this) + " then " + ii.Test.Accept(this)
-                   + (ii.Otherwise == null ? "" : " else " + ii.Otherwise.Accept(this));
+            return "if " + iff.Test.Accept(this) + " then " + iff.Test.Accept(this)
+                   + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
         }
     }
 }

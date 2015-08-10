@@ -27,6 +27,8 @@
             <Word>p</Word>
             <Word>b</Word>
             <Word>c</Word>
+            <Word>i</Word>
+            <Word>iff</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>

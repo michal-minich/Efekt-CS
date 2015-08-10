@@ -18,7 +18,7 @@ namespace Efekt
         public Asi VisitInt(Int ii) => ii;
 
 
-        public Asi VisitIdent(Ident ident) => env.GetValue(ident.Name);
+        public Asi VisitIdent(Ident i) => env.GetValue(i.Name);
 
 
         public Asi VisitBinOpApply(BinOpApply opa)
@@ -273,16 +273,16 @@ namespace Efekt
         public Asi VisitChar(Char c) => c;
 
 
-        public Asi VisitIf(If ii)
+        public Asi VisitIf(If iff)
         {
-            var t = ii.Test.Accept(this);
+            var t = iff.Test.Accept(this);
             var b = t as Bool;
             if (b == null)
                 throw new EfektException("test in if must evaluated to bool, not to: " +
                                          t.GetType().Name);
             return b.Value
-                ? ii.Then.Accept(this)
-                : ii.Otherwise == null ? new Void() : ii.Otherwise.Accept(this);
+                ? iff.Then.Accept(this)
+                : iff.Otherwise == null ? new Void() : iff.Otherwise.Accept(this);
         }
     }
 }

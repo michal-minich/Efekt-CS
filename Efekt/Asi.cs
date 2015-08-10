@@ -10,7 +10,7 @@ namespace Efekt
     {
         T VisitAsiList(AsiList al);
         T VisitInt(Int ii);
-        T VisitIdent(Ident ident);
+        T VisitIdent(Ident i);
         T VisitBinOpApply(BinOpApply opa);
         T VisitDeclr(Declr d);
         T VisitArr(Arr arr);
@@ -21,7 +21,7 @@ namespace Efekt
         T VisitVoid(Void v);
         T VisitBool(Bool b);
         T VisitChar(Char c);
-        T VisitIf(If ii);
+        T VisitIf(If iff);
     }
 
 

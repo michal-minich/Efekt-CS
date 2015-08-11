@@ -3,10 +3,10 @@ var s1 = new struct {
     var a = 1
  }
  var p = fn () {
+  var a = 3
   import s
   a = 2
   s.a
   }
 }
-var x = s1.p
-x()
+s1.p()

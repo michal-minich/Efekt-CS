@@ -124,14 +124,14 @@ namespace Efekt
                     }
                     else if (curOpPrecedence <= prevOpPrecedence)
                     {
-                        var op2 = parseAsi();
+                        var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
                         asi = new BinOpApply(new Ident(op, IdentType.Op), asi, op2);
                         prevOpPrecedence = curOpPrecedence;
                     }
                     else
                     {
-                        var op2 = parseAsi();
+                        var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
                         var op1 = (BinOpApply) asi;
                         op1.Op2 = new BinOpApply(new Ident(op, IdentType.Op), op1.Op2, op2);
@@ -147,8 +147,8 @@ namespace Efekt
             return asi;
         }
 
-
-        private Asi parseAsi()
+      
+        private Asi parseAsi(Boolean skipFnApply = false)
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
@@ -156,7 +156,7 @@ namespace Efekt
                       ?? parseChar() ?? parseString('"') ?? parseImport()
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
-            if (asi != null)
+            if (asi != null && !skipFnApply)
                 asi = parseFnApply(asi);
             return asi;
         }
@@ -620,6 +620,9 @@ namespace Efekt
 
         private Boolean matchUntil(Func<Boolean> isMatch)
         {
+            if (index > code.Length)
+                return false;
+
             var startIndex = index;
             while (index < code.Length && isMatch())
                 index++;

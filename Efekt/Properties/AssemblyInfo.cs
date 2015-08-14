@@ -9,9 +9,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Efekt")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("IBM")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Efekt")]
-[assembly: AssemblyCopyright("Copyright © IBM 2015")]
+[assembly: AssemblyCopyright("Copyright © Michal Minich 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

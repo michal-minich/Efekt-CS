@@ -251,7 +251,7 @@ namespace Efekt
             eval("__at([1, 2, 3], 2)", "3");
             eval("__add([1, 2], 3)", "[1, 2, 3]");
 
-            /*eval("struct { }");
+            eval("struct { }");
             eval("struct { var a = 1 }");
             eval("var S = struct { var a = 1 }", "struct { var a = 1 }");
             eval("var S = struct { var a = 1 } S", "struct { var a = 1 }");
@@ -279,7 +279,7 @@ namespace Efekt
             eval(struct1 + id + " id(s).a.b", "1");
             eval(struct1 + id + " id(s).a.b = 2 s.a.b", "1");
             eval(struct1 + " fn (a) { a.a.b = 2 } (s) s.a.b", "1");
-              */
+              
             eval("var a = 1 /*a = 2*/ a", "1");
             eval("var a = 1 --a = 2\n a", "1");
             eval("var a = 1 /*--a = 2*/ a", "1");

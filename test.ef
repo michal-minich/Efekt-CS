@@ -1,8 +1,12 @@
-var f = fn () {
-    var c = 1
-    c
-    c + 2
-    c
-    c
+
+var s = new struct {
+  var a = 1
 }
-f()
+var s1 = new struct {
+  import s
+  var p = fn () {
+    a = 2
+  }
+}
+s1.p()
+s.a

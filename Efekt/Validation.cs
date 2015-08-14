@@ -14,7 +14,7 @@ namespace Efekt
         public Int32 Number { get; }
         public String Template { get; }
         public String Code { get; }
-        public ValidationSeverity Severity { get; }
+        public ValidationSeverity Severity { get; set; }
 
 
         public ValidationType(ValidationCategory category, Int32 number, String template)
@@ -120,6 +120,23 @@ namespace Efekt
         }
 
 
+        public static Dictionary<Int32, ValidationSeverity> LoadSeverities(IEnumerable<String> lines)
+        {
+            var severities = new Dictionary<Int32, ValidationSeverity>();
+            foreach (var l in lines)
+            {
+                if (String.IsNullOrWhiteSpace(l))
+                    continue;
+                var split = l.Split('=');
+                var number = split[0].Trim().Substring(1).ToInt();
+                var severity = split[1].Trim();
+                severities.Add(number,
+                    (ValidationSeverity) Enum.Parse(typeof (ValidationSeverity), severity));
+            }
+            return severities;
+        }
+
+
         private Validation add(Int32 number, IAsi affectedItem = null)
         {
             var v = new Validation(types[number], affectedItem);
@@ -131,6 +148,8 @@ namespace Efekt
 
         private static void handle(Validation v)
         {
+            if (v.AffectedItem != null)
+                Console.Write(v.AffectedItem.Line + ":" + v.AffectedItem.Column + " ");
             Console.WriteLine(v.Text);
             if (v.Type.Severity == ValidationSeverity.Error)
                 throw new ValidationException(v);
@@ -139,5 +158,12 @@ namespace Efekt
 
         public Validation AddNothingAfterIf() => add(101);
         public Validation AddIfTestIsNotExp(IAsi affectedItem) => add(102, affectedItem);
+
+
+        public void UseSeverities(Dictionary<Int32, ValidationSeverity> severities)
+        {
+            foreach (var svr in severities)
+                types[svr.Key].Severity = svr.Value;
+        }
     }
 }

@@ -16,8 +16,16 @@ namespace Efekt
             try
             {
                 DefaultPrinter = new Printer();
-                ValidationList = ValidationList.InitFrom(File.ReadAllLines(
-                    AppDomain.CurrentDomain.BaseDirectory + @"Resources\validations.en-US.ef"));
+
+                var basePath = AppDomain.CurrentDomain.BaseDirectory + @"Resources\";
+
+                ValidationList = ValidationList.InitFrom(
+                    File.ReadAllLines(basePath + "validations.en-US.ef"));
+
+                var severities = ValidationList.LoadSeverities(
+                    File.ReadAllLines(basePath + "severity-normal.ef"));
+
+                ValidationList.UseSeverities(severities);
 
                 Tests.Test();
 

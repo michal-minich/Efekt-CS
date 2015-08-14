@@ -348,11 +348,16 @@ namespace Efekt
         MessageId = "If")]
     public sealed class If : Exp
     {
-        public IExp Test { get; }
-        public IAsi Then { get; }
+        public IExp Test { get; set; }
+        public IAsi Then { get; set; }
 
         [CanBeNull]
-        public IAsi Otherwise { get; }
+        public IAsi Otherwise { get; set; }
+
+
+        public If()
+        {
+        }
 
 
         public If(IExp test, IAsi then, [CanBeNull] IAsi otherwise)
@@ -369,7 +374,12 @@ namespace Efekt
 
     public sealed class Import : Stm
     {
-        public IExp QualifiedIdent { get; }
+        public IExp QualifiedIdent { get; set; }
+
+
+        public Import()
+        {
+        }
 
 
         public Import(IExp qualifiedIdent)

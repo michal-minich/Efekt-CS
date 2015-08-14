@@ -9,4 +9,6 @@ var s1 = new struct {
 }
 s1.p()
 s.a
-if import dddddddddddddddddddddddddddddddddddddddddddddddddda then 1 else 2
+if import aaaaa then 11111 else 222222
+s
+s

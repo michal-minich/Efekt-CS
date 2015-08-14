@@ -13,6 +13,9 @@ namespace Efekt
         private Int32 index;
         private String matched = "";
         private ValidationList validations;
+        private Int32 lineNumber;
+        private Int32 columnNumber;
+        private Int32 indexOfFirstColumn;
 
         private static readonly List<String> rightAssociativeOps = new List<String>
         {":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|="};
@@ -67,6 +70,8 @@ namespace Efekt
 
             code = codeText;
             index = 0;
+            columnNumber = 1;
+            lineNumber = 1;
             validations = validationList;
             var items = new List<IAsi>();
             while (true)
@@ -78,7 +83,7 @@ namespace Efekt
                 items.Add(asi);
             }
 
-            return new AsiList(items);
+            return a(new AsiList(items));
         }
 
 
@@ -107,6 +112,7 @@ namespace Efekt
                     {
                         if (isRight)
                         {
+                            columnNumber -= ix - index;
                             index = ix;
                             return asi;
                         }
@@ -115,21 +121,22 @@ namespace Efekt
                         {
                             var type = parseCombinedAsi(true);
                             Contract.Assume(type != null);
-                            asi = new Declr((Ident) asi, type);
+                            asi = a(new Declr((Ident) asi, type));
                         }
                         else
                         {
                             var op2 = parseCombinedAsi(true);
                             Contract.Assume(op2 != null);
-                            asi = new BinOpApply(
-                                new Ident(op, IdentCategory.Op), (IExp) asi, (IExp) op2);
+                            asi = a(new BinOpApply(
+                                a(new Ident(op, IdentCategory.Op)), (IExp) asi, (IExp) op2));
                         }
                     }
                     else if (curOpPrecedence <= prevOpPrecedence)
                     {
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
-                        asi = new BinOpApply(new Ident(op, IdentCategory.Op), (IExp) asi, (IExp) op2);
+                        asi = a(new BinOpApply(
+                            a(new Ident(op, IdentCategory.Op)), (IExp) asi, (IExp) op2));
                         prevOpPrecedence = curOpPrecedence;
                     }
                     else
@@ -137,8 +144,8 @@ namespace Efekt
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
                         var op1 = (BinOpApply) asi;
-                        op1.Op2 = new BinOpApply(
-                            new Ident(op, IdentCategory.Op), op1.Op2, (IExp) op2);
+                        op1.Op2 = a(new BinOpApply(
+                            a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp) op2));
                     }
 
                     found = true;
@@ -166,13 +173,13 @@ namespace Efekt
         }
 
 
-        private Int parseInt() => matchUntil(isDigit) ? new Int(matched) : null;
+        private Int parseInt() => matchUntil(isDigit) ? a(new Int(matched)) : null;
 
 
         private Arr parseArr()
         {
             var items = parseBracedList('[', ']');
-            return items == null ? null : new Arr(items.Cast<IExp>());
+            return items == null ? null : a(new Arr(items.Cast<IExp>()));
         }
 
 
@@ -195,7 +202,7 @@ namespace Efekt
             if (b == null)
                 throw new EfektException("expected '{...}' after 'fn (...)'");
 
-            return new Fn(p2.ToList(), b);
+            return a(new Fn(p2.ToList(), b));
         }
 
 
@@ -210,16 +217,16 @@ namespace Efekt
             if (items == null)
                 throw new EfektException("missing open curly brace after 'struct'");
 
-            return new Struct(items);
+            return a(new Struct(items));
         }
 
 
         private Bool parseBool()
         {
             if (matchWord("true"))
-                return new Bool(true);
+                return a(new Bool(true));
             if (matchWord("false"))
-                return new Bool(false);
+                return a(new Bool(false));
             return null;
         }
 
@@ -228,42 +235,43 @@ namespace Efekt
         {
             if (!matchWord("if"))
                 return null;
+            var iff = a(new If());
             var t = parseCombinedAsi();
 
             Validation v = null;
+            var tIExp = t as IExp;
             if (t == null)
             {
                 v = validations.AddNothingAfterIf();
-                t = new Err();
+                iff.Test = a(new Err());
             }
-
-            var tIExp = t as IExp;
-            if (tIExp == null)
+            else if (tIExp == null)
             {
                 validations.AddIfTestIsNotExp(t);
-                tIExp = new Err(t);
+                iff.Test = a(new Err(t));
+            }
+            else
+            {
+                iff.Test = tIExp;
             }
 
-            IAsi then;
             if (matchWord("then"))
             {
-                then = parseCombinedAsi();
-                if (then == null)
+                iff.Then = parseCombinedAsi();
+                if (iff.Then == null)
                     throw new EfektException("expected expression after then");
             }
             else
                 throw new EfektException("expected then after if");
 
 
-            IAsi o = null;
             if (matchWord("else"))
             {
-                o = parseCombinedAsi();
-                if (o == null)
+                iff.Otherwise = parseCombinedAsi();
+                if (iff.Otherwise == null)
                     throw new EfektException("expected expression after else");
             }
 
-            var iff = new If(tIExp, then, o);
             if (v != null)
                 v.AffectedItem = iff;
             return iff;
@@ -273,7 +281,7 @@ namespace Efekt
         private Asi parseAsiList()
         {
             var b = parseBracedList('{', '}');
-            return b == null ? null : new AsiList(b);
+            return b == null ? null : a(new AsiList(b));
         }
 
 
@@ -314,6 +322,7 @@ namespace Efekt
                 }
                 var ch = code[index];
                 ++index;
+                ++columnNumber;
                 if (ch == quote)
                     break;
                 if (firstNewLineAt == 0 && isNewLine(ch))
@@ -333,9 +342,9 @@ namespace Efekt
             }
             var chars = new List<Char>();
             for (var i = startAt; i < to; ++i)
-                chars.Add(new Char(code[i]));
-            var arr = new Arr(chars);
-            return isUnterminated ? new Err(arr) : (IExp) arr;
+                chars.Add(a(new Char(code[i])));
+            var arr = a(new Arr(chars));
+            return isUnterminated ? a(new Err(arr)) : (IExp) arr;
         }
 
 
@@ -343,12 +352,13 @@ namespace Efekt
         {
             if (!matchWord("import"))
                 return null;
-            var asi = parseAsi();
-            return new Import((IExp) asi);
+            var imp = a(new Import());
+            imp.QualifiedIdent = (IExp) parseAsi();
+            return imp;
         }
 
 
-        private Void parseVoid() => matchWord("void") ? new Void() : null;
+        private Void parseVoid() => matchWord("void") ? a(new Void()) : null;
 
 
         private Ident parseIdent()
@@ -362,13 +372,13 @@ namespace Efekt
                 var m1 = matched;
                 matchUntil(isLetterOrDigit);
                 var name = m1 + matched;
-                return new Ident(
+                return a(new Ident(
                     name,
-                    System.Char.IsUpper(name[0]) ? IdentCategory.Type : IdentCategory.Value);
+                    System.Char.IsUpper(name[0]) ? IdentCategory.Type : IdentCategory.Value));
             }
 
             var isOpMatched = matchUntil(isOp);
-            return isOpMatched ? new Ident(matched, IdentCategory.Op) : null;
+            return isOpMatched ? a(new Ident(matched, IdentCategory.Op)) : null;
         }
 
 
@@ -397,14 +407,14 @@ namespace Efekt
         }
 
 
-        private static Exp expToDeclrOrAssign([CanBeNull] IAsi asi, Boolean isVar)
+        private Exp expToDeclrOrAssign([CanBeNull] IAsi asi, Boolean isVar)
         {
             if (asi == null)
                 throw new EfektException("expected ident, declaration or assignment");
 
             var i = asi as Ident;
             if (i != null)
-                return new Declr(i, null) {IsVar = isVar};
+                return a(new Declr(i, null) {IsVar = isVar});
 
             var o = asi as BinOpApply;
             if (o != null)
@@ -414,7 +424,7 @@ namespace Efekt
                 var i2 = o.Op1 as Ident;
                 if (i2 != null)
                 {
-                    o.Op1 = new Declr(i2, null) {IsVar = isVar};
+                    o.Op1 = a(new Declr(i2, null) {IsVar = isVar});
                     return o;
                 }
                 var d2 = o.Op1 as Declr;
@@ -468,7 +478,7 @@ namespace Efekt
             var asi = parseCombinedAsi();
             if (asi == null)
                 throw new EfektException("expression required after new");
-            return new New((IExp) asi);
+            return a(new New((IExp) asi));
         }
 
 
@@ -480,8 +490,9 @@ namespace Efekt
             while (matchChar('('))
             {
                 --index;
+                --columnNumber;
                 var args = parseBracedList('(', ')');
-                asi = new FnApply(asi, args.Cast<IExp>());
+                asi = a(new FnApply(asi, args.Cast<IExp>()));
                 skipWhite();
             }
             return asi;
@@ -544,6 +555,7 @@ namespace Efekt
         private void skipWhite()
         {
             var wasAnyNewLine = false;
+            var startIndex = index;
             Int32 prevIndex;
             do
             {
@@ -555,6 +567,7 @@ namespace Efekt
                 skipCommentMulti();
             } while (prevIndex != index);
             wasNewLine = wasAnyNewLine;
+            columnNumber += index - startIndex;
         }
 
 
@@ -592,6 +605,12 @@ namespace Efekt
             if (index >= code.Length)
                 return false;
             var ch = code[index];
+            if (ch == '\n')
+            {
+                ++lineNumber;
+                columnNumber = 0;
+                indexOfFirstColumn = index;
+            }
             return ch == ' ' || ch == '\t' || isNewLine(ch);
         }
 
@@ -604,6 +623,7 @@ namespace Efekt
             if (index >= code.Length || code[index] != ch)
                 return false;
 
+            columnNumber += 1;
             ++index;
             return true;
         }
@@ -615,6 +635,7 @@ namespace Efekt
                           && code.IndexOf(text, index) == index;
             if (isMatch)
                 index += text.Length;
+            columnNumber += text.Length;
             return isMatch;
         }
 
@@ -634,6 +655,8 @@ namespace Efekt
                     return false;
             }
             matched = code.Substring(index, w.Length);
+            columnNumber += matched.Length;
+
             index += w.Length;
             return true;
         }
@@ -649,9 +672,14 @@ namespace Efekt
                 index++;
 
             var length = index - startIndex;
+            if (length == 0)
+            {
+                matched = "";
+                return false;
+            }
             matched = code.Substring(startIndex, length);
-
-            return length != 0;
+            columnNumber += matched.Length;
+            return true;
         }
 
 
@@ -659,5 +687,13 @@ namespace Efekt
 
 
         private Boolean hasChars => index < code.Length;
+
+
+        private T a<T>(T asi) where T : Asi
+        {
+            asi.Line = lineNumber;
+            asi.Column = columnNumber;
+            return asi;
+        }
     }
 }

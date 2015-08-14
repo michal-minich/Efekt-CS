@@ -30,10 +30,12 @@
             <Word>b</Word>
             <Word>c</Word>
             <Word>i</Word>
+            <Word>e</Word>
             <Word>iff</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>
+            <Term>TestIs</Term>
         </DiscreteExceptions>
     </Words>
     <Acronyms>

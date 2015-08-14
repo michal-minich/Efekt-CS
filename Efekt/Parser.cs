@@ -12,6 +12,7 @@ namespace Efekt
         private String code;
         private Int32 index;
         private String matched = "";
+        private ValidationList validations;
 
         private static readonly List<String> rightAssociativeOps = new List<String>
         {":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|="};
@@ -59,13 +60,14 @@ namespace Efekt
         private Boolean wasNewLine;
 
 
-        public AsiList Parse(String codeText)
+        public AsiList Parse(String codeText, ValidationList validationList)
         {
             Contract.Requires(codeText != null);
             Contract.Ensures(Contract.Result<AsiList>() != null);
 
             code = codeText;
             index = 0;
+            validations = validationList;
             var items = new List<IAsi>();
             while (true)
             {
@@ -228,12 +230,19 @@ namespace Efekt
                 return null;
             var t = parseCombinedAsi();
 
+            Validation v = null;
             if (t == null)
-                throw new EfektException("expected expression after then");
+            {
+                v = validations.AddNothingAfterIf();
+                t = new Err();
+            }
 
             var tIExp = t as IExp;
             if (tIExp == null)
-                throw new EfektException("if test must be expression");
+            {
+                validations.AddIfTestIsNotExp(t);
+                tIExp = new Err(t);
+            }
 
             IAsi then;
             if (matchWord("then"))
@@ -254,7 +263,10 @@ namespace Efekt
                     throw new EfektException("expected expression after else");
             }
 
-            return new If(tIExp, then, o);
+            var iff = new If(tIExp, then, o);
+            if (v != null)
+                v.AffectedItem = iff;
+            return iff;
         }
 
 
@@ -272,7 +284,7 @@ namespace Efekt
                 return null;
             var str = strParsed as Arr;
             if (str == null)
-                str = (Arr)((Err)strParsed).Item;
+                str = (Arr) ((Err) strParsed).Item;
             if (!str.Items.Any())
                 throw new EfektException("char must have exactly one character, it has 0");
             if (str.Items.Count() != 1)
@@ -323,7 +335,7 @@ namespace Efekt
             for (var i = startAt; i < to; ++i)
                 chars.Add(new Char(code[i]));
             var arr = new Arr(chars);
-            return isUnterminated ? new Err(arr) : (IExp)arr;
+            return isUnterminated ? new Err(arr) : (IExp) arr;
         }
 
 
@@ -332,7 +344,7 @@ namespace Efekt
             if (!matchWord("import"))
                 return null;
             var asi = parseAsi();
-            return new Import((IExp)asi);
+            return new Import((IExp) asi);
         }
 
 
@@ -456,7 +468,7 @@ namespace Efekt
             var asi = parseCombinedAsi();
             if (asi == null)
                 throw new EfektException("expression required after new");
-            return new New((IExp)asi);
+            return new New((IExp) asi);
         }
 
 

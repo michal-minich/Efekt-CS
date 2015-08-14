@@ -13,7 +13,9 @@ namespace Efekt
 
         public String VisitAsiList(AsiList al) => joinStatements(al.Items);
 
-        public String VisitErr(Err err) => "error (" + err.Accept(this) + ")";
+
+        public String VisitErr(Err err)
+            => "error (" + (err.Item == null ? "" : err.Item.Accept(this)) + ")";
 
 
         public String VisitInt(Int ii) => ii.Value;

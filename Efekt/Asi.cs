@@ -30,6 +30,9 @@ namespace Efekt
     public interface IAsi
     {
         T Accept<T>(IAsiVisitor<T> v);
+        Int32 Line { get; }
+
+        Int32 Column { get; }
     }
 
 
@@ -69,8 +72,8 @@ namespace Efekt
     public abstract class Asi : IAsi
     {
         public abstract T Accept<T>(IAsiVisitor<T> v);
-
-
+        public Int32 Line { get; set; }
+        public Int32 Column { get; set; }
         public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);
     }
 
@@ -123,7 +126,12 @@ namespace Efekt
         public IAsi Item { get; }
 
 
-        public Err([CanBeNull] IAsi item)
+        public Err()
+        {
+        }
+
+
+        public Err(IAsi item)
         {
             Item = item;
         }
@@ -151,7 +159,6 @@ namespace Efekt
     public sealed class Ident : Val
     {
         public String Name { get; }
-
         public IdentCategory Category { get; }
 
 
@@ -218,7 +225,6 @@ namespace Efekt
     public sealed class Arr : Val
     {
         public IEnumerable<IExp> Items { get; }
-
         public Boolean IsEvaluated { get; set; }
 
 
@@ -235,7 +241,6 @@ namespace Efekt
     public sealed class Struct : Type
     {
         public IEnumerable<IAsi> Items { get; }
-
         public Env Env { get; set; }
 
 
@@ -344,7 +349,6 @@ namespace Efekt
     public sealed class If : Exp
     {
         public IExp Test { get; }
-
         public IAsi Then { get; }
 
         [CanBeNull]

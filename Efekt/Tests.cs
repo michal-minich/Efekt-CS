@@ -344,7 +344,7 @@ namespace Efekt
         private static void parse(String code, String expected, Printer printer)
         {
             var p = new Parser();
-            var al = p.Parse(code);
+            var al = p.Parse(code, Program.ValidationList);
             check(al, expected, printer);
         }
 
@@ -364,7 +364,7 @@ namespace Efekt
         private static void eval(String code, String expected, Printer printer)
         {
             var p = new Parser();
-            var al = p.Parse(code);
+            var al = p.Parse(code, Program.ValidationList);
             var i = new Interpreter();
             var asi = i.VisitAsiList(al);
             check(asi, expected, printer);

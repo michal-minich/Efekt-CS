@@ -8,6 +8,7 @@ namespace Efekt
     internal static class Program
     {
         public static Printer DefaultPrinter;
+        public static ValidationList ValidationList;
 
 
         internal static void Main(String[] args)
@@ -15,6 +16,8 @@ namespace Efekt
             try
             {
                 DefaultPrinter = new Printer();
+                ValidationList = ValidationList.InitFrom(File.ReadAllLines(
+                    AppDomain.CurrentDomain.BaseDirectory + @"Resources\validations.en-US.ef"));
 
                 Tests.Test();
 
@@ -22,9 +25,9 @@ namespace Efekt
                 {
                     var p = new Parser();
                     var txt = File.ReadAllText(args[0]);
-                    var al = p.Parse(txt);
+                    var al = p.Parse(txt, ValidationList);
 
-                    var prelude = p.Parse(preludeCode);
+                    var prelude = p.Parse(preludeCode, ValidationList);
                     var code = new AsiList(prelude.Items.Union(al.Items));
 
                     var i = new Interpreter();
@@ -37,6 +40,10 @@ namespace Efekt
                 {
                     Console.WriteLine("Usage: Efekt <file>");
                 }
+            }
+            catch (ValidationException)
+            {
+                // do nothing, it should be printed already
             }
             catch (Exception ex)
             {

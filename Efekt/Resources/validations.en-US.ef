@@ -1,0 +1,2 @@
+p101 = "Expected an expression after if keyword, but nothing was found."
+p102 = "Expected an expression after if keyword, but statement was found: '{0}'"

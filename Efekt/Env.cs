@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
+using System.Linq;
 using JetBrains.Annotations;
 
 
@@ -13,15 +15,27 @@ namespace Efekt
 
         public Dictionary<String, Asi> Dict { get; } = new Dictionary<String, Asi>();
 
+        public List<Env> ImportedEnvs { get; set; } = new List<Env>();
+        private static int counter = 0;
 
-        public Env([CanBeNull] Env parent)
+
+        public Env()
         {
+            ++counter;
+        }
+
+
+        public Env(Env parent)
+        {
+            Contract.Requires(parent != null);
+            ++counter;
             Parent = parent;
         }
 
 
         private Env(Dictionary<String, Asi> dictionary)
         {
+            ++counter;
             Dict = dictionary;
         }
 
@@ -29,21 +43,27 @@ namespace Efekt
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public Env GetFlat()
         {
-            var d = new Dictionary<String, Asi>();
+            var res = new Env();
+            var imports = new List<Env>();
             var e = this;
             do
             {
                 foreach (var kvp in e.Dict)
-                    if (!d.ContainsKey(kvp.Key))
-                        d.Add(kvp.Key, kvp.Value);
+                    if (!res.Dict.ContainsKey(kvp.Key))
+                        res.Dict.Add(kvp.Key, kvp.Value);
+                imports.AddRange(Enumerable.Reverse(e.ImportedEnvs));
                 e = e.Parent;
             } while (e != null);
-            return new Env(d);
+            foreach (var i in imports)
+                if (!res.ImportedEnvs.Contains(i))
+                    res.ImportedEnvs.Add(i);
+            return res;
         }
 
 
         public void CopyFrom(Env env)
         {
+            ImportedEnvs = env.ImportedEnvs;
             foreach (var kvp in env.Dict)
                 if (Dict.ContainsKey(kvp.Key))
                     Dict[kvp.Key] = kvp.Value;
@@ -64,6 +84,12 @@ namespace Efekt
         {
             getEnvDeclaring(name, this).Dict[name] = value;
         }
+
+
+        public void AddImport(Env ie) => ImportedEnvs.Insert(0, new Env(ie.Dict));
+
+
+        public void ClearImports() => ImportedEnvs.Clear();
 
 
         public Asi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
@@ -113,16 +139,22 @@ namespace Efekt
         [CanBeNull]
         private Env getEnvDeclaring2(String name, Env env)
         {
-            if (++n == 10)
+            if (++n == 20)
             {
-                n = 0;
                 throw new EfektException("too many nested environments?");
             }
             if (env.Dict.ContainsKey(name))
                 return env;
-            if (env.Parent != null)
-                return getEnvDeclaring2(name, env.Parent);
-            return null;
+            if (env.ImportedEnvs.Count != 0)
+            {
+                foreach (var ie in env.ImportedEnvs)
+                {
+                    if (ie.Dict.ContainsKey(name))
+                        return env;
+                }
+                return null;
+            }
+            return env.Parent == null ? null : getEnvDeclaring2(name, env.Parent);
         }
     }
 }

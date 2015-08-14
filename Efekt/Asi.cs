@@ -32,12 +32,6 @@ namespace Efekt
     }
 
 
-    public interface IHasImportedEnv
-    {
-        Env ImportedEnv { get; set; }
-    }
-
-
     public abstract class Asi : IAsi
     {
         public abstract T Accept<T>(IAsiVisitor<T> v);
@@ -162,13 +156,11 @@ namespace Efekt
     }
 
 
-    public sealed class Struct : Asi, IHasImportedEnv
+    public sealed class Struct : Asi
     {
         public IEnumerable<Asi> Items { get; }
 
         public Env Env { get; set; }
-
-        public Env ImportedEnv { get; set; }
 
 
         public Struct(IEnumerable<Asi> items)
@@ -180,12 +172,11 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitStruct(this);
     }
 
-    public sealed class Fn : Asi, IHasImportedEnv
+    public sealed class Fn : Asi
     {
         public IEnumerable<Asi> Params { get; }
         public IEnumerable<Asi> Items { get; }
         public Env Env { get; set; }
-        public Env ImportedEnv { get; set; }
 
 
         public Fn(IEnumerable<Asi> @params, IEnumerable<Asi> items)

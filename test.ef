@@ -1,12 +1,11 @@
+var s = new struct {
+  var a = 1
+}
 var s1 = new struct {
- var s = new struct {
-    var a = 1
- }
- var p = fn () {
-  var a = 3
   import s
-  a = 2
-  s.a
+  var p = fn () {
+    a = 2
   }
 }
 s1.p()
+s.a

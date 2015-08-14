@@ -11,24 +11,29 @@ namespace Efekt
     {
         private Env env;
         private Asi current;
+        private Env rootEnv;
 
 
-        public Asi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(env), env);
+        public Asi VisitAsiList(AsiList al)
+        {
+            Env e;
+            if (rootEnv == null)
+            {
+                e = new Env();
+                rootEnv = e;
+            }
+            else
+            {
+                e = new Env(env);
+            }
+            return visitAsiArray(al.Items, e, env);
+        }
 
 
         public Asi VisitInt(Int ii) => ii;
 
 
-        public Asi VisitIdent(Ident i)
-        {
-            var v = env.GetValueOrNull(i.Name);
-            if (v != null)
-                return v;
-            Contract.Assume(current != null);
-            var ie = current as IHasImportedEnv;
-            Contract.Assume(ie != null);
-            return ie.ImportedEnv.GetValue(i.Name);
-        }
+        public Asi VisitIdent(Ident i) => env.GetValue(i.Name);
 
 
         public Asi VisitBinOpApply(BinOpApply opa)
@@ -48,15 +53,7 @@ namespace Efekt
                     else
                     {
                         var i = getIdentAndDeclareIfDeclr(opa.Op1);
-                        if (env.IsDeclared(i.Name))
-                        {
-                            env.SetValue(i.Name, evaluated);
-                        }
-                        else
-                        {
-                            var e = (IHasImportedEnv) current;
-                            e.ImportedEnv.SetValue(i.Name, evaluated);
-                        }
+                        env.SetValue(i.Name, evaluated);
                     }
                     return evaluated;
                 case ".":
@@ -68,12 +65,12 @@ namespace Efekt
         }
 
 
-        private static Asi copyIfStructInstance([CanBeNull] Asi asi)
+        private Asi copyIfStructInstance([CanBeNull] Asi asi)
         {
             var s = asi as Struct;
             if (s?.Env == null)
                 return asi;
-            var newEnv = new Env(null);
+            var newEnv = new Env(rootEnv);
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
                 newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value));
@@ -143,10 +140,7 @@ namespace Efekt
         }
 
 
-        public Asi VisitFn(Fn fn)
-        {
-            return new Fn(fn.Params, fn.Items) {Env = fn.Env ?? env.GetFlat()};
-        }
+        public Asi VisitFn(Fn fn) => new Fn(fn.Params, fn.Items) {Env = fn.Env ?? env.GetFlat()};
 
 
         public Asi VisitFnApply(FnApply fna)
@@ -170,7 +164,6 @@ namespace Efekt
                 throw new EfektException("cannot apply " + fnAsi.GetType().Name);
 
             Contract.Assume(fn.Env != null);
-            Contract.Assume(fn.ImportedEnv == null);
             current = fn;
 
             var prevEnv = env;
@@ -178,6 +171,7 @@ namespace Efekt
             var localEnv = new Env(env); // new local env for this fn call
             localEnv.CopyFrom(env); // make params local variables of fn
             localEnv.Parent = fn.Env; // reference captured env
+            localEnv.ImportedEnvs = fn.Env.ImportedEnvs;
             var res = visitAsiArray(fn.Items, localEnv, prevEnv);
             return res;
         }
@@ -229,18 +223,29 @@ namespace Efekt
 
             Contract.Assume(s.Env == null);
             var prevEnv = env;
-            env = new Env(null);
+            env = new Env(rootEnv);
+            var instance = new Struct(Array.Empty<Asi>()) {Env = env};
+            current = instance;
             foreach (var item in s.Items)
             {
                 var declrItem = item as Declr;
                 var opa = item as BinOpApply;
                 if (opa == null)
                 {
-                    if (declrItem == null)
-                        throw new EfektException("struct can contains only variables");
-                    if (!declrItem.IsVar)
-                        throw new EfektException("declaration must be prefixed with 'var' in struct");
-                    declrItem.Accept(this);
+                    var imp = item as Import;
+                    if (imp == null)
+                    {
+                        if (declrItem == null)
+                            throw new EfektException("struct can contains only variables");
+                        if (!declrItem.IsVar)
+                            throw new EfektException(
+                                "declaration must be prefixed with 'var' in struct");
+                        declrItem.Accept(this);
+                    }
+                    else
+                    {
+                        imp.Accept(this);
+                    }
                 }
                 else if (opa.Op.Name == "=")
                 {
@@ -256,17 +261,12 @@ namespace Efekt
                 }
             }
 
-            Struct instance;
             if (fna != null)
             {
                 var c = (Fn) env.GetValue("constructor");
+                c.Env = env;
                 var fna2 = new FnApply(c, fna.Args);
                 VisitFnApply(fna2);
-                instance = new Struct(Array.Empty<Asi>()) {Env = c.Env};
-            }
-            else
-            {
-                instance = new Struct(Array.Empty<Asi>()) {Env = env};
             }
             if (opa2 != null)
             {
@@ -274,6 +274,8 @@ namespace Efekt
                 return new BinOpApply(opa2.Op, instance, opa2.Op2).Accept(this);
             }
             env = prevEnv;
+            Contract.Assume(instance.Env != null);
+            Contract.Assume(instance.Env.Parent == rootEnv);
             return instance;
         }
 
@@ -314,18 +316,19 @@ namespace Efekt
         {
             var asi = imp.QualifiedIdent.Accept(this);
             var s = asi as Struct;
-            if (s == null)
-                throw new EfektException("only constructed struct or fn can be imported, not " +
-                                         asi.GetType().Name);
+            if (s == null || s.Env == null)
+                throw new EfektException(
+                    "only constructed struct or fn can be imported, not " + asi.GetType().Name);
 
-            var hasIe = current as IHasImportedEnv;
-            if (hasIe == null)
-                throw new EfektException("import can be present only in struct or fn, not " +
-                                         asi.GetType().Name);
-
-            if (hasIe.ImportedEnv == null)
-                hasIe.ImportedEnv = new Env(null);
-            hasIe.ImportedEnv = s.Env;
+            var sTo = current as Struct;
+            var fTo = current as Fn;
+            if (sTo == null && fTo == null)
+                throw new EfektException(
+                    "import can be present only in struct or fn, not " + asi.GetType().Name);
+            if (sTo != null)
+                sTo.Env.AddImport(s.Env);
+            else if (fTo != null)
+                fTo.Env.AddImport(s.Env);
             return new Void();
         }
     }

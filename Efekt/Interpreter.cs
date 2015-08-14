@@ -295,8 +295,15 @@ namespace Efekt
         {
             env = newEnv;
             IAsi res = null;
-            foreach (var item in items)
-                res = item.Accept(this);
+            var n = 0;
+            var itemList = items.ToList();
+            foreach (var item in itemList)
+            {
+                if (++n != itemList.Count && item is Val)
+                    Program.ValidationList.AddExpHasNoEffect(item);
+                else
+                    res = item.Accept(this);
+            }
             env = restoreEnv;
             return copyIfStructInstance(res) ?? new Void();
         }

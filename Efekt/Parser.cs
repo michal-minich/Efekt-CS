@@ -237,12 +237,11 @@ namespace Efekt
                 return null;
             var iff = a(new If());
             var t = parseCombinedAsi();
-
-            Validation v = null;
+            
             var tIExp = t as IExp;
             if (t == null)
             {
-                v = validations.AddNothingAfterIf();
+                validations.AddNothingAfterIf(iff);
                 iff.Test = a(new Err());
             }
             else if (tIExp == null)
@@ -272,8 +271,6 @@ namespace Efekt
                     throw new EfektException("expected expression after else");
             }
 
-            if (v != null)
-                v.AffectedItem = iff;
             return iff;
         }
 

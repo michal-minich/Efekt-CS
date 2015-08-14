@@ -244,7 +244,7 @@ namespace Efekt
             eval(plus + " var c = 1 + 2 [1, 2, c]", "[1, 2, 3]");
             eval(plus + " var c = 1 + 2 [c + 1, c + 1, c + 1]", "[4, 4, 4]");
             eval(plus + " var c = 1 + 2 [c = c + 1, c = c + 1, c = c + 1]", "[4, 5, 6]");
-            eval(plus + " var c = 3 var a = [c = c + 1, c = c + 1] c = 5 a a", "[4, 5]");
+            eval(plus + " var c = 3 var a = [c = c + 1, c = c + 1] c = 5 var b = a a", "[4, 5]");
 
             eval("__rest([1, 2, 3])", "[2, 3]");
             eval("__at([1, 2, 3], 0)", "1");

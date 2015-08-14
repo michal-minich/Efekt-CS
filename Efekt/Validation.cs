@@ -137,7 +137,7 @@ namespace Efekt
         }
 
 
-        private Validation add(Int32 number, IAsi affectedItem = null)
+        private Validation add(Int32 number, IAsi affectedItem)
         {
             var v = new Validation(types[number], affectedItem);
             validations.Add(v);
@@ -149,15 +149,11 @@ namespace Efekt
         private static void handle(Validation v)
         {
             if (v.AffectedItem != null)
-                Console.Write(v.AffectedItem.Line + ":" + v.AffectedItem.Column + " ");
+                Console.Write(v.AffectedItem.Line/* + ":" + v.AffectedItem.Column*/ + " ");
             Console.WriteLine(v.Text);
             if (v.Type.Severity == ValidationSeverity.Error)
                 throw new ValidationException(v);
         }
-
-
-        public Validation AddNothingAfterIf() => add(101);
-        public Validation AddIfTestIsNotExp(IAsi affectedItem) => add(102, affectedItem);
 
 
         public void UseSeverities(Dictionary<Int32, ValidationSeverity> severities)
@@ -165,5 +161,10 @@ namespace Efekt
             foreach (var svr in severities)
                 types[svr.Key].Severity = svr.Value;
         }
+
+
+        public void AddNothingAfterIf(IAsi affectedItem) => add(101, affectedItem);
+        public void AddIfTestIsNotExp(IAsi affectedItem) => add(102, affectedItem);
+        public void AddExpHasNoEffect(IAsi affectedItem) => add(201, affectedItem);
     }
 }

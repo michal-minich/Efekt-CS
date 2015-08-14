@@ -66,7 +66,7 @@ namespace Efekt
 
             code = codeText;
             index = 0;
-            var items = new List<Asi>();
+            var items = new List<IAsi>();
             while (true)
             {
                 var asi = parseCombinedAsi();
@@ -81,7 +81,7 @@ namespace Efekt
 
 
         [CanBeNull]
-        private Asi parseCombinedAsi(Boolean isRight = false)
+        private IAsi parseCombinedAsi(Boolean isRight = false)
         {
             var asi = parseAsi();
             if (asi == null)
@@ -119,14 +119,15 @@ namespace Efekt
                         {
                             var op2 = parseCombinedAsi(true);
                             Contract.Assume(op2 != null);
-                            asi = new BinOpApply(new Ident(op, IdentType.Op), asi, op2);
+                            asi = new BinOpApply(
+                                new Ident(op, IdentCategory.Op), (IExp) asi, (IExp) op2);
                         }
                     }
                     else if (curOpPrecedence <= prevOpPrecedence)
                     {
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
-                        asi = new BinOpApply(new Ident(op, IdentType.Op), asi, op2);
+                        asi = new BinOpApply(new Ident(op, IdentCategory.Op), (IExp) asi, (IExp) op2);
                         prevOpPrecedence = curOpPrecedence;
                     }
                     else
@@ -134,7 +135,8 @@ namespace Efekt
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
                         var op1 = (BinOpApply) asi;
-                        op1.Op2 = new BinOpApply(new Ident(op, IdentType.Op), op1.Op2, op2);
+                        op1.Op2 = new BinOpApply(
+                            new Ident(op, IdentCategory.Op), op1.Op2, (IExp) op2);
                     }
 
                     found = true;
@@ -147,8 +149,8 @@ namespace Efekt
             return asi;
         }
 
-      
-        private Asi parseAsi(Boolean skipFnApply = false)
+
+        private IAsi parseAsi(Boolean skipFnApply = false)
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
@@ -168,7 +170,7 @@ namespace Efekt
         private Arr parseArr()
         {
             var items = parseBracedList('[', ']');
-            return items == null ? null : new Arr(items);
+            return items == null ? null : new Arr(items.Cast<IExp>());
         }
 
 
@@ -183,7 +185,7 @@ namespace Efekt
             if (p == null)
                 throw new EfektException("expected '(...)' after 'fn'");
 
-            p = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
+            var p2 = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
 
             skipWhite();
             var b = parseBracedList('{', '}');
@@ -191,7 +193,7 @@ namespace Efekt
             if (b == null)
                 throw new EfektException("expected '{...}' after 'fn (...)'");
 
-            return new Fn(p, b);
+            return new Fn(p2.ToList(), b);
         }
 
 
@@ -229,7 +231,11 @@ namespace Efekt
             if (t == null)
                 throw new EfektException("expected expression after then");
 
-            Asi then;
+            var tIExp = t as IExp;
+            if (tIExp == null)
+                throw new EfektException("if test must be expression");
+
+            IAsi then;
             if (matchWord("then"))
             {
                 then = parseCombinedAsi();
@@ -240,7 +246,7 @@ namespace Efekt
                 throw new EfektException("expected then after if");
 
 
-            Asi o = null;
+            IAsi o = null;
             if (matchWord("else"))
             {
                 o = parseCombinedAsi();
@@ -248,7 +254,7 @@ namespace Efekt
                     throw new EfektException("expected expression after else");
             }
 
-            return new If(t, then, o);
+            return new If(tIExp, then, o);
         }
 
 
@@ -261,9 +267,12 @@ namespace Efekt
 
         private Char parseChar()
         {
-            var str = parseString('\'');
-            if (str == null)
+            var strParsed = parseString('\'');
+            if (strParsed == null)
                 return null;
+            var str = strParsed as Arr;
+            if (str == null)
+                str = (Arr)((Err)strParsed).Item;
             if (!str.Items.Any())
                 throw new EfektException("char must have exactly one character, it has 0");
             if (str.Items.Count() != 1)
@@ -273,7 +282,7 @@ namespace Efekt
         }
 
 
-        private Arr parseString(System.Char quote)
+        private IExp parseString(System.Char quote)
         {
             if (!matchChar(quote))
                 return null;
@@ -314,7 +323,7 @@ namespace Efekt
             for (var i = startAt; i < to; ++i)
                 chars.Add(new Char(code[i]));
             var arr = new Arr(chars);
-            return isUnterminated ? /*new Err(arr)*/arr : arr;
+            return isUnterminated ? new Err(arr) : (IExp)arr;
         }
 
 
@@ -323,7 +332,7 @@ namespace Efekt
             if (!matchWord("import"))
                 return null;
             var asi = parseAsi();
-            return new Import(asi);
+            return new Import((IExp)asi);
         }
 
 
@@ -343,15 +352,15 @@ namespace Efekt
                 var name = m1 + matched;
                 return new Ident(
                     name,
-                    System.Char.IsUpper(name[0]) ? IdentType.Type : IdentType.Value);
+                    System.Char.IsUpper(name[0]) ? IdentCategory.Type : IdentCategory.Value);
             }
 
             var isOpMatched = matchUntil(isOp);
-            return isOpMatched ? new Ident(matched, IdentType.Op) : null;
+            return isOpMatched ? new Ident(matched, IdentCategory.Op) : null;
         }
 
 
-        private Asi parseBraced()
+        private IAsi parseBraced()
         {
             if (!matchChar('('))
                 return null;
@@ -376,7 +385,7 @@ namespace Efekt
         }
 
 
-        private static Asi expToDeclrOrAssign([CanBeNull] Asi asi, Boolean isVar)
+        private static Exp expToDeclrOrAssign([CanBeNull] IAsi asi, Boolean isVar)
         {
             if (asi == null)
                 throw new EfektException("expected ident, declaration or assignment");
@@ -411,7 +420,7 @@ namespace Efekt
         }
 
 
-        internal static Ident GetIdentFromDeclrLikeAsi(Asi a)
+        internal static Ident GetIdentFromDeclrLikeAsi(IAsi a)
         {
             var i = a as Ident;
             if (i != null)
@@ -447,11 +456,11 @@ namespace Efekt
             var asi = parseCombinedAsi();
             if (asi == null)
                 throw new EfektException("expression required after new");
-            return new New(asi);
+            return new New((IExp)asi);
         }
 
 
-        private Asi parseFnApply(Asi asi)
+        private IAsi parseFnApply(IAsi asi)
         {
             skipWhite();
             if (wasNewLine)
@@ -460,19 +469,19 @@ namespace Efekt
             {
                 --index;
                 var args = parseBracedList('(', ')');
-                asi = new FnApply(asi, args);
+                asi = new FnApply(asi, args.Cast<IExp>());
                 skipWhite();
             }
             return asi;
         }
 
 
-        private List<Asi> parseBracedList(System.Char startBrace, System.Char endBrace)
+        private List<IAsi> parseBracedList(System.Char startBrace, System.Char endBrace)
         {
             if (!matchChar(startBrace))
                 return null;
 
-            var items = new List<Asi>();
+            var items = new List<IAsi>();
             skipWhite();
             while (!matchChar(endBrace))
             {

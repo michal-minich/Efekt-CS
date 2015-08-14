@@ -13,12 +13,14 @@ namespace Efekt
 
         public String VisitAsiList(AsiList al) => joinStatements(al.Items);
 
+        public String VisitErr(Err err) => "error (" + err.Accept(this) + ")";
+
 
         public String VisitInt(Int ii) => ii.Value;
 
 
         public String VisitIdent(Ident i)
-            => (i.Type == IdentType.Op ? "op" : "") + i.Name;
+            => (i.Category == IdentCategory.Op ? "op" : "") + i.Name;
 
 
         public String VisitBinOpApply(BinOpApply opa)
@@ -64,19 +66,19 @@ namespace Efekt
         public String VisitVoid(Void v) => "void";
 
 
-        private String joinStatementsOneLine(IEnumerable<Asi> items)
+        private String joinStatementsOneLine(IEnumerable<IAsi> items)
         {
             return String.Join(" ", items.Select(i => i.Accept(this)));
         }
 
 
-        private String joinStatements(IEnumerable<Asi> items)
+        private String joinStatements(IEnumerable<IAsi> items)
         {
             return String.Join("\n", items.Select(i => i.Accept(this)));
         }
 
 
-        private String joinList(IEnumerable<Asi> items)
+        private String joinList(IEnumerable<IAsi> items)
         {
             return String.Join(", ", items.Select(i => i.Accept(this)));
         }

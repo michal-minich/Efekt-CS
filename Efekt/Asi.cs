@@ -9,6 +9,7 @@ namespace Efekt
     public interface IAsiVisitor<out T>
     {
         T VisitAsiList(AsiList al);
+        T VisitErr(Err err);
         T VisitInt(Int ii);
         T VisitIdent(Ident i);
         T VisitBinOpApply(BinOpApply opa);
@@ -32,6 +33,39 @@ namespace Efekt
     }
 
 
+    [SuppressMessage("Microsoft.Design", "CA1040:AvoidEmptyInterfaces")]
+    public interface IExp : IAsi
+    {
+    }
+
+
+    [SuppressMessage("Microsoft.Design", "CA1040:AvoidEmptyInterfaces")]
+    public interface IStm : IAsi
+    {
+    }
+
+
+    public interface IType : IExp
+    {
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
+        MessageId = "Val")]
+    public interface IVal : IExp
+    {
+    }
+
+    public interface IAtom : IVal
+    {
+    }
+
+
+    public interface IErr : IStm, IType, IAtom
+    {
+    }
+
+
     public abstract class Asi : IAsi
     {
         public abstract T Accept<T>(IAsiVisitor<T> v);
@@ -41,12 +75,39 @@ namespace Efekt
     }
 
 
+    public abstract class Exp : Asi, IExp
+    {
+    }
+
+
+    public abstract class Stm : Asi, IStm
+    {
+    }
+
+
+    public abstract class Type : Exp, IType
+    {
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
+        MessageId = "Val")]
+    public abstract class Val : Exp, IVal
+    {
+    }
+
+
+    public abstract class Atom : Val, IAtom
+    {
+    }
+
+
     public sealed class AsiList : Asi
     {
-        public IEnumerable<Asi> Items { get; }
+        public IEnumerable<IAsi> Items { get; }
 
 
-        public AsiList(IEnumerable<Asi> items)
+        public AsiList(IEnumerable<IAsi> items)
         {
             Items = items;
         }
@@ -56,7 +117,23 @@ namespace Efekt
     }
 
 
-    public sealed class Int : Asi
+    public sealed class Err : Asi, IErr
+    {
+        [CanBeNull]
+        public IAsi Item { get; }
+
+
+        public Err([CanBeNull] IAsi item)
+        {
+            Item = item;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitErr(this);
+    }
+
+
+    public sealed class Int : Atom
     {
         public String Value { get; }
 
@@ -71,17 +148,16 @@ namespace Efekt
     }
 
 
-    public sealed class Ident : Asi
+    public sealed class Ident : Val
     {
         public String Name { get; }
 
-        [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
-        public IdentType Type { get; }
+        public IdentCategory Category { get; }
 
 
-        public Ident(String name, IdentType type)
+        public Ident(String name, IdentCategory category)
         {
-            Type = type;
+            Category = category;
             Name = name;
         }
 
@@ -90,7 +166,7 @@ namespace Efekt
     }
 
 
-    public enum IdentType
+    public enum IdentCategory
     {
         Value,
         Type,
@@ -98,14 +174,14 @@ namespace Efekt
     }
 
 
-    public sealed class BinOpApply : Asi
+    public sealed class BinOpApply : Exp
     {
         public Ident Op { get; }
-        public Asi Op1 { get; set; }
-        public Asi Op2 { get; set; }
+        public IExp Op1 { get; set; }
+        public IExp Op2 { get; set; }
 
 
-        public BinOpApply(Ident op, Asi op1, Asi op2)
+        public BinOpApply(Ident op, IExp op1, IExp op2)
         {
             Op = op;
             Op1 = op1;
@@ -117,18 +193,18 @@ namespace Efekt
     }
 
 
-    public sealed class Declr : Asi
+    public sealed class Declr : Exp
     {
         public Ident Ident { get; }
 
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         [CanBeNull]
-        public Asi Type { get; }
+        public IAsi Type { get; }
 
         public Boolean IsVar { get; set; }
 
 
-        public Declr(Ident ident, [CanBeNull] Asi type)
+        public Declr(Ident ident, [CanBeNull] IAsi type)
         {
             Ident = ident;
             Type = type;
@@ -139,14 +215,14 @@ namespace Efekt
     }
 
 
-    public sealed class Arr : Asi
+    public sealed class Arr : Val
     {
-        public IEnumerable<Asi> Items { get; }
+        public IEnumerable<IExp> Items { get; }
 
         public Boolean IsEvaluated { get; set; }
 
 
-        public Arr(IEnumerable<Asi> items)
+        public Arr(IEnumerable<IExp> items)
         {
             Items = items;
         }
@@ -156,14 +232,14 @@ namespace Efekt
     }
 
 
-    public sealed class Struct : Asi
+    public sealed class Struct : Type
     {
-        public IEnumerable<Asi> Items { get; }
+        public IEnumerable<IAsi> Items { get; }
 
         public Env Env { get; set; }
 
 
-        public Struct(IEnumerable<Asi> items)
+        public Struct(IEnumerable<IAsi> items)
         {
             Items = items;
         }
@@ -172,14 +248,14 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitStruct(this);
     }
 
-    public sealed class Fn : Asi
+    public sealed class Fn : Val
     {
-        public IEnumerable<Asi> Params { get; }
-        public IEnumerable<Asi> Items { get; }
+        public IEnumerable<IExp> Params { get; }
+        public IEnumerable<IAsi> Items { get; }
         public Env Env { get; set; }
 
 
-        public Fn(IEnumerable<Asi> @params, IEnumerable<Asi> items)
+        public Fn(IEnumerable<IExp> @params, IEnumerable<IAsi> items)
         {
             Params = @params;
             Items = items;
@@ -190,13 +266,13 @@ namespace Efekt
     }
 
 
-    public sealed class FnApply : Asi
+    public sealed class FnApply : Exp
     {
-        public Asi Fn { get; }
-        public IEnumerable<Asi> Args { get; }
+        public IAsi Fn { get; }
+        public IEnumerable<IExp> Args { get; }
 
 
-        public FnApply(Asi fn, IEnumerable<Asi> args)
+        public FnApply(IAsi fn, IEnumerable<IExp> args)
         {
             Fn = fn;
             Args = args;
@@ -210,12 +286,12 @@ namespace Efekt
     [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix")]
     [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
         MessageId = "New")]
-    public sealed class New : Asi
+    public sealed class New : Exp
     {
-        public Asi Exp { get; }
+        public IExp Exp { get; }
 
 
-        public New(Asi exp)
+        public New(IExp exp)
         {
             Exp = exp;
         }
@@ -225,13 +301,13 @@ namespace Efekt
     }
 
 
-    public sealed class Void : Asi
+    public sealed class Void : Atom
     {
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitVoid(this);
     }
 
 
-    public sealed class Bool : Asi
+    public sealed class Bool : Atom
     {
         public Boolean Value { get; }
 
@@ -248,7 +324,7 @@ namespace Efekt
 
     [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
         MessageId = "Char")]
-    public sealed class Char : Asi
+    public sealed class Char : Atom
     {
         public System.Char Value { get; }
 
@@ -265,17 +341,17 @@ namespace Efekt
 
     [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
         MessageId = "If")]
-    public sealed class If : Asi
+    public sealed class If : Exp
     {
-        public Asi Test { get; }
+        public IExp Test { get; }
 
-        public Asi Then { get; }
+        public IAsi Then { get; }
 
         [CanBeNull]
-        public Asi Otherwise { get; }
+        public IAsi Otherwise { get; }
 
 
-        public If(Asi test, Asi then, [CanBeNull] Asi otherwise)
+        public If(IExp test, IAsi then, [CanBeNull] IAsi otherwise)
         {
             Test = test;
             Then = then;
@@ -287,12 +363,12 @@ namespace Efekt
     }
 
 
-    public sealed class Import : Asi
+    public sealed class Import : Stm
     {
-        public Asi QualifiedIdent { get; }
+        public IExp QualifiedIdent { get; }
 
 
-        public Import(Asi qualifiedIdent)
+        public Import(IExp qualifiedIdent)
         {
             QualifiedIdent = qualifiedIdent;
         }

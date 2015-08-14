@@ -13,10 +13,12 @@
             <Word>New</Word>
             <Word>Fn</Word>
             <Word>Env</Word>
+            <Word>Envs</Word>
             <Word>Builtins</Word>
             <Word>Builtin</Word>
             <Word>Exp</Word>
             <Word>Dict</Word>
+            <Word>Stm</Word>
             <Word>v</Word>
             <Word>n</Word>
             <Word>fna</Word>

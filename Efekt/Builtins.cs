@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 
@@ -6,8 +7,13 @@ namespace Efekt
 {
     public static class Builtins
     {
-        public static Asi Call(String fnName, params Asi[] args)
+        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
+        public static IExp Call(String fnName, params IExp[] args)
         {
+            var err = args.FirstOrDefault(a => a is IErr);
+            if (err != null)
+                return err;
+
             switch (fnName)
             {
                 case "plus":
@@ -39,7 +45,7 @@ namespace Efekt
         }
 
 
-        private static Void printEnvText(Asi asi)
+        private static Void printEnvText(IExp asi)
         {
             var fn = asi as Fn;
             if (fn != null)
@@ -53,11 +59,11 @@ namespace Efekt
         }
 
 
-        private static Int32 asInt(this IAsi asi) => ((Int) asi).Value.ToInt();
+        private static Int32 asInt(this IExp asi) => ((Int) asi).Value.ToInt();
 
-        private static Boolean asBool(this IAsi asi) => ((Bool) asi).Value;
+        private static Boolean asBool(this IExp asi) => ((Bool) asi).Value;
 
-        private static Arr asArr(this IAsi asi) => (Arr) asi;
+        private static Arr asArr(this IExp asi) => (Arr) asi;
 
         private static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter);
     }

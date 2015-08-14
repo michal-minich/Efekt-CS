@@ -13,10 +13,10 @@ namespace Efekt
         [CanBeNull]
         public Env Parent { get; set; }
 
-        public Dictionary<String, Asi> Dict { get; } = new Dictionary<String, Asi>();
+        public Dictionary<String, IAsi> Dict { get; } = new Dictionary<String, IAsi>();
 
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
-        private static int counter = 0;
+        private static Int32 counter;
 
 
         public Env()
@@ -33,7 +33,7 @@ namespace Efekt
         }
 
 
-        private Env(Dictionary<String, Asi> dictionary)
+        private Env(Dictionary<String, IAsi> dictionary)
         {
             ++counter;
             Dict = dictionary;
@@ -80,7 +80,7 @@ namespace Efekt
         }
 
 
-        public void SetValue(String name, Asi value)
+        public void SetValue(String name, IAsi value)
         {
             getEnvDeclaring(name, this).Dict[name] = value;
         }
@@ -92,9 +92,9 @@ namespace Efekt
         public void ClearImports() => ImportedEnvs.Clear();
 
 
-        public Asi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
+        public IAsi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
 
-        public Asi GetValueOrNull(String name) => getEnvDeclaringOrNull(name, this)?.Dict[name];
+        public IAsi GetValueOrNull(String name) => getEnvDeclaringOrNull(name, this)?.Dict[name];
 
 
         public Boolean IsDeclared(String name) => getEnvDeclaringOrNull(name, this) != null;

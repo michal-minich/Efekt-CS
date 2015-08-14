@@ -7,14 +7,14 @@ using JetBrains.Annotations;
 
 namespace Efekt
 {
-    public sealed class Interpreter : IAsiVisitor<Asi>
+    public sealed class Interpreter : IAsiVisitor<IAsi>
     {
         private Env env;
         private Asi current;
         private Env rootEnv;
 
 
-        public Asi VisitAsiList(AsiList al)
+        public IAsi VisitAsiList(AsiList al)
         {
             Env e;
             if (rootEnv == null)
@@ -30,13 +30,16 @@ namespace Efekt
         }
 
 
-        public Asi VisitInt(Int ii) => ii;
+        public IAsi VisitErr(Err err) => err.Item == null ? err : err.Item.Accept(this);
 
 
-        public Asi VisitIdent(Ident i) => env.GetValue(i.Name);
+        public IAsi VisitInt(Int ii) => ii;
 
 
-        public Asi VisitBinOpApply(BinOpApply opa)
+        public IAsi VisitIdent(Ident i) => env.GetValue(i.Name);
+
+
+        public IAsi VisitBinOpApply(BinOpApply opa)
         {
             Contract.Assume(opa != null);
             switch (opa.Op.Name)
@@ -65,7 +68,7 @@ namespace Efekt
         }
 
 
-        private Asi copyIfStructInstance([CanBeNull] Asi asi)
+        private IAsi copyIfStructInstance([CanBeNull] IAsi asi)
         {
             var s = asi as Struct;
             if (s?.Env == null)
@@ -78,7 +81,7 @@ namespace Efekt
         }
 
 
-        private Asi getStructMember(IAsi bag, IAsi member)
+        private IAsi getStructMember(IAsi bag, IAsi member)
             => getStructEnvOfMember(bag, member).GetValue(((Ident) member).Name);
 
 
@@ -109,7 +112,7 @@ namespace Efekt
         }
 
 
-        private Ident getIdentAndDeclareIfDeclr(Asi declrOrIdent)
+        private Ident getIdentAndDeclareIfDeclr(IAsi declrOrIdent)
         {
             var d = declrOrIdent as Declr;
             if (d == null)
@@ -119,38 +122,41 @@ namespace Efekt
         }
 
 
-        public Asi VisitDeclr(Declr d)
+        public IAsi VisitDeclr(Declr d)
         {
             env.Declare(d.Ident.Name);
             return null;
         }
 
 
-        public Asi VisitArr(Arr arr)
+        public IAsi VisitArr(Arr arr)
         {
             Contract.Assume(arr.IsEvaluated == false);
-            return new Arr(arr.Items.Select(i => i.Accept(this)).ToList()) {IsEvaluated = true};
+            return new Arr(arr.Items
+                .Select(i => i.Accept(this))
+                .Cast<IExp>()
+                .ToList()) {IsEvaluated = true};
         }
 
 
-        public Asi VisitStruct(Struct s)
+        public IAsi VisitStruct(Struct s)
         {
             current = s;
             return s;
         }
 
 
-        public Asi VisitFn(Fn fn) => new Fn(fn.Params, fn.Items) {Env = fn.Env ?? env.GetFlat()};
+        public IAsi VisitFn(Fn fn) => new Fn(fn.Params, fn.Items) {Env = fn.Env ?? env.GetFlat()};
 
 
-        public Asi VisitFnApply(FnApply fna)
+        public IAsi VisitFnApply(FnApply fna)
         {
             var fnIdent = fna.Fn as Ident;
             if (fnIdent != null && fnIdent.Name.StartsWith("__"))
             {
                 var prevEnv1 = env;
                 env = new Env(env); // for params
-                var evaluatedArgs = fna.Args.Select(arg => arg.Accept(this)).ToArray();
+                var evaluatedArgs = fna.Args.Select(arg => arg.Accept(this)).Cast<IExp>().ToArray();
                 var r = Builtins.Call(fnIdent.Name.Substring(2), evaluatedArgs);
                 env = prevEnv1;
                 return r;
@@ -177,7 +183,7 @@ namespace Efekt
         }
 
 
-        private void evalParamsAndArgs(ICollection<Asi> @params, ICollection<Asi> args)
+        private void evalParamsAndArgs(ICollection<IExp> @params, ICollection<IExp> args)
         {
             env = new Env(env); // for params
             var n = 0;
@@ -208,7 +214,7 @@ namespace Efekt
         }
 
 
-        public Asi VisitNew(New n)
+        public IAsi VisitNew(New n)
         {
             var opa2 = n.Exp as BinOpApply; // new has higher priority than any op
             var eExp = opa2 != null ? opa2.Op1.Accept(this) : n.Exp.Accept(this);
@@ -280,15 +286,15 @@ namespace Efekt
         }
 
 
-        public Asi VisitVoid(Void v) => v;
+        public IAsi VisitVoid(Void v) => v;
 
-        public Asi VisitBool(Bool b) => b;
+        public IAsi VisitBool(Bool b) => b;
 
 
-        private Asi visitAsiArray(IEnumerable<Asi> items, Env newEnv, Env restoreEnv)
+        private IAsi visitAsiArray(IEnumerable<IAsi> items, Env newEnv, Env restoreEnv)
         {
             env = newEnv;
-            Asi res = null;
+            IAsi res = null;
             foreach (var item in items)
                 res = item.Accept(this);
             env = restoreEnv;
@@ -296,10 +302,10 @@ namespace Efekt
         }
 
 
-        public Asi VisitChar(Char c) => c;
+        public IAsi VisitChar(Char c) => c;
 
 
-        public Asi VisitIf(If iff)
+        public IAsi VisitIf(If iff)
         {
             var t = iff.Test.Accept(this);
             var b = t as Bool;
@@ -312,7 +318,7 @@ namespace Efekt
         }
 
 
-        public Asi VisitImport(Import imp)
+        public IAsi VisitImport(Import imp)
         {
             var asi = imp.QualifiedIdent.Accept(this);
             var s = asi as Struct;

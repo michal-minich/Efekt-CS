@@ -1,6 +1,15 @@
-var f = fn (a, b, c, d = 1, e = 2, f = 3) { c }
-f(var x = 4, 5, 6)
-var z = 10
-var f2 = fn (a = z) { a }
-z = 11
-f2()
+var S = struct {
+    var a = 0
+    var constructor = fn (x) { a = x }
+    --var op+ = fn (a, b) { __plus(a, b) }
+    var f1 = fn (b) { a = a + b }
+    var f2 = fn (c) { a = a + c }
+}
+var s = new S(1)
+print(s.a)
+s.f1(20)
+print(s.a)
+s.f2(100)
+print(s.a)
+s.a = 3
+print(s.a)

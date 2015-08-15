@@ -17,7 +17,7 @@ namespace Efekt
         Int32 columnNumber;
 
         static readonly List<String> rightAssociativeOps = new List<String>
-        {":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|="};
+        { ":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|=" };
 
         static readonly Dictionary<String, Int32> opPrecedence
             = new Dictionary<String, Int32>
@@ -87,7 +87,7 @@ namespace Efekt
 
 
         [CanBeNull]
-        IAsi parseCombinedAsi(Boolean isRight = false)
+        IAsi parseCombinedAsi(String context = null)
         {
             var asi = parseAsi();
             if (asi == null)
@@ -106,45 +106,57 @@ namespace Efekt
                 if (matchUntil(isOp) || matchSpecialOp())
                 {
                     var op = matched;
+
+                    if (context == "new" && op == ".")
+                    {
+                        columnNumber -= ix - index;
+                        index = ix;
+                        return asi;
+                    }
+
                     var curOpPrecedence = opPrecedence[op];
                     if (rightAssociativeOps.Contains(op))
                     {
-                        if (isRight)
+                        if (context == "right")
                         {
                             columnNumber -= ix - index;
                             index = ix;
                             return asi;
                         }
 
+                        var nextAsi = parseCombinedAsi("right");
+                        Contract.Assume(nextAsi != null);
                         if (op == ":")
                         {
-                            var type = parseCombinedAsi(true);
-                            Contract.Assume(type != null);
-                            asi = a(new Declr((Ident) asi, type));
+                            asi = a(new Declr((Ident)asi, nextAsi));
                         }
                         else
                         {
-                            var op2 = parseCombinedAsi(true);
-                            Contract.Assume(op2 != null);
-                            asi = a(new BinOpApply(
-                                a(new Ident(op, IdentCategory.Op)), (IExp) asi, (IExp) op2));
+                            var opa = a(new BinOpApply(
+                                a(new Ident(op, IdentCategory.Op)), (IExp)asi, (IExp)nextAsi));
+                            asi = opa;
+                            checkIdentAfterDot(opa);
                         }
                     }
                     else if (curOpPrecedence <= prevOpPrecedence)
                     {
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
-                        asi = a(new BinOpApply(
-                            a(new Ident(op, IdentCategory.Op)), (IExp) asi, (IExp) op2));
+                        var opa = a(new BinOpApply(
+                            a(new Ident(op, IdentCategory.Op)), (IExp)asi, (IExp)op2));
+                        asi = opa;
+                        checkIdentAfterDot(opa);
                         prevOpPrecedence = curOpPrecedence;
                     }
                     else
                     {
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
-                        var op1 = (BinOpApply) asi;
-                        op1.Op2 = a(new BinOpApply(
-                            a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp) op2));
+                        var op1 = (BinOpApply)asi;
+                        var opa = a(new BinOpApply(
+                            a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op2));
+                        op1.Op2 = opa;
+                        checkIdentAfterDot(opa);
                     }
 
                     found = true;
@@ -155,6 +167,18 @@ namespace Efekt
                 asi = parseFnApply(asi);
 
             return asi;
+        }
+
+
+        void checkIdentAfterDot(BinOpApply opa)
+        {
+            if (opa.Op.Name != ".")
+                return;
+            var i = opa.Op2 as Ident;
+            if (i != null)
+                return;
+            validations.ExpectedIdent(opa);
+            opa.Op2 = new Ident("__error", IdentCategory.Value);
         }
 
 
@@ -319,13 +343,13 @@ namespace Efekt
                 return null;
             var str = strParsed as Arr;
             if (str == null)
-                str = (Arr) ((Err) strParsed).Item;
+                str = (Arr)((Err)strParsed).Item;
             if (!str.Items.Any())
                 throw new EfektException("char must have exactly one character, it has 0");
             if (str.Items.Count() != 1)
                 Console.WriteLine("char must have exactly one character, it has " +
                                   str.Items.Count());
-            return (Char) str.Items.First();
+            return (Char)str.Items.First();
         }
 
 
@@ -371,7 +395,7 @@ namespace Efekt
             for (var i = startAt; i < to; ++i)
                 chars.Add(a(new Char(code[i])));
             var arr = a(new Arr(chars));
-            return isUnterminated ? a(new Err(arr)) : (IExp) arr;
+            return isUnterminated ? a(new Err(arr)) : (IExp)arr;
         }
 
 
@@ -380,7 +404,7 @@ namespace Efekt
             if (!matchWord("import"))
                 return null;
             var imp = a(new Import());
-            imp.QualifiedIdent = (IExp) parseAsi();
+            imp.QualifiedIdent = (IExp)parseAsi();
             return imp;
         }
 
@@ -441,7 +465,7 @@ namespace Efekt
 
             var i = asi as Ident;
             if (i != null)
-                return a(new Declr(i, null) {IsVar = isVar});
+                return a(new Declr(i, null) { IsVar = isVar });
 
             var o = asi as BinOpApply;
             if (o != null)
@@ -451,7 +475,7 @@ namespace Efekt
                 var i2 = o.Op1 as Ident;
                 if (i2 != null)
                 {
-                    o.Op1 = a(new Declr(i2, null) {IsVar = isVar});
+                    o.Op1 = a(new Declr(i2, null) { IsVar = isVar });
                     return o;
                 }
                 var d2 = o.Op1 as Declr;
@@ -502,10 +526,10 @@ namespace Efekt
             if (!matchWord("new"))
                 return null;
             skipWhite();
-            var asi = parseCombinedAsi();
+            var asi = parseCombinedAsi("new");
             if (asi == null)
                 throw new EfektException("expression required after new");
-            return a(new New((IExp) asi));
+            return a(new New((IExp)asi));
         }
 
 

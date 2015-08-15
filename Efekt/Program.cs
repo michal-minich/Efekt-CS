@@ -15,41 +15,17 @@ namespace Efekt
         {
             try
             {
-                DefaultPrinter = new Printer();
-
-                var basePath = AppDomain.CurrentDomain.BaseDirectory + @"Resources\";
-
-                ValidationList = ValidationList.InitFrom(
-                    File.ReadAllLines(basePath + "validations.en-US.ef"));
-
-                var severities = ValidationList.LoadSeverities(
-                    File.ReadAllLines(basePath + "severity-light.ef"));
-
-                ValidationList.UseSeverities(severities);
+                init();
 
                 Tests.Test();
 
-                if (args.Length == 1)
-                {
-                    var p = new Parser();
-                    var txt = File.ReadAllText(args[0]);
-                    var al = p.Parse(txt, ValidationList);
-
-                    var prelude = p.Parse(preludeCode, ValidationList);
-                    var code = new AsiList(prelude.Items.Concat(al.Items).ToList());
-
-                    Console.WriteLine("Running...");
-
-                    var i = new Interpreter();
-                    var res = i.Run(code, ValidationList);
-
-                    var str = res.Accept(DefaultPrinter);
-                    Console.WriteLine(str);
-                }
-                else
+                if (args.Length != 1)
                 {
                     Console.WriteLine("Usage: Efekt <file>");
+                    return;
                 }
+
+                run(args[0]);
             }
             catch (ValidationException)
             {
@@ -59,6 +35,41 @@ namespace Efekt
             {
                 Console.WriteLine(ex.GetType().Name + ": " + ex.Message);
             }
+        }
+
+
+        static void init()
+        {
+            DefaultPrinter = new Printer();
+
+            var basePath = AppDomain.CurrentDomain.BaseDirectory + @"Resources\";
+
+            ValidationList = ValidationList.InitFrom(
+                File.ReadAllLines(basePath + "validations.en-US.ef"));
+
+            var severities = ValidationList.LoadSeverities(
+                File.ReadAllLines(basePath + "severity-light.ef"));
+
+            ValidationList.UseSeverities(severities);
+        }
+
+
+        static void run(String filePath)
+        {
+            var p = new Parser();
+            var txt = File.ReadAllText(filePath);
+            var al = p.Parse(txt, ValidationList);
+
+            var prelude = p.Parse(preludeCode, ValidationList);
+            var code = new AsiList(prelude.Items.Concat(al.Items).ToList());
+
+            Console.WriteLine("Running...");
+
+            var i = new Interpreter();
+            var res = i.Run(code, ValidationList);
+
+            var str = res.Accept(DefaultPrinter);
+            Console.WriteLine(str);
         }
 
 

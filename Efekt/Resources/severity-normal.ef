@@ -1,6 +1,7 @@
 NothingAfterIf = Error
 IfTestIsNotExp = Error
 WrongParamsOrder = Error
+ExpectedIdent = Error
 
 ExpHasNoEffect = Warning
 ImplicitVar = Error
@@ -11,3 +12,9 @@ CannotImportTo = Error
 IfTestIsNotBool = Error
 CannotApply = Error
 NotEnoughArgs = Errror
+TooManyArgs = Error
+NoStructAfterNew = Error
+InstanceAfterNew = Error
+NoConstructor = Error
+ConstructorIsNotFn = Error
+ConstructorNotCalled = Error

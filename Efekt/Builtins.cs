@@ -56,11 +56,11 @@ namespace Efekt
         }
 
 
-        static Int32 asInt(this IExp asi) => ((Int) asi).Value.ToInt();
+        static Int32 asInt(this IExp asi) => ((Int)asi).Value.ToInt();
 
-        static Boolean asBool(this IExp asi) => ((Bool) asi).Value;
+        static Boolean asBool(this IExp asi) => ((Bool)asi).Value;
 
-        static Arr asArr(this IExp asi) => (Arr) asi;
+        static Arr asArr(this IExp asi) => (Arr)asi;
 
         static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter);
     }

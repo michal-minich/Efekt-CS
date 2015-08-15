@@ -324,7 +324,7 @@ namespace Efekt
 
 
         static void parseWithBraces(String code, String expected)
-            => parse(code, expected, new Printer {PutBracesAroundBinOpApply = true});
+            => parse(code, expected, new Printer { PutBracesAroundBinOpApply = true });
 
 
         static void parse(String code) => parse(code, code, new Printer());

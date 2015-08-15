@@ -49,7 +49,7 @@ namespace Efekt
         {
             var res = Items
                 .Select(item => item is IAsi
-                    ? ((IAsi) item).Accept(Program.DefaultPrinter)
+                    ? ((IAsi)item).Accept(Program.DefaultPrinter)
                     : item.ToString())
                 .Select(af => af.Length > 20 ? af.Substring(0, 20) + "..." : af).ToArray();
             return String.Format(Type.Template, res);
@@ -123,7 +123,7 @@ namespace Efekt
 
         Validation add(IAsi item, [CallerMemberName] String code = "")
         {
-            var v = new Validation(types[code], new Object[] {item});
+            var v = new Validation(types[code], new Object[] { item });
             validations.Add(v);
             handle(v);
             return v;
@@ -169,15 +169,37 @@ namespace Efekt
 
 
         public void CannotApply(IAsi affectedItem, IAsi evaluatedItem)
-            => add(new[] {affectedItem, evaluatedItem});
+            => add(new[] { affectedItem, evaluatedItem });
 
 
         public void WrongParamsOrder(IAsi mandatoryParam, IAsi optionalParam)
-            => add(new[] {mandatoryParam, optionalParam});
+            => add(new[] { mandatoryParam, optionalParam });
 
 
         public void NotEnoughArgs(IAsi missingParam, IAsi fn, Int32 paramsCount,
             Int32 mandatoryCount, Int32 applyCount)
-            => add(new Object[] {missingParam, fn, paramsCount, mandatoryCount, applyCount});
+            => add(new Object[] { missingParam, fn, paramsCount, mandatoryCount, applyCount });
+
+
+        public void TooManyArgs(IAsi missingParam, IAsi fn, Int32 paramsCount, Int32 applyCount)
+            => add(new Object[] { missingParam, fn, paramsCount, applyCount });
+
+
+        public void ExpectedIdent(BinOpApply affectedItem) => add(affectedItem);
+
+
+        public void NoStructAfterNew(IAsi asi, String asiTpe) => add(new Object[] { asi, asiTpe });
+
+
+        public void InstanceAfterNew(IExp exp) => add(exp);
+
+
+        public void NoConstructor(New n) => add(n);
+
+
+        public void ConstructorIsNotFn(IAsi asi) => add(asi);
+
+
+        public void ConstructorNotCalled(New n) => add(n);
     }
 }

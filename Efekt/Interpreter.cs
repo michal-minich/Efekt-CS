@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using JetBrains.Annotations;
 
 
 namespace Efekt
@@ -17,7 +18,7 @@ namespace Efekt
         {
             validations = validationList;
             global = env = new Env();
-            var res = VisitAsiList(al);
+            var res = visitAsiArray(al.Items, env, env);
             global = null;
             return res;
         }
@@ -47,26 +48,34 @@ namespace Efekt
             switch (opa.Op.Name)
             {
                 case "=":
-                    var v = opa.Op2.Accept(this);
-                    v = copyIfStructInstance(v);
-                    var ma = opa.Op1 as BinOpApply;
-                    if (ma != null && ma.Op.Name == ".")
-                    {
-                        var s = ma.Op1.Accept(this);
-                        var e = getStructEnvOfMember(s, ma.Op2);
-                        e.SetValue(((Ident) ma.Op2).Name, v);
-                    }
-                    else
-                    {
-                        var i = declare(opa.Op1);
-                        env.SetValue(i.Name, v);
-                    }
-                    return v;
+                    return assign(opa);
                 case ".":
-                    return getStructMember(opa.Op1.Accept(this), opa.Op2);
+                    return getStructEnvOfMember(
+                        opa.Op1.Accept(this),
+                        opa.Op2).GetValue(((Ident)opa.Op2).Name);
                 default:
-                    return VisitFnApply(new FnApply(opa.Op, new List<IExp> {opa.Op1, opa.Op2}));
+                    return VisitFnApply(new FnApply(opa.Op, new List<IExp> { opa.Op1, opa.Op2 }));
             }
+        }
+
+
+        IAsi assign(BinOpApply opa)
+        {
+            var v = opa.Op2.Accept(this);
+            v = copyIfStructInstance(v);
+            var ma = opa.Op1 as BinOpApply;
+            if (ma != null && ma.Op.Name == ".")
+            {
+                var s = ma.Op1.Accept(this);
+                var e = getStructEnvOfMember(s, ma.Op2);
+                e.SetValue(((Ident)ma.Op2).Name, v);
+            }
+            else
+            {
+                var i = declare(opa.Op1);
+                env.SetValue(i.Name, v);
+            }
+            return v;
         }
 
 
@@ -78,13 +87,14 @@ namespace Efekt
             var newEnv = new Env(global);
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
+            {
                 newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value));
-            return new Struct(new List<IAsi>()) {Env = newEnv};
+                var fn = kvp.Value as Fn;
+                if (fn?.Env != null)
+                    fn.Env = newEnv;
+            }
+            return new Struct(new List<IAsi>()) { Env = newEnv };
         }
-
-
-        IAsi getStructMember(IAsi bag, IAsi member)
-            => getStructEnvOfMember(bag, member).GetValue(((Ident) member).Name);
 
 
         Env getStructEnvOfMember(IAsi bag, IAsi member)
@@ -143,15 +153,11 @@ namespace Efekt
                 .Select(i => i.Accept(this))
                 .Cast<IExp>()
                 .ToList())
-            {IsEvaluated = true};
+            { IsEvaluated = true };
         }
 
 
-        public IAsi VisitStruct(Struct s)
-        {
-            current = s;
-            return s;
-        }
+        public IAsi VisitStruct(Struct s) => s;
 
 
         public IAsi VisitFn(Fn fn)
@@ -214,6 +220,9 @@ namespace Efekt
             }
             else
             {
+                if (args.Count > fn.Params.Count)
+                    validations.TooManyArgs(
+                        args[fn.Params.Count], notEvaledFn, fn.Params.Count, args.Count);
                 args2 = args;
             }
             var n = 0;
@@ -243,22 +252,60 @@ namespace Efekt
 
         public IAsi VisitNew(New n)
         {
-            var opa2 = n.Exp as BinOpApply; // new has higher priority than any op
-            var eExp = opa2 != null ? opa2.Op1.Accept(this) : n.Exp.Accept(this);
-
-            var fna = eExp as FnApply;
-            var s = fna == null ? eExp as Struct : fna.Fn as Struct;
+            var expAsi = n.Exp.Accept(this);
+            var fna = expAsi as FnApply;
+            var sAsi = fna != null ? fna.Fn : expAsi;
+            var s = sAsi as Struct;
 
             if (s == null)
-                throw new EfektException(
-                    "expression after new should evaluate to struct or fn apply, not "
-                    + eExp.GetType().Name);
+            {
+                validations.NoStructAfterNew(sAsi, sAsi.GetType().Name);
+                return new Err(n);
+            }
+            if (s.Env != null)
+            {
+                validations.InstanceAfterNew(n.Exp);
+                return new Err(n);
+            }
 
-            Contract.Assume(s.Env == null);
             var prevEnv = env;
             env = new Env(global);
-            var instance = new Struct(new List<IAsi>()) {Env = env};
+            var instance = new Struct(new List<IAsi>()) { Env = env };
             current = instance;
+            prepareStructBody(s);
+            applyConstructor(n, fna);
+            env = prevEnv;
+            return instance;
+        }
+
+
+        void applyConstructor(New n, [CanBeNull] FnApply fna)
+        {
+            var cAsi = env.GetValueOrNull("constructor");
+            if (fna != null)
+            {
+                if (cAsi == null)
+                {
+                    validations.NoConstructor(n);
+                    return;
+                }
+                var c = cAsi as Fn;
+                if (c == null)
+                {
+                    validations.ConstructorIsNotFn(cAsi);
+                    return;
+                }
+                VisitFnApply(new FnApply(VisitFn(c), fna.Args));
+            }
+            else if (cAsi != null)
+            {
+                validations.ConstructorNotCalled(n);
+            }
+        }
+
+
+        void prepareStructBody(Struct s)
+        {
             foreach (var item in s.Items)
             {
                 var declrItem = item as Declr;
@@ -293,23 +340,6 @@ namespace Efekt
                     throw new EfektException("struct can contains only variables, found: " + opa.Op);
                 }
             }
-
-            if (fna != null)
-            {
-                var c = (Fn) env.GetValue("constructor");
-                c.Env = env;
-                var fna2 = new FnApply(c, fna.Args);
-                VisitFnApply(fna2);
-            }
-            if (opa2 != null)
-            {
-                env = prevEnv;
-                return new BinOpApply(opa2.Op, instance, opa2.Op2).Accept(this);
-            }
-            env = prevEnv;
-            Contract.Assume(instance.Env != null);
-            Contract.Assume(instance.Env.Parent == global);
-            return instance;
         }
 
 

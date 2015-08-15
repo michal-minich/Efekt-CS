@@ -21,12 +21,12 @@ namespace Efekt
         {
             var attrs = typeof (T).GetMember(e.ToString())[0]
                 .GetCustomAttributes(typeof (DescriptionAttribute), false);
-            return ((DescriptionAttribute) attrs[0]).Description;
+            return ((DescriptionAttribute)attrs[0]).Description;
         }
 
 
         public static T ParseEnum<T>(this String value) where T : struct
-            => (T) Enum.Parse(typeof (T), value);
+            => (T)Enum.Parse(typeof (T), value);
 
 
         public static T Last<T>(this IReadOnlyList<T> source) => source[source.Count - 1];

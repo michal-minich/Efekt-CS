@@ -13,7 +13,7 @@ namespace Efekt
         }
 
 
-        private static void testParser()
+        static void testParser()
         {
             parse("");
             parse(" ", "");
@@ -126,7 +126,7 @@ namespace Efekt
         }
 
 
-        private static void testInterpreter()
+        static void testInterpreter()
         {
             eval("", "void");
             eval("1");
@@ -249,7 +249,7 @@ namespace Efekt
             eval("__rest([1, 2, 3])", "[2, 3]");
             eval("__at([1, 2, 3], 0)", "1");
             eval("__at([1, 2, 3], 2)", "3");
-            eval("__add([1, 2], 3)", "[1, 2, 3]");
+            eval("var a = [1, 2] __add(a, 3) a", "[1, 2, 3]");
 
             eval("struct { }");
             eval("struct { var a = 1 }");
@@ -275,11 +275,11 @@ namespace Efekt
             eval(struct1 + "var sa = s.a sa.b = 2 s.a.b", "1");
             eval(struct1 + "var ss = s s.a.b = 2 ss.a.b", "1");
             eval(struct1 + "var ss = s ss.a.b = 2 s.a.b", "1");
-          
+
             eval(struct1 + id + " id(s).a.b", "1");
             eval(struct1 + id + " id(s).a.b = 2 s.a.b", "1");
             eval(struct1 + " fn (a) { a.a.b = 2 } (s) s.a.b", "1");
-              
+
             eval("var a = 1 /*a = 2*/ a", "1");
             eval("var a = 1 --a = 2\n a", "1");
             eval("var a = 1 /*--a = 2*/ a", "1");
@@ -310,11 +310,11 @@ namespace Efekt
         }
 
 
-        private static String removeVar(String t) => t.SubstringAfter("= ");
+        static String removeVar(String t) => t.SubstringAfter("= ");
 
 
         // ReSharper disable once UnusedParameter.Local
-        private static void check(IAsi al, String expected, Printer printer)
+        static void check(IAsi al, String expected, Printer printer)
         {
             var actual = al.Accept(printer);
             if (expected != actual)
@@ -323,25 +323,18 @@ namespace Efekt
         }
 
 
-        private static void parseWithBraces(String code, String expected)
-        {
-            parse(code, expected, new Printer {PutBracesAroundBinOpApply = true});
-        }
+        static void parseWithBraces(String code, String expected)
+            => parse(code, expected, new Printer {PutBracesAroundBinOpApply = true});
 
 
-        private static void parse(String code)
-        {
-            parse(code, code, new Printer());
-        }
+        static void parse(String code) => parse(code, code, new Printer());
 
 
-        private static void parse(String code, String expected)
-        {
-            parse(code, expected, new Printer());
-        }
+        static void parse(String code, String expected)
+            => parse(code, expected, new Printer());
 
 
-        private static void parse(String code, String expected, Printer printer)
+        static void parse(String code, String expected, Printer printer)
         {
             var p = new Parser();
             var al = p.Parse(code, Program.ValidationList);
@@ -349,24 +342,19 @@ namespace Efekt
         }
 
 
-        private static void eval(String code)
-        {
-            eval(code, code, new Printer());
-        }
+        static void eval(String code) => eval(code, code, new Printer());
 
 
-        private static void eval(String code, String expected)
-        {
-            eval(code, expected, new Printer());
-        }
+        static void eval(String code, String expected)
+            => eval(code, expected, new Printer());
 
 
-        private static void eval(String code, String expected, Printer printer)
+        static void eval(String code, String expected, Printer printer)
         {
             var p = new Parser();
             var al = p.Parse(code, Program.ValidationList);
             var i = new Interpreter();
-            var asi = i.VisitAsiList(al);
+            var asi = i.Run(al, Program.ValidationList);
             check(asi, expected, printer);
         }
     }

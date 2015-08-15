@@ -1,4 +1,13 @@
-p101 = Error
-p102 = Error
+NothingAfterIf = Error
+IfTestIsNotExp = Error
+WrongParamsOrder = Error
 
-r201 = Warning
+ExpHasNoEffect = Warning
+ImplicitVar = Error
+DeclrExpected = Error
+ImportIsNotStruct = Error
+ImportIsStructType = Error
+CannotImportTo = Error
+IfTestIsNotBool = Error
+CannotApply = Error
+NotEnoughArgs = Errror

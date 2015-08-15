@@ -35,6 +35,11 @@ namespace Efekt
         Int32 Column { get; }
     }
 
+    public interface IHasEnv
+    {
+        Env Env { get; set; }
+    }
+
 
     [SuppressMessage("Microsoft.Design", "CA1040:AvoidEmptyInterfaces")]
     public interface IExp : IAsi
@@ -107,10 +112,10 @@ namespace Efekt
 
     public sealed class AsiList : Asi
     {
-        public IEnumerable<IAsi> Items { get; }
+        public IReadOnlyList<IAsi> Items { get; }
 
 
-        public AsiList(IEnumerable<IAsi> items)
+        public AsiList(IReadOnlyList<IAsi> items)
         {
             Items = items;
         }
@@ -222,13 +227,16 @@ namespace Efekt
     }
 
 
-    public sealed class Arr : Val
+    public sealed class Arr : Exp
     {
-        public IEnumerable<IExp> Items { get; }
+        [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
+        public List<IExp> Items { get; }
+
         public Boolean IsEvaluated { get; set; }
 
 
-        public Arr(IEnumerable<IExp> items)
+        [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
+        public Arr(List<IExp> items)
         {
             Items = items;
         }
@@ -238,13 +246,13 @@ namespace Efekt
     }
 
 
-    public sealed class Struct : Type
+    public sealed class Struct : Type, IHasEnv
     {
-        public IEnumerable<IAsi> Items { get; }
+        public IReadOnlyCollection<IAsi> Items { get; }
         public Env Env { get; set; }
 
 
-        public Struct(IEnumerable<IAsi> items)
+        public Struct(IReadOnlyCollection<IAsi> items)
         {
             Items = items;
         }
@@ -253,17 +261,19 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitStruct(this);
     }
 
-    public sealed class Fn : Val
+    public sealed class Fn : Val, IHasEnv
     {
-        public IEnumerable<IExp> Params { get; }
-        public IEnumerable<IAsi> Items { get; }
+        public IReadOnlyList<IExp> Params { get; }
+        public IReadOnlyList<IAsi> Items { get; }
         public Env Env { get; set; }
+        public Int32 CountMandatoryParams { get; set; }
 
 
-        public Fn(IEnumerable<IExp> @params, IEnumerable<IAsi> items)
+        public Fn(IReadOnlyList<IExp> @params, IReadOnlyList<IAsi> items)
         {
             Params = @params;
             Items = items;
+            CountMandatoryParams = @params.Count;
         }
 
 
@@ -274,10 +284,10 @@ namespace Efekt
     public sealed class FnApply : Exp
     {
         public IAsi Fn { get; }
-        public IEnumerable<IExp> Args { get; }
+        public IReadOnlyCollection<IExp> Args { get; }
 
 
-        public FnApply(IAsi fn, IEnumerable<IExp> args)
+        public FnApply(IAsi fn, IReadOnlyCollection<IExp> args)
         {
             Fn = fn;
             Args = args;
@@ -355,19 +365,6 @@ namespace Efekt
         public IAsi Otherwise { get; set; }
 
 
-        public If()
-        {
-        }
-
-
-        public If(IExp test, IAsi then, [CanBeNull] IAsi otherwise)
-        {
-            Test = test;
-            Then = then;
-            Otherwise = otherwise;
-        }
-
-
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitIf(this);
     }
 
@@ -375,17 +372,6 @@ namespace Efekt
     public sealed class Import : Stm
     {
         public IExp QualifiedIdent { get; set; }
-
-
-        public Import()
-        {
-        }
-
-
-        public Import(IExp qualifiedIdent)
-        {
-            QualifiedIdent = qualifiedIdent;
-        }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitImport(this);

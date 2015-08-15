@@ -68,38 +68,36 @@ namespace Efekt
         public String VisitVoid(Void v) => "void";
 
 
-        private String joinStatementsOneLine(IEnumerable<IAsi> items)
+        String joinStatementsOneLine(IEnumerable<IAsi> items)
         {
             return String.Join(" ", items.Select(i => i.Accept(this)));
         }
 
 
-        private String joinStatements(IEnumerable<IAsi> items)
+        String joinStatements(IEnumerable<IAsi> items)
         {
             return String.Join("\n", items.Select(i => i.Accept(this)));
         }
 
 
-        private String joinList(IEnumerable<IAsi> items)
+        String joinList(IEnumerable<IAsi> items)
         {
             return String.Join(", ", items.Select(i => i.Accept(this)));
         }
 
 
-        private String visitOptional([CanBeNull] IAsi asi, String prefix)
+        String visitOptional([CanBeNull] IAsi asi, String prefix)
             => asi == null ? "" : prefix + asi.Accept(this);
 
 
         public String VisitBool(Bool b) => b.Value ? "true" : "false";
 
-        public String VisitChar(Char c) => "'" + c.Value.ToString() + "'";
+        public String VisitChar(Char c) => "'" + c.Value + "'";
 
 
-        public String VisitIf(If iff)
-        {
-            return "if " + iff.Test.Accept(this) + " then " + iff.Test.Accept(this)
-                   + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
-        }
+        public String VisitIf(If iff) =>
+            "if " + iff.Test.Accept(this) + " then " + iff.Test.Accept(this)
+            + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
 
 
         public String VisitImport(Import imp) => "import " + imp.QualifiedIdent.Accept(this);

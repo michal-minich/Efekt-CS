@@ -23,7 +23,7 @@ namespace Efekt
                     File.ReadAllLines(basePath + "validations.en-US.ef"));
 
                 var severities = ValidationList.LoadSeverities(
-                    File.ReadAllLines(basePath + "severity-normal.ef"));
+                    File.ReadAllLines(basePath + "severity-light.ef"));
 
                 ValidationList.UseSeverities(severities);
 
@@ -36,10 +36,12 @@ namespace Efekt
                     var al = p.Parse(txt, ValidationList);
 
                     var prelude = p.Parse(preludeCode, ValidationList);
-                    var code = new AsiList(prelude.Items.Union(al.Items));
+                    var code = new AsiList(prelude.Items.Concat(al.Items).ToList());
+
+                    Console.WriteLine("Running...");
 
                     var i = new Interpreter();
-                    var res = i.VisitAsiList(code);
+                    var res = i.Run(code, ValidationList);
 
                     var str = res.Accept(DefaultPrinter);
                     Console.WriteLine(str);
@@ -60,7 +62,7 @@ namespace Efekt
         }
 
 
-        private const String preludeCode =
+        const String preludeCode =
             "var id = fn (a) { a }\n"
             + "var op+ = fn(a, b) { __plus(a, b) }\n"
             + "var op* = fn(a, b) { __multiply(a, b) }\n"

@@ -1,91 +1,93 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using JetBrains.Annotations;
 
 
 namespace Efekt
 {
     public sealed class Interpreter : IAsiVisitor<IAsi>
     {
-        private Env env;
-        private Asi current;
-        private Env rootEnv;
+        Env env;
+        Asi current;
+        Env global;
+        ValidationList validations;
 
 
-        public IAsi VisitAsiList(AsiList al)
+        public IAsi Run(AsiList al, ValidationList validationList)
         {
-            Env e;
-            if (rootEnv == null)
-            {
-                e = new Env();
-                rootEnv = e;
-            }
-            else
-            {
-                e = new Env(env);
-            }
-            return visitAsiArray(al.Items, e, env);
+            validations = validationList;
+            global = env = new Env();
+            var res = VisitAsiList(al);
+            global = null;
+            return res;
         }
 
 
-        public IAsi VisitErr(Err err) => err.Item == null ? err : err.Item.Accept(this);
+        public IAsi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(env), env);
+
+
+        public IAsi VisitErr(Err err) => err;
 
 
         public IAsi VisitInt(Int ii) => ii;
 
 
-        public IAsi VisitIdent(Ident i) => env.GetValue(i.Name);
+        public IAsi VisitIdent(Ident i)
+        {
+            var v = env.GetValueOrNull(i.Name);
+            if (v != null)
+                return v;
+            validations.ImplicitVar(i);
+            return new Err(i);
+        }
 
 
         public IAsi VisitBinOpApply(BinOpApply opa)
         {
-            Contract.Assume(opa != null);
             switch (opa.Op.Name)
             {
                 case "=":
-                    var evaluated = opa.Op2.Accept(this);
-                    evaluated = copyIfStructInstance(evaluated);
+                    var v = opa.Op2.Accept(this);
+                    v = copyIfStructInstance(v);
                     var ma = opa.Op1 as BinOpApply;
                     if (ma != null && ma.Op.Name == ".")
                     {
-                        var e = getStructEnvOfMember(ma.Op1.Accept(this), ma.Op2);
-                        e.SetValue(((Ident) ma.Op2).Name, evaluated);
+                        var s = ma.Op1.Accept(this);
+                        var e = getStructEnvOfMember(s, ma.Op2);
+                        e.SetValue(((Ident) ma.Op2).Name, v);
                     }
                     else
                     {
-                        var i = getIdentAndDeclareIfDeclr(opa.Op1);
-                        env.SetValue(i.Name, evaluated);
+                        var i = declare(opa.Op1);
+                        env.SetValue(i.Name, v);
                     }
-                    return evaluated;
+                    return v;
                 case ".":
                     return getStructMember(opa.Op1.Accept(this), opa.Op2);
                 default:
-                    var fna = new FnApply(opa.Op, new[] {opa.Op1, opa.Op2});
-                    return VisitFnApply(fna);
+                    return VisitFnApply(new FnApply(opa.Op, new List<IExp> {opa.Op1, opa.Op2}));
             }
         }
 
 
-        private IAsi copyIfStructInstance([CanBeNull] IAsi asi)
+        IAsi copyIfStructInstance(IAsi asi)
         {
             var s = asi as Struct;
             if (s?.Env == null)
                 return asi;
-            var newEnv = new Env(rootEnv);
+            var newEnv = new Env(global);
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
                 newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value));
-            return new Struct(Array.Empty<Asi>()) {Env = newEnv};
+            return new Struct(new List<IAsi>()) {Env = newEnv};
         }
 
 
-        private IAsi getStructMember(IAsi bag, IAsi member)
+        IAsi getStructMember(IAsi bag, IAsi member)
             => getStructEnvOfMember(bag, member).GetValue(((Ident) member).Name);
 
 
-        private Env getStructEnvOfMember(IAsi bag, IAsi member)
+        Env getStructEnvOfMember(IAsi bag, IAsi member)
         {
             var s2 = bag as Struct;
             if (s2 == null)
@@ -112,11 +114,16 @@ namespace Efekt
         }
 
 
-        private Ident getIdentAndDeclareIfDeclr(IAsi declrOrIdent)
+        Ident declare(IAsi declrOrIdent)
         {
             var d = declrOrIdent as Declr;
             if (d == null)
-                return (Ident) declrOrIdent;
+            {
+                var i = declrOrIdent as Ident;
+                if (i == null)
+                    validations.DeclrExpected(declrOrIdent);
+                return i;
+            }
             d.Accept(this);
             return d.Ident;
         }
@@ -131,11 +138,12 @@ namespace Efekt
 
         public IAsi VisitArr(Arr arr)
         {
-            Contract.Assume(arr.IsEvaluated == false);
+            Contract.Assume(!arr.IsEvaluated);
             return new Arr(arr.Items
                 .Select(i => i.Accept(this))
                 .Cast<IExp>()
-                .ToList()) {IsEvaluated = true};
+                .ToList())
+            {IsEvaluated = true};
         }
 
 
@@ -146,62 +154,81 @@ namespace Efekt
         }
 
 
-        public IAsi VisitFn(Fn fn) => new Fn(fn.Params, fn.Items) {Env = fn.Env ?? env.GetFlat()};
+        public IAsi VisitFn(Fn fn)
+            => new Fn(fn.Params, fn.Items)
+            {
+                Env = env,
+                CountMandatoryParams = fn.CountMandatoryParams,
+                Column = fn.Column,
+                Line = fn.Line
+            };
 
 
         public IAsi VisitFnApply(FnApply fna)
         {
-            var fnIdent = fna.Fn as Ident;
-            if (fnIdent != null && fnIdent.Name.StartsWith("__"))
-            {
-                var prevEnv1 = env;
-                env = new Env(env); // for params
-                var evaluatedArgs = fna.Args.Select(arg => arg.Accept(this)).Cast<IExp>().ToArray();
-                var r = Builtins.Call(fnIdent.Name.Substring(2), evaluatedArgs);
-                env = prevEnv1;
-                return r;
-            }
+            var bRes = applyBuiltin(fna);
+            if (bRes != null)
+                return bRes;
 
             var fnAsi = fna.Fn.Accept(this);
-            var fn = fnAsi as Fn;
             if (fnAsi is Struct)
                 return new FnApply(fnAsi, fna.Args);
+            var fn = fnAsi as Fn;
             if (fn == null)
-                throw new EfektException("cannot apply " + fnAsi.GetType().Name);
+            {
+                validations.CannotApply(fna.Fn, fnAsi);
+                return new Err(fna);
+            }
 
-            Contract.Assume(fn.Env != null);
             current = fn;
-
             var prevEnv = env;
-            evalParamsAndArgs(fn.Params.ToArray(), fna.Args.ToArray());
-            var localEnv = new Env(env); // new local env for this fn call
-            localEnv.CopyFrom(env); // make params local variables of fn
-            localEnv.Parent = fn.Env; // reference captured env
-            localEnv.ImportedEnvs = fn.Env.ImportedEnvs;
-            var res = visitAsiArray(fn.Items, localEnv, prevEnv);
-            return res;
+            var envForParams = new Env(fn.Env);
+            evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
+            return visitAsiArray(fn.Items, envForParams, prevEnv);
         }
 
 
-        private void evalParamsAndArgs(ICollection<IExp> @params, ICollection<IExp> args)
+        IAsi applyBuiltin(FnApply fna)
         {
-            env = new Env(env); // for params
+            var fnIdent = fna.Fn as Ident;
+            if (fnIdent == null || !fnIdent.Name.StartsWith("__"))
+                return null;
+            return Builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
+        }
+
+
+        IExp[] evalArgs(IEnumerable<IExp> args)
+            => args.Select(arg => arg.Accept(this)).Cast<IExp>().ToArray();
+
+
+        void evalParamsAndArgs(Fn fn, IAsi notEvaledFn, IReadOnlyList<IExp> args, Env envForParams)
+        {
+            IReadOnlyList<IExp> args2;
+            if (args.Count < fn.CountMandatoryParams)
+            {
+                validations.NotEnoughArgs(fn.Params[args.Count], notEvaledFn, fn.Params.Count,
+                    fn.CountMandatoryParams, args.Count);
+                var missingArgCount = fn.CountMandatoryParams - args.Count;
+                var errs = fn.Params.Skip(args.Count).Take(missingArgCount).Select(p => new Err(p));
+                args2 = args.Concat(errs).ToList();
+            }
+            else
+            {
+                args2 = args;
+            }
             var n = 0;
-            foreach (var p in @params)
+            var evaluatedArgs = evalArgs(args2);
+            env = envForParams;
+            foreach (var p in fn.Params)
             {
                 var opa = p as BinOpApply;
-                if (args.Count <= n)
+                if (args2.Count <= n)
                 {
                     p.Accept(this);
-                    if (opa == null)
-                        throw new EfektException("fn has " + @params.Count + " parameter(s)" +
-                                                 ", but calling with " + args.Count);
                 }
                 else
                 {
-                    var arg = args.ElementAt(n);
-                    var argValue = arg.Accept(this);
-                    argValue = copyIfStructInstance(argValue);
+                    var argValue = copyIfStructInstance(evaluatedArgs[n]);
                     var i = Parser.GetIdentFromDeclrLikeAsi(p);
                     if (opa != null)
                         env.Declare(i.Name);
@@ -229,8 +256,8 @@ namespace Efekt
 
             Contract.Assume(s.Env == null);
             var prevEnv = env;
-            env = new Env(rootEnv);
-            var instance = new Struct(Array.Empty<Asi>()) {Env = env};
+            env = new Env(global);
+            var instance = new Struct(new List<IAsi>()) {Env = env};
             current = instance;
             foreach (var item in s.Items)
             {
@@ -257,7 +284,7 @@ namespace Efekt
                 {
                     // provide error as above
                     Contract.Assume(opa.Op1 is Declr);
-                    var i = getIdentAndDeclareIfDeclr(opa.Op1);
+                    var i = declare(opa.Op1);
                     var v = opa.Op2.Accept(this);
                     env.SetValue(i.Name, v);
                 }
@@ -281,7 +308,7 @@ namespace Efekt
             }
             env = prevEnv;
             Contract.Assume(instance.Env != null);
-            Contract.Assume(instance.Env.Parent == rootEnv);
+            Contract.Assume(instance.Env.Parent == global);
             return instance;
         }
 
@@ -291,21 +318,21 @@ namespace Efekt
         public IAsi VisitBool(Bool b) => b;
 
 
-        private IAsi visitAsiArray(IEnumerable<IAsi> items, Env newEnv, Env restoreEnv)
+        IAsi visitAsiArray(IReadOnlyList<IAsi> items, Env newEnv, Env restoreEnv)
         {
+            if (items.Count == 0)
+                return new Void();
             env = newEnv;
-            IAsi res = null;
-            var n = 0;
-            var itemList = items.ToList();
-            foreach (var item in itemList)
+            for (var i = 0; i < items.Count - 1; ++i)
             {
-                if (++n != itemList.Count && item is Val)
-                    Program.ValidationList.AddExpHasNoEffect(item);
+                if (items[i] is Val)
+                    validations.ExpHasNoEffect(items[i]);
                 else
-                    res = item.Accept(this);
+                    items[i].Accept(this);
             }
+            var res = items.Last().Accept(this);
             env = restoreEnv;
-            return copyIfStructInstance(res) ?? new Void();
+            return copyIfStructInstance(res);
         }
 
 
@@ -317,9 +344,9 @@ namespace Efekt
             var t = iff.Test.Accept(this);
             var b = t as Bool;
             if (b == null)
-                throw new EfektException("test in if must evaluated to bool, not to: " +
-                                         t.GetType().Name);
-            return b.Value
+                validations.IfTestIsNotBool(t);
+            // if 'else' is missing and 'if' is used as stm, then it is and error
+            return b != null && b.Value
                 ? iff.Then.Accept(this)
                 : iff.Otherwise == null ? new Void() : iff.Otherwise.Accept(this);
         }
@@ -327,21 +354,22 @@ namespace Efekt
 
         public IAsi VisitImport(Import imp)
         {
-            var asi = imp.QualifiedIdent.Accept(this);
-            var s = asi as Struct;
-            if (s == null || s.Env == null)
-                throw new EfektException(
-                    "only constructed struct or fn can be imported, not " + asi.GetType().Name);
-
-            var sTo = current as Struct;
-            var fTo = current as Fn;
-            if (sTo == null && fTo == null)
-                throw new EfektException(
-                    "import can be present only in struct or fn, not " + asi.GetType().Name);
-            if (sTo != null)
-                sTo.Env.AddImport(s.Env);
-            else if (fTo != null)
-                fTo.Env.AddImport(s.Env);
+            var to = current as IHasEnv;
+            if (to == null)
+            {
+                validations.CannotImportTo(imp);
+            }
+            else
+            {
+                var asi = imp.QualifiedIdent.Accept(this);
+                var s = asi as Struct;
+                if (s == null)
+                    validations.ImportIsNotStruct(imp.QualifiedIdent);
+                else if (s.Env == null)
+                    validations.ImportIsStructType(imp.QualifiedIdent);
+                else
+                    to.Env.AddImport(s.Env);
+            }
             return new Void();
         }
     }

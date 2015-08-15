@@ -1,0 +1,13 @@
+NothingAfterIf = Warning
+IfTestIsNotExp = Warning
+WrongParamsOrder = Warning
+
+ExpHasNoEffect = Suggestion
+ImplicitVar = Warning
+DeclrExpected = Warning
+ImportIsNotStruct = Warning
+ImportIsStructType = Warning
+CannotImportTo = Warning
+IfTestIsNotBool = Warning
+CannotApply = Warning
+NotEnoughArgs = Warning

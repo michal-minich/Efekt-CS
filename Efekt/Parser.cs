@@ -9,18 +9,17 @@ namespace Efekt
 {
     public sealed class Parser
     {
-        private String code;
-        private Int32 index;
-        private String matched = "";
-        private ValidationList validations;
-        private Int32 lineNumber;
-        private Int32 columnNumber;
-        private Int32 indexOfFirstColumn;
+        String code;
+        Int32 index;
+        String matched = "";
+        ValidationList validations;
+        Int32 lineNumber;
+        Int32 columnNumber;
 
-        private static readonly List<String> rightAssociativeOps = new List<String>
+        static readonly List<String> rightAssociativeOps = new List<String>
         {":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|="};
 
-        private static readonly Dictionary<String, Int32> opPrecedence
+        static readonly Dictionary<String, Int32> opPrecedence
             = new Dictionary<String, Int32>
             {
                 ["."] = 160,
@@ -60,7 +59,7 @@ namespace Efekt
                 ["] ="] = 2
             };
 
-        private Boolean wasNewLine;
+        Boolean wasNewLine;
 
 
         public AsiList Parse(String codeText, ValidationList validationList)
@@ -88,7 +87,7 @@ namespace Efekt
 
 
         [CanBeNull]
-        private IAsi parseCombinedAsi(Boolean isRight = false)
+        IAsi parseCombinedAsi(Boolean isRight = false)
         {
             var asi = parseAsi();
             if (asi == null)
@@ -159,7 +158,7 @@ namespace Efekt
         }
 
 
-        private IAsi parseAsi(Boolean skipFnApply = false)
+        IAsi parseAsi(Boolean skipFnApply = false)
         {
             skipWhite();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
@@ -173,17 +172,17 @@ namespace Efekt
         }
 
 
-        private Int parseInt() => matchUntil(isDigit) ? a(new Int(matched)) : null;
+        Int parseInt() => matchUntil(isDigit) ? a(new Int(matched)) : null;
 
 
-        private Arr parseArr()
+        Arr parseArr()
         {
             var items = parseBracedList('[', ']');
-            return items == null ? null : a(new Arr(items.Cast<IExp>()));
+            return items == null ? null : a(new Arr(items.Cast<IExp>().ToList()));
         }
 
 
-        private Fn parseFn()
+        Fn parseFn()
         {
             if (!matchWord("fn"))
                 return null;
@@ -202,11 +201,42 @@ namespace Efekt
             if (b == null)
                 throw new EfektException("expected '{...}' after 'fn (...)'");
 
-            return a(new Fn(p2.ToList(), b));
+            var fn = a(new Fn(p2.Cast<IExp>().ToList(), b));
+            validateParamsOrder(fn);
+            return fn;
         }
 
 
-        private Struct parseStruct()
+        void validateParamsOrder(Fn fn)
+        {
+            IAsi recentOptional = null;
+            var n = 0;
+            foreach (var p in fn.Params)
+            {
+                ++n;
+                var isIdentOrDeclr = p is Ident || p is Declr;
+                if (recentOptional == null)
+                {
+                    if (isIdentOrDeclr)
+                        continue;
+                    var opa = p as BinOpApply;
+                    if (opa == null)
+                        continue;
+                    Contract.Assume(opa.Op.Name == "=");
+                    recentOptional = p;
+                    fn.CountMandatoryParams = n - 1;
+                }
+                else
+                {
+                    if (isIdentOrDeclr)
+                        validations.WrongParamsOrder(p, recentOptional);
+                    recentOptional = p;
+                }
+            }
+        }
+
+
+        Struct parseStruct()
         {
             if (!matchWord("struct"))
                 return null;
@@ -221,7 +251,7 @@ namespace Efekt
         }
 
 
-        private Bool parseBool()
+        Bool parseBool()
         {
             if (matchWord("true"))
                 return a(new Bool(true));
@@ -231,22 +261,22 @@ namespace Efekt
         }
 
 
-        private If parseIf()
+        If parseIf()
         {
             if (!matchWord("if"))
                 return null;
             var iff = a(new If());
             var t = parseCombinedAsi();
-            
+
             var tIExp = t as IExp;
             if (t == null)
             {
-                validations.AddNothingAfterIf(iff);
+                validations.NothingAfterIf(iff);
                 iff.Test = a(new Err());
             }
             else if (tIExp == null)
             {
-                validations.AddIfTestIsNotExp(t);
+                validations.IfTestIsNotExp(t);
                 iff.Test = a(new Err(t));
             }
             else
@@ -275,14 +305,14 @@ namespace Efekt
         }
 
 
-        private Asi parseAsiList()
+        Asi parseAsiList()
         {
             var b = parseBracedList('{', '}');
             return b == null ? null : a(new AsiList(b));
         }
 
 
-        private Char parseChar()
+        Char parseChar()
         {
             var strParsed = parseString('\'');
             if (strParsed == null)
@@ -299,7 +329,7 @@ namespace Efekt
         }
 
 
-        private IExp parseString(System.Char quote)
+        IExp parseString(System.Char quote)
         {
             if (!matchChar(quote))
                 return null;
@@ -337,7 +367,7 @@ namespace Efekt
                 if (to > code.Length)
                     to = code.Length;
             }
-            var chars = new List<Char>();
+            var chars = new List<IExp>();
             for (var i = startAt; i < to; ++i)
                 chars.Add(a(new Char(code[i])));
             var arr = a(new Arr(chars));
@@ -345,7 +375,7 @@ namespace Efekt
         }
 
 
-        private Import parseImport()
+        Import parseImport()
         {
             if (!matchWord("import"))
                 return null;
@@ -355,10 +385,10 @@ namespace Efekt
         }
 
 
-        private Void parseVoid() => matchWord("void") ? a(new Void()) : null;
+        Void parseVoid() => matchWord("void") ? a(new Void()) : null;
 
 
-        private Ident parseIdent()
+        Ident parseIdent()
         {
             var isLetterMatched = matchUntil(isLetter);
             if (!isLetterMatched)
@@ -379,7 +409,7 @@ namespace Efekt
         }
 
 
-        private IAsi parseBraced()
+        IAsi parseBraced()
         {
             if (!matchChar('('))
                 return null;
@@ -393,7 +423,7 @@ namespace Efekt
         }
 
 
-        private Asi parseVar()
+        Asi parseVar()
         {
             if (!matchWord("var"))
                 return null;
@@ -404,7 +434,7 @@ namespace Efekt
         }
 
 
-        private Exp expToDeclrOrAssign([CanBeNull] IAsi asi, Boolean isVar)
+        Exp expToDeclrOrAssign([CanBeNull] IAsi asi, Boolean isVar)
         {
             if (asi == null)
                 throw new EfektException("expected ident, declaration or assignment");
@@ -467,7 +497,7 @@ namespace Efekt
         }
 
 
-        private New parseNew()
+        New parseNew()
         {
             if (!matchWord("new"))
                 return null;
@@ -479,7 +509,7 @@ namespace Efekt
         }
 
 
-        private IAsi parseFnApply(IAsi asi)
+        IAsi parseFnApply(IAsi asi)
         {
             skipWhite();
             if (wasNewLine)
@@ -489,14 +519,14 @@ namespace Efekt
                 --index;
                 --columnNumber;
                 var args = parseBracedList('(', ')');
-                asi = a(new FnApply(asi, args.Cast<IExp>()));
+                asi = a(new FnApply(asi, args.Cast<IExp>().ToList()));
                 skipWhite();
             }
             return asi;
         }
 
 
-        private List<IAsi> parseBracedList(System.Char startBrace, System.Char endBrace)
+        List<IAsi> parseBracedList(System.Char startBrace, System.Char endBrace)
         {
             if (!matchChar(startBrace))
                 return null;
@@ -518,7 +548,7 @@ namespace Efekt
         }
 
 
-        private Boolean isDigit()
+        Boolean isDigit()
         {
             if (index >= code.Length)
                 return false;
@@ -527,17 +557,17 @@ namespace Efekt
         }
 
 
-        private Boolean isLetter() => index < code.Length && isLetter(code[index]);
+        Boolean isLetter() => index < code.Length && isLetter(code[index]);
 
 
-        private Boolean isLetterOrDigit() => isLetter() || isDigit();
+        Boolean isLetterOrDigit() => isLetter() || isDigit();
 
 
-        private static Boolean isLetter(System.Char ch)
+        static Boolean isLetter(System.Char ch)
             => (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
 
 
-        private Boolean isOp()
+        Boolean isOp()
         {
             var ch = code[index];
             return ch == '.' || ch == '+' || ch == '-' || ch == '*' ||
@@ -549,7 +579,7 @@ namespace Efekt
         }
 
 
-        private void skipWhite()
+        void skipWhite()
         {
             var wasAnyNewLine = false;
             var startIndex = index;
@@ -568,7 +598,7 @@ namespace Efekt
         }
 
 
-        private void skipBlanks()
+        void skipBlanks()
         {
             var res = matchUntil(isWhite);
             if (res)
@@ -576,7 +606,7 @@ namespace Efekt
         }
 
 
-        private void skipCommentLine()
+        void skipCommentLine()
         {
             if (!matchText("--"))
                 return;
@@ -586,7 +616,7 @@ namespace Efekt
         }
 
 
-        private void skipCommentMulti()
+        void skipCommentMulti()
         {
             if (!matchText("/*"))
                 return;
@@ -597,7 +627,7 @@ namespace Efekt
         }
 
 
-        private Boolean isWhite()
+        Boolean isWhite()
         {
             if (index >= code.Length)
                 return false;
@@ -606,16 +636,16 @@ namespace Efekt
             {
                 ++lineNumber;
                 columnNumber = 0;
-                indexOfFirstColumn = index;
+                //indexOfFirstColumn = index;
             }
             return ch == ' ' || ch == '\t' || isNewLine(ch);
         }
 
 
-        private static Boolean isNewLine(System.Char ch) => ch == '\r' || ch == '\n';
+        static Boolean isNewLine(System.Char ch) => ch == '\r' || ch == '\n';
 
 
-        private Boolean matchChar(System.Char ch)
+        Boolean matchChar(System.Char ch)
         {
             if (index >= code.Length || code[index] != ch)
                 return false;
@@ -626,7 +656,7 @@ namespace Efekt
         }
 
 
-        private Boolean matchText(String text)
+        Boolean matchText(String text)
         {
             var isMatch = index + text.Length <= code.Length
                           && code.IndexOf(text, index) == index;
@@ -637,7 +667,7 @@ namespace Efekt
         }
 
 
-        private Boolean matchWord(String w)
+        Boolean matchWord(String w)
         {
             Contract.Ensures(Contract.Result<Boolean>() == (Contract.OldValue(index) < index));
             Contract.Ensures(Contract.Result<Boolean>() != (Contract.OldValue(index) == index));
@@ -659,7 +689,7 @@ namespace Efekt
         }
 
 
-        private Boolean matchUntil(Func<Boolean> isMatch)
+        Boolean matchUntil(Func<Boolean> isMatch)
         {
             if (index > code.Length)
                 return false;
@@ -680,13 +710,13 @@ namespace Efekt
         }
 
 
-        private Boolean matchSpecialOp() => matchWord("and") || matchWord("or");
+        Boolean matchSpecialOp() => matchWord("and") || matchWord("or");
 
 
-        private Boolean hasChars => index < code.Length;
+        Boolean hasChars => index < code.Length;
 
 
-        private T a<T>(T asi) where T : Asi
+        T a<T>(T asi) where T : Asi
         {
             asi.Line = lineNumber;
             asi.Column = columnNumber;

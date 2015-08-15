@@ -1,12 +1,6 @@
-
-var s = new struct {
-  var a = 1
-}
-var s1 = new struct {
-  import s
-  var p = fn () {
-    a = 2
-  }
-}
-s1.p()
-s.a
+var f = fn (a, b, c, d = 1, e = 2, f = 3) { c }
+f(var x = 4, 5, 6)
+var z = 10
+var f2 = fn (a = z) { a }
+z = 11
+f2()

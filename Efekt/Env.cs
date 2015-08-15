@@ -11,31 +11,27 @@ namespace Efekt
     public sealed class Env
     {
         [CanBeNull]
-        public Env Parent { get; set; }
+        public Env Parent { get; }
 
         public Dictionary<String, IAsi> Dict { get; } = new Dictionary<String, IAsi>();
 
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
-        private static Int32 counter;
 
 
         public Env()
         {
-            ++counter;
         }
 
 
         public Env(Env parent)
         {
             Contract.Requires(parent != null);
-            ++counter;
             Parent = parent;
         }
 
 
-        private Env(Dictionary<String, IAsi> dictionary)
+        Env(Dictionary<String, IAsi> dictionary)
         {
-            ++counter;
             Dict = dictionary;
         }
 
@@ -81,23 +77,14 @@ namespace Efekt
 
 
         public void SetValue(String name, IAsi value)
-        {
-            getEnvDeclaring(name, this).Dict[name] = value;
-        }
+            => getEnvDeclaring(name, this).Dict[name] = value;
 
 
         public void AddImport(Env ie) => ImportedEnvs.Insert(0, new Env(ie.Dict));
 
-
-        public void ClearImports() => ImportedEnvs.Clear();
-
-
         public IAsi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
 
         public IAsi GetValueOrNull(String name) => getEnvDeclaringOrNull(name, this)?.Dict[name];
-
-
-        public Boolean IsDeclared(String name) => getEnvDeclaringOrNull(name, this) != null;
 
 
         public static void PrintEnv(Env env)
@@ -114,35 +101,18 @@ namespace Efekt
         }
 
 
-        [CanBeNull]
-        private Env getEnvDeclaringOrNull(String name, Env env)
+        Env getEnvDeclaring(String name, Env env)
         {
-            var e = getEnvDeclaring2(name, env);
-            n = 0;
-            return e;
-        }
-
-
-        private Int32 n;
-
-
-        private Env getEnvDeclaring(String name, Env env)
-        {
-            var e = getEnvDeclaring2(name, env);
+            var e = getEnvDeclaringOrNull(name, env);
             if (e == null)
                 throw new EfektException("variable '" + name + "' is not declared");
-            n = 0;
             return e;
         }
 
 
         [CanBeNull]
-        private Env getEnvDeclaring2(String name, Env env)
+        Env getEnvDeclaringOrNull(String name, Env env)
         {
-            if (++n == 20)
-            {
-                throw new EfektException("too many nested environments?");
-            }
             if (env.Dict.ContainsKey(name))
                 return env;
             if (env.ImportedEnvs.Count != 0)
@@ -154,7 +124,7 @@ namespace Efekt
                 }
                 return null;
             }
-            return env.Parent == null ? null : getEnvDeclaring2(name, env.Parent);
+            return env.Parent == null ? null : getEnvDeclaringOrNull(name, env.Parent);
         }
     }
 }

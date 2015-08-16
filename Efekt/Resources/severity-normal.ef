@@ -2,6 +2,7 @@ NothingAfterIf = Error
 IfTestIsNotExp = Error
 WrongParamsOrder = Error
 ExpectedIdent = Error
+ThisMemberAcces = Error
 
 ExpHasNoEffect = Warning
 ImplicitVar = Error

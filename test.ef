@@ -2,7 +2,7 @@ var S = struct {
     var a = 0
     var constructor = fn (x) { a = x }
     --var op+ = fn (a, b) { __plus(a, b) }
-    var f1 = fn (b) { a = a + b }
+    var f1 = fn (b) { a = this.a + b }
     var f2 = fn (c) { a = a + c }
 }
 var s = new S(1)
@@ -13,3 +13,4 @@ s.f2(100)
 print(s.a)
 s.a = 3
 print(s.a)
+print(global.S)

@@ -2,6 +2,7 @@ NothingAfterIf = Warning
 IfTestIsNotExp = Warning
 WrongParamsOrder = Warning
 ExpectedIdent = Warning
+ThisMemberAcces = Suggestion
 
 ExpHasNoEffect = Suggestion
 ImplicitVar = Warning

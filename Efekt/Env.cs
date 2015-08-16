@@ -10,6 +10,8 @@ namespace Efekt
 {
     public sealed class Env
     {
+        public IAsi Owner { get; }
+
         [CanBeNull]
         public Env Parent { get; }
 
@@ -18,14 +20,16 @@ namespace Efekt
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
 
 
-        public Env()
+        public Env(IAsi owner)
         {
+            Owner = owner;
         }
 
 
-        public Env(Env parent)
+        public Env(IAsi owner, Env parent)
         {
             Contract.Requires(parent != null);
+            Owner = owner;
             Parent = parent;
         }
 
@@ -33,27 +37,6 @@ namespace Efekt
         Env(Dictionary<String, IAsi> dictionary)
         {
             Dict = dictionary;
-        }
-
-
-        [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
-        public Env GetFlat()
-        {
-            var res = new Env();
-            var imports = new List<Env>();
-            var e = this;
-            do
-            {
-                foreach (var kvp in e.Dict)
-                    if (!res.Dict.ContainsKey(kvp.Key))
-                        res.Dict.Add(kvp.Key, kvp.Value);
-                imports.AddRange(Enumerable.Reverse(e.ImportedEnvs));
-                e = e.Parent;
-            } while (e != null);
-            foreach (var i in imports)
-                if (!res.ImportedEnvs.Contains(i))
-                    res.ImportedEnvs.Add(i);
-            return res;
         }
 
 
@@ -68,11 +51,11 @@ namespace Efekt
         }
 
 
-        public void Declare(String name)
+        public void Declare(String name, IAsi value = null)
         {
             if (Dict.ContainsKey(name))
                 throw new EfektException("variable '" + name + "' is already declared");
-            Dict.Add(name, null);
+            Dict.Add(name, value);
         }
 
 

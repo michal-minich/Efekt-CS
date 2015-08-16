@@ -113,6 +113,9 @@ namespace Efekt
                         index = ix;
                         return asi;
                     }
+                    var ident = asi as Ident;
+                    if (op == "." && ident != null && ident.Name == "this")
+                        validations.ThisMemberAcces(ident);
 
                     var curOpPrecedence = opPrecedence[op];
                     if (rightAssociativeOps.Contains(op))
@@ -636,6 +639,7 @@ namespace Efekt
                 return;
             while (index < code.Length && !isNewLine(code[index]))
                 ++index;
+            ++lineNumber;
             ++index;
         }
 
@@ -645,7 +649,11 @@ namespace Efekt
             if (!matchText("/*"))
                 return;
             while (index < code.Length - 1 && !(code[index] == '*' && code[index + 1] == '/'))
+            {
+                if (code[index] == '\n')
+                    ++lineNumber;
                 ++index;
+            }
             ++index;
             ++index;
         }
@@ -660,7 +668,6 @@ namespace Efekt
             {
                 ++lineNumber;
                 columnNumber = 0;
-                //indexOfFirstColumn = index;
             }
             return ch == ' ' || ch == '\t' || isNewLine(ch);
         }

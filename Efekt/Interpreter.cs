@@ -17,14 +17,16 @@ namespace Efekt
         public IAsi Run(AsiList al, ValidationList validationList)
         {
             validations = validationList;
-            global = env = new Env();
+            var fileStruct = new Struct(new List<IAsi>());
+            global = env = new Env(fileStruct);
+            fileStruct.Env = global;
             var res = visitAsiArray(al.Items, env, env);
             global = null;
             return res;
         }
 
 
-        public IAsi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(env), env);
+        public IAsi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(al, env), env);
 
 
         public IAsi VisitErr(Err err) => err;
@@ -35,6 +37,10 @@ namespace Efekt
 
         public IAsi VisitIdent(Ident i)
         {
+            if (i.Name == "this")
+                return env.Owner;
+            if (i.Name == "global")
+                return global.Owner;
             var v = env.GetValueOrNull(i.Name);
             if (v != null)
                 return v;
@@ -84,7 +90,9 @@ namespace Efekt
             var s = asi as Struct;
             if (s?.Env == null)
                 return asi;
-            var newEnv = new Env(global);
+            var newStruct = new Struct(new List<IAsi>());
+            var newEnv = new Env(newStruct, global);
+            newStruct.Env = newEnv;
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             {
@@ -93,13 +101,13 @@ namespace Efekt
                 if (fn?.Env != null)
                     fn.Env = newEnv;
             }
-            return new Struct(new List<IAsi>()) { Env = newEnv };
+            return newStruct;
         }
 
 
         Env getStructEnvOfMember(IAsi bag, IAsi member)
         {
-            var s2 = bag as Struct;
+            var s2 = bag as IHasEnv;
             if (s2 == null)
                 throw new EfektException(
                     "cannot access member '" + member.Accept(Program.DefaultPrinter) + "' of " +
@@ -115,7 +123,7 @@ namespace Efekt
                     "expected identifier or member access after '.', not "
                     + member.GetType().Name);
             var sAsi = bag.Accept(this);
-            var s = sAsi as Struct;
+            var s = sAsi as IHasEnv;
             if (s == null)
                 throw new EfektException(
                     "exp before '." + member.Accept(Program.DefaultPrinter)
@@ -188,7 +196,7 @@ namespace Efekt
 
             current = fn;
             var prevEnv = env;
-            var envForParams = new Env(fn.Env);
+            var envForParams = new Env(fn, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
             return visitAsiArray(fn.Items, envForParams, prevEnv);
         }
@@ -269,8 +277,9 @@ namespace Efekt
             }
 
             var prevEnv = env;
-            env = new Env(global);
-            var instance = new Struct(new List<IAsi>()) { Env = env };
+            var instance = new Struct(new List<IAsi>());
+            env = new Env(instance, global);
+            instance.Env = env;
             current = instance;
             prepareStructBody(s);
             applyConstructor(n, fna);

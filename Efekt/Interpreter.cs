@@ -26,7 +26,8 @@ namespace Efekt
         }
 
 
-        public IAsi VisitAsiList(AsiList al) => visitAsiArray(al.Items, new Env(al, env), env);
+        public IAsi VisitAsiList(AsiList al)
+            => visitAsiArray(al.Items, new Env(env.Owner, env), env);
 
 
         public IAsi VisitErr(Err err) => err;
@@ -196,7 +197,7 @@ namespace Efekt
 
             current = fn;
             var prevEnv = env;
-            var envForParams = new Env(fn, fn.Env);
+            var envForParams = new Env(fn.Env.Owner, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
             return visitAsiArray(fn.Items, envForParams, prevEnv);
         }
@@ -317,37 +318,39 @@ namespace Efekt
         {
             foreach (var item in s.Items)
             {
-                var declrItem = item as Declr;
-                var opa = item as BinOpApply;
-                if (opa == null)
+                var d = item as Declr;
+                if (d != null)
                 {
-                    var imp = item as Import;
-                    if (imp == null)
+                    VisitDeclr(d);
+                    continue;
+                }
+
+                var opa = item as BinOpApply;
+                if (opa != null && opa.Op.Name == "=")
+                {
+                    var i = opa.Op1 as Ident;
+                    if (i != null)
                     {
-                        if (declrItem == null)
-                            throw new EfektException("struct can contains only variables");
-                        if (!declrItem.IsVar)
-                            throw new EfektException(
-                                "declaration must be prefixed with 'var' in struct");
-                        declrItem.Accept(this);
+                        validations.StructItemVarMissing(i);
+                        env.Declare(i.Name);
                     }
                     else
                     {
-                        imp.Accept(this);
+                        i = declare(opa.Op1);
                     }
-                }
-                else if (opa.Op.Name == "=")
-                {
-                    // provide error as above
-                    Contract.Assume(opa.Op1 is Declr);
-                    var i = declare(opa.Op1);
                     var v = opa.Op2.Accept(this);
                     env.SetValue(i.Name, v);
+                    continue;
                 }
-                else
+
+                var imp = item as Import;
+                if (imp != null)
                 {
-                    throw new EfektException("struct can contains only variables, found: " + opa.Op);
+                    VisitImport(imp);
+                    continue;
                 }
+
+                validations.InvalidStructItem(item);
             }
         }
 

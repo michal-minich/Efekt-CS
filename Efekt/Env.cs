@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using JetBrains.Annotations;
 
 
@@ -10,7 +8,7 @@ namespace Efekt
 {
     public sealed class Env
     {
-        public IAsi Owner { get; }
+        public Struct Owner { get; }
 
         [CanBeNull]
         public Env Parent { get; }
@@ -20,13 +18,13 @@ namespace Efekt
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
 
 
-        public Env(IAsi owner)
+        public Env(Struct owner)
         {
             Owner = owner;
         }
 
 
-        public Env(IAsi owner, Env parent)
+        public Env(Struct owner, Env parent)
         {
             Contract.Requires(parent != null);
             Owner = owner;

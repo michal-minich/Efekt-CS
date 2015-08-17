@@ -2,7 +2,7 @@ NothingAfterIf = "Expected an expression after if keyword, but nothing was found
 IfTestIsNotExp = "Expected an expression after if keyword, but statement was found: '{0}'."
 WrongParamsOrder = "Parameters of function must be ordered first mandatory, then optional. '{0}' was found after '{1}'."
 ExpectedIdent = "Identifier was expected after dot '{0}'."
-ThisMemberAcces = "It is not allowed to use 'this' for accessing member, use just member name direcly instead."
+ThisMemberAcces = "To access member of currect struct don't use 'this', just member name direcly is enough."
 
 ExpHasNoEffect = "Expression has no effect: '{0}'."
 ImplicitVar = "Variable '{0}' was delared implicitly."
@@ -19,3 +19,5 @@ InstanceAfterNew = "Expresion after new statement must evalute to struct type, n
 NoConstructor = "Struct has no constructor '{0}'."
 ConstructorIsNotFn = "Struct member variable named 'constructor' should be a function, not '{0'}."
 ConstructorNotCalled = "Struct constructor must be applied when it is present in the struct '{0}'."
+InvalidStructItem = "Struct can contain only variables and imports '{0}'."
+StructItemVarMissing = "Variable assigmet must be prefixed with var keyword '{0}'."

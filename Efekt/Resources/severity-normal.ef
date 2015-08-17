@@ -19,3 +19,5 @@ InstanceAfterNew = Error
 NoConstructor = Error
 ConstructorIsNotFn = Error
 ConstructorNotCalled = Error
+InvalidStructItem = Error
+StructItemVarMissing = Error

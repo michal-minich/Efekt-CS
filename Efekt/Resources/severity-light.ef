@@ -19,3 +19,5 @@ InstanceAfterNew = Warning
 NoConstructor = Warning
 ConstructorIsNotFn = Warning
 ConstructorNotCalled = Warning
+InvalidStructItem = Warning
+StructItemVarMissing = Warning

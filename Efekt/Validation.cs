@@ -192,5 +192,7 @@ namespace Efekt
         public void ConstructorIsNotFn(IAsi asi) => add(asi);
         public void ConstructorNotCalled(New n) => add(n);
         public void ThisMemberAcces(Ident @this) => add(@this);
+        public void InvalidStructItem(IAsi asi) => add(asi);
+        public void StructItemVarMissing(Ident i) => add(i);
     }
 }

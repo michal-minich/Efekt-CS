@@ -2,7 +2,7 @@ NothingAfterIf = "Expected an expression after if keyword, but nothing was found
 IfTestIsNotExp = "Expected an expression after if keyword, but statement was found: '{0}'."
 WrongParamsOrder = "Parameters of function must be ordered first mandatory, then optional. '{0}' was found after '{1}'."
 ExpectedIdent = "Identifier was expected after dot '{0}'."
-ThisMemberAcces = "To access member of currect struct don't use 'this', just member name direcly is enough."
+ThisMemberAccess = "To access member of currect struct don't use 'this', just member name direcly is enough."
 
 ExpHasNoEffect = "Expression has no effect: '{0}'."
 ImplicitVar = "Variable '{0}' was delared implicitly."

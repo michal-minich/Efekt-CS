@@ -33,6 +33,7 @@
             <Word>i</Word>
             <Word>e</Word>
             <Word>iff</Word>
+            <Word>a</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>

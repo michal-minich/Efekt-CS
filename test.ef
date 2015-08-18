@@ -4,7 +4,7 @@ var S = struct {
     --var op+ = fn (a, b) { __plus(a, b) }
     var f1 = fn (b) { a = a + b }
     var f2 = fn (c) { a = a + c }
-    x = 1
+    var x = 1
 }
 var s = new S(1)
 print(s.a)

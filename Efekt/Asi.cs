@@ -24,6 +24,7 @@ namespace Efekt
         T VisitChar(Char c);
         T VisitIf(If iff);
         T VisitImport(Import imp);
+        T VisitAssign(Assign a);
     }
 
 
@@ -366,6 +367,23 @@ namespace Efekt
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitIf(this);
+    }
+
+
+    public sealed class Assign : Exp
+    {
+        public IExp Target { get; set; }
+        public IExp Value { get; }
+
+
+        public Assign(IExp target, IExp value)
+        {
+            Target = target;
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitAssign(this);
     }
 
 

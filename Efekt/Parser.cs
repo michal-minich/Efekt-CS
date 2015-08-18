@@ -115,7 +115,7 @@ namespace Efekt
                     }
                     var ident = asi as Ident;
                     if (op == "." && ident != null && ident.Name == "this")
-                        validations.ThisMemberAcces(ident);
+                        validations.ThisMemberAccess(ident);
 
                     var curOpPrecedence = opPrecedence[op];
                     if (rightAssociativeOps.Contains(op))
@@ -135,31 +135,40 @@ namespace Efekt
                         }
                         else
                         {
-                            var opa = a(new BinOpApply(
-                                a(new Ident(op, IdentCategory.Op)), (IExp)asi, (IExp)nextAsi));
-                            asi = opa;
-                            checkIdentAfterDot(opa);
+                            Contract.Assume(op != ".");
+                            var i = a(new Ident(op, IdentCategory.Op));
+                            asi = op == "="
+                                ? (IAsi)new Assign((IExp)asi, (IExp)nextAsi)
+                                : a(new BinOpApply(i, (IExp)asi, (IExp)nextAsi));
                         }
                     }
                     else if (curOpPrecedence <= prevOpPrecedence)
                     {
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
-                        var opa = a(new BinOpApply(
-                            a(new Ident(op, IdentCategory.Op)), (IExp)asi, (IExp)op2));
+                        var i = a(new Ident(op, IdentCategory.Op));
+                        var opa = a(new BinOpApply(i, (IExp)asi, (IExp)op2));
                         asi = opa;
-                        checkIdentAfterDot(opa);
+                        if (op == ".")
+                        {
+                            var i1 = opa.Op2 as Ident;
+                            if (i1 == null)
+                            {
+                                validations.ExpectedIdent(opa);
+                                opa.Op2 = new Ident("__error", IdentCategory.Value);
+                            }
+                        }
                         prevOpPrecedence = curOpPrecedence;
                     }
                     else
                     {
+                        Contract.Assume(op != ".");
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
                         var op1 = (BinOpApply)asi;
                         var opa = a(new BinOpApply(
                             a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op2));
                         op1.Op2 = opa;
-                        checkIdentAfterDot(opa);
                     }
 
                     found = true;
@@ -170,18 +179,6 @@ namespace Efekt
                 asi = parseFnApply(asi);
 
             return asi;
-        }
-
-
-        void checkIdentAfterDot(BinOpApply opa)
-        {
-            if (opa.Op.Name != ".")
-                return;
-            var i = opa.Op2 as Ident;
-            if (i != null)
-                return;
-            validations.ExpectedIdent(opa);
-            opa.Op2 = new Ident("__error", IdentCategory.Value);
         }
 
 
@@ -228,7 +225,7 @@ namespace Efekt
             if (b == null)
                 throw new EfektException("expected '{...}' after 'fn (...)'");
 
-            var fn = a(new Fn(p2.Cast<IExp>().ToList(), b));
+            var fn = a(new Fn(p2, b));
             validateParamsOrder(fn);
             return fn;
         }
@@ -246,10 +243,8 @@ namespace Efekt
                 {
                     if (isIdentOrDeclr)
                         continue;
-                    var opa = p as BinOpApply;
-                    if (opa == null)
+                    if (!(p is Assign))
                         continue;
-                    Contract.Assume(opa.Op.Name == "=");
                     recentOptional = p;
                     fn.CountMandatoryParams = n - 1;
                 }
@@ -450,7 +445,7 @@ namespace Efekt
         }
 
 
-        Asi parseVar()
+        Exp parseVar()
         {
             if (!matchWord("var"))
                 return null;
@@ -470,22 +465,20 @@ namespace Efekt
             if (i != null)
                 return a(new Declr(i, null) { IsVar = isVar });
 
-            var o = asi as BinOpApply;
-            if (o != null)
+            var assign = asi as Assign;
+            if (assign != null)
             {
-                if (o.Op.Name != "=")
-                    throw new EfektException("only assignment can be variable");
-                var i2 = o.Op1 as Ident;
+                var i2 = assign.Target as Ident;
                 if (i2 != null)
                 {
-                    o.Op1 = a(new Declr(i2, null) { IsVar = isVar });
-                    return o;
+                    assign.Target = a(new Declr(i2, null) { IsVar = isVar });
+                    return assign;
                 }
-                var d2 = o.Op1 as Declr;
+                var d2 = assign.Target as Declr;
                 if (d2 == null)
                     throw new EfektException("only identifier or declaration can be assigned");
                 d2.IsVar = isVar;
-                return o;
+                return assign;
             }
 
             var d = asi as Declr;
@@ -496,31 +489,27 @@ namespace Efekt
         }
 
 
-        internal static Ident GetIdentFromDeclrLikeAsi(IAsi a)
+        internal static Ident GetIdentFromDeclrLikeAsi(IAsi asi)
         {
-            var i = a as Ident;
+            var i = asi as Ident;
             if (i != null)
                 return i;
-            var d = a as Declr;
+            var d = asi as Declr;
             if (d != null)
                 return d.Ident;
-            var o = a as BinOpApply;
-            if (o != null)
+            var a = asi as Assign;
+            if (a != null)
             {
-                if (o.Op.Name == "=")
-                {
-                    var i2 = o.Op1 as Ident;
-                    if (i2 != null)
-                        return i2;
-                    var d2 = o.Op1 as Declr;
-                    if (d2 != null)
-                        return d2.Ident;
-                    throw new EfektException("expression of type " + a.GetType().Name +
-                                             " cannot be assigned");
-                }
-                throw new EfektException("expected assignment operator");
+                var i2 = a.Target as Ident;
+                if (i2 != null)
+                    return i2;
+                var d2 = a.Target as Declr;
+                if (d2 != null)
+                    return d2.Ident;
+                throw new EfektException("expression of type " + asi.GetType().Name +
+                                         " cannot be assigned");
             }
-            throw new EfektException("expression of type " + a.GetType().Name + "is unexpected");
+            throw new EfektException("expression of type " + asi.GetType().Name + "is unexpected");
         }
 
 

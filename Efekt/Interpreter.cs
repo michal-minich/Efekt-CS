@@ -54,35 +54,11 @@ namespace Efekt
         {
             switch (opa.Op.Name)
             {
-                case "=":
-                    return assign(opa);
                 case ".":
-                    return getStructEnvOfMember(
-                        opa.Op1.Accept(this),
-                        opa.Op2).GetValue(((Ident)opa.Op2).Name);
+                    return getStructEnvOfMember(opa).GetValue(((Ident)opa.Op2).Name);
                 default:
                     return VisitFnApply(new FnApply(opa.Op, new List<IExp> { opa.Op1, opa.Op2 }));
             }
-        }
-
-
-        IAsi assign(BinOpApply opa)
-        {
-            var v = opa.Op2.Accept(this);
-            v = copyIfStructInstance(v);
-            var ma = opa.Op1 as BinOpApply;
-            if (ma != null && ma.Op.Name == ".")
-            {
-                var s = ma.Op1.Accept(this);
-                var e = getStructEnvOfMember(s, ma.Op2);
-                e.SetValue(((Ident)ma.Op2).Name, v);
-            }
-            else
-            {
-                var i = declare(opa.Op1);
-                env.SetValue(i.Name, v);
-            }
-            return v;
         }
 
 
@@ -106,30 +82,25 @@ namespace Efekt
         }
 
 
-        Env getStructEnvOfMember(IAsi bag, IAsi member)
+        Env getStructEnvOfMember(BinOpApply ma)
         {
-            var s2 = bag as IHasEnv;
-            if (s2 == null)
-                throw new EfektException(
-                    "cannot access member '" + member.Accept(Program.DefaultPrinter) + "' of " +
-                    bag.GetType().Name);
-            if (s2.Env == null)
-                throw new EfektException(
-                    "cannot access member '" + member.Accept(Program.DefaultPrinter) +
-                    "'of not constructed struct");
-
-            var m = member as Ident;
+            var bag = ma.Op1.Accept(this);
+            var m = ma.Op2 as Ident;
             if (m == null)
                 throw new EfektException(
                     "expected identifier or member access after '.', not "
-                    + member.GetType().Name);
-            var sAsi = bag.Accept(this);
-            var s = sAsi as IHasEnv;
-            if (s == null)
+                    + ma.Op2.GetType().Name);
+
+            var s2 = bag as Struct;
+            if (s2 == null)
                 throw new EfektException(
-                    "exp before '." + member.Accept(Program.DefaultPrinter)
-                    + "'must evaluate to struct, not " + sAsi.GetType().Name);
-            return s.Env;
+                    "cannot access member '" + ma.Op2.Accept(Program.DefaultPrinter) + "' of " +
+                    bag.GetType().Name);
+            if (s2.Env == null)
+                throw new EfektException(
+                    "cannot access member '" + ma.Op2.Accept(Program.DefaultPrinter) +
+                    "' of not constructed struct");
+            return s2.Env;
         }
 
 
@@ -140,7 +111,11 @@ namespace Efekt
             {
                 var i = declrOrIdent as Ident;
                 if (i == null)
+                {
                     validations.DeclrExpected(declrOrIdent);
+                    i = new Ident("__error", IdentCategory.Value);
+                    env.Declare(i.Name);
+                }
                 return i;
             }
             d.Accept(this);
@@ -325,10 +300,10 @@ namespace Efekt
                     continue;
                 }
 
-                var opa = item as BinOpApply;
-                if (opa != null && opa.Op.Name == "=")
+                var a = item as Assign;
+                if (a != null)
                 {
-                    var i = opa.Op1 as Ident;
+                    var i = a.Target as Ident;
                     if (i != null)
                     {
                         validations.StructItemVarMissing(i);
@@ -336,9 +311,9 @@ namespace Efekt
                     }
                     else
                     {
-                        i = declare(opa.Op1);
+                        i = declare(a.Target);
                     }
-                    var v = opa.Op2.Accept(this);
+                    var v = a.Value.Accept(this);
                     env.SetValue(i.Name, v);
                     continue;
                 }
@@ -391,6 +366,24 @@ namespace Efekt
             return b != null && b.Value
                 ? iff.Then.Accept(this)
                 : iff.Otherwise == null ? new Void() : iff.Otherwise.Accept(this);
+        }
+
+
+        public IAsi VisitAssign(Assign a)
+        {
+            var v = a.Value.Accept(this);
+            v = copyIfStructInstance(v);
+            var ma = a.Target as BinOpApply;
+            if (ma != null && ma.Op.Name == ".")
+            {
+                getStructEnvOfMember(ma).SetValue(((Ident)ma.Op2).Name, v);
+            }
+            else
+            {
+                var i = declare(a.Target);
+                env.SetValue(i.Name, v);
+            }
+            return v;
         }
 
 

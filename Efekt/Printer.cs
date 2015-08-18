@@ -8,7 +8,7 @@ namespace Efekt
 {
     public sealed class Printer : IAsiVisitor<String>
     {
-        public Boolean PutBracesAroundBinOpApply { get; set; }
+        public Boolean PutBracesAroundBinOpApply { private get; set; }
 
 
         public String VisitAsiList(AsiList al) => joinStatements(al.Items);
@@ -69,15 +69,11 @@ namespace Efekt
 
 
         String joinStatementsOneLine(IEnumerable<IAsi> items)
-        {
-            return String.Join(" ", items.Select(i => i.Accept(this)));
-        }
+            => String.Join(" ", items.Select(i => i.Accept(this)));
 
 
         String joinStatements(IEnumerable<IAsi> items)
-        {
-            return String.Join("\n", items.Select(i => i.Accept(this)));
-        }
+            => String.Join("\n", items.Select(i => i.Accept(this)));
 
 
         String joinList(IEnumerable<IAsi> items)
@@ -98,6 +94,13 @@ namespace Efekt
         public String VisitIf(If iff) =>
             "if " + iff.Test.Accept(this) + " then " + iff.Test.Accept(this)
             + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
+
+
+        public String VisitAssign(Assign a)
+        {
+            var str = a.Target.Accept(this) + " = " + a.Value.Accept(this);
+            return PutBracesAroundBinOpApply ? "(" + str + ")" : str;
+        }
 
 
         public String VisitImport(Import imp) => "import " + imp.QualifiedIdent.Accept(this);

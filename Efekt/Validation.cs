@@ -186,12 +186,12 @@ namespace Efekt
 
 
         public void ExpectedIdent(BinOpApply affectedItem) => add(affectedItem);
-        public void NoStructAfterNew(IAsi asi, String asiTpe) => add(new Object[] { asi, asiTpe });
+        public void NoStructAfterNew(IAsi asi, String asiType) => add(new Object[] { asi, asiType });
         public void InstanceAfterNew(IExp exp) => add(exp);
         public void NoConstructor(New n) => add(n);
         public void ConstructorIsNotFn(IAsi asi) => add(asi);
         public void ConstructorNotCalled(New n) => add(n);
-        public void ThisMemberAcces(Ident @this) => add(@this);
+        public void ThisMemberAccess(Ident @this) => add(@this);
         public void InvalidStructItem(IAsi asi) => add(asi);
         public void StructItemVarMissing(Ident i) => add(i);
     }

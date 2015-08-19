@@ -8,7 +8,7 @@ namespace Efekt
 {
     public sealed class Interpreter : IAsiVisitor<IAsi>
     {
-        Env env;
+        private Env env;
         Asi current;
         Env global;
         ValidationList validations;
@@ -16,12 +16,19 @@ namespace Efekt
 
         public IAsi Run(AsiList al, ValidationList validationList)
         {
+            if (al.Items.Count == 0)
+                return new Void();
             validations = validationList;
             var fileStruct = new Struct(new List<IAsi>());
             global = env = new Env(fileStruct);
             fileStruct.Env = global;
-            var res = visitAsiArray(al.Items, env, env);
-            global = null;
+            visitAsiArray(al.Items.DropLast().ToList(), env, env);
+            var last = al.Items.Last();
+            IAsi res;
+            res = last.Accept(this);
+            global = env = null;
+            current = null;
+            validations = null;
             return res;
         }
 
@@ -65,7 +72,7 @@ namespace Efekt
         IAsi copyIfStructInstance(IAsi asi)
         {
             var s = asi as Struct;
-            if (s?.Env == null)
+            if (s?.Env == null || s == global.Owner)
                 return asi;
             var newStruct = new Struct(new List<IAsi>());
             var newEnv = new Env(newStruct, global);
@@ -106,6 +113,8 @@ namespace Efekt
 
         Ident declare(IAsi declrOrIdent)
         {
+            Contract.Ensures(Contract.Result<Ident>() != null);
+
             var d = declrOrIdent as Declr;
             if (d == null)
             {
@@ -126,7 +135,7 @@ namespace Efekt
         public IAsi VisitDeclr(Declr d)
         {
             env.Declare(d.Ident.Name);
-            return null;
+            return new Void();
         }
 
 
@@ -156,9 +165,9 @@ namespace Efekt
 
         public IAsi VisitFnApply(FnApply fna)
         {
-            var bRes = applyBuiltin(fna);
-            if (bRes != null)
-                return bRes;
+            var fnIdent = fna.Fn as Ident;
+            if (fnIdent != null && fnIdent.Name.StartsWith("__"))
+                return Builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
 
             var fnAsi = fna.Fn.Accept(this);
             if (fnAsi is Struct)
@@ -175,15 +184,6 @@ namespace Efekt
             var envForParams = new Env(fn.Env.Owner, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
             return visitAsiArray(fn.Items, envForParams, prevEnv);
-        }
-
-
-        IAsi applyBuiltin(FnApply fna)
-        {
-            var fnIdent = fna.Fn as Ident;
-            if (fnIdent == null || !fnIdent.Name.StartsWith("__"))
-                return null;
-            return Builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
         }
 
 
@@ -257,7 +257,8 @@ namespace Efekt
             env = new Env(instance, global);
             instance.Env = env;
             current = instance;
-            prepareStructBody(s);
+            foreach (var item in s.Items)
+                item.Accept(this);
             applyConstructor(n, fna);
             env = prevEnv;
             return instance;
@@ -289,47 +290,6 @@ namespace Efekt
         }
 
 
-        void prepareStructBody(Struct s)
-        {
-            foreach (var item in s.Items)
-            {
-                var d = item as Declr;
-                if (d != null)
-                {
-                    VisitDeclr(d);
-                    continue;
-                }
-
-                var a = item as Assign;
-                if (a != null)
-                {
-                    var i = a.Target as Ident;
-                    if (i != null)
-                    {
-                        validations.StructItemVarMissing(i);
-                        env.Declare(i.Name);
-                    }
-                    else
-                    {
-                        i = declare(a.Target);
-                    }
-                    var v = a.Value.Accept(this);
-                    env.SetValue(i.Name, v);
-                    continue;
-                }
-
-                var imp = item as Import;
-                if (imp != null)
-                {
-                    VisitImport(imp);
-                    continue;
-                }
-
-                validations.InvalidStructItem(item);
-            }
-        }
-
-
         public IAsi VisitVoid(Void v) => v;
 
         public IAsi VisitBool(Bool b) => b;
@@ -337,6 +297,8 @@ namespace Efekt
 
         IAsi visitAsiArray(IReadOnlyList<IAsi> items, Env newEnv, Env restoreEnv)
         {
+            Contract.Ensures(Contract.Result<IAsi>() != null);
+
             if (items.Count == 0)
                 return new Void();
             env = newEnv;

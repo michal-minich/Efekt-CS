@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using JetBrains.Annotations;
 
 
 namespace Efekt
 {
-    public interface IAsiVisitor<out T>
+    [ContractClass(typeof (IAsiVisitorContract<>))]
+    public interface IAsiVisitor<out T> where T : class
     {
         T VisitAsiList(AsiList al);
         T VisitErr(Err err);
@@ -27,14 +29,186 @@ namespace Efekt
         T VisitAssign(Assign a);
     }
 
+    [ContractClassFor(typeof (IAsiVisitor<>))]
+    internal abstract class IAsiVisitorContract<T> : IAsiVisitor<T> where T : class
+    {
+        T IAsiVisitor<T>.VisitAsiList(AsiList al)
+        {
+            Contract.Requires(al != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
 
+
+        T IAsiVisitor<T>.VisitErr(Err err)
+        {
+            Contract.Requires(err != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitInt(Int ii)
+        {
+            Contract.Requires(ii != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitIdent(Ident i)
+        {
+            Contract.Requires(i != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitBinOpApply(BinOpApply opa)
+        {
+            Contract.Requires(opa != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitDeclr(Declr d)
+        {
+            Contract.Requires(d != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitArr(Arr arr)
+        {
+            Contract.Requires(arr != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitStruct(Struct s)
+        {
+            Contract.Requires(s != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitFn(Fn fn)
+        {
+            Contract.Requires(fn != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitFnApply(FnApply fna)
+        {
+            Contract.Requires(fna != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitNew(New n)
+        {
+            Contract.Requires(n != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitVoid(Void v)
+        {
+            Contract.Requires(v != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitBool(Bool b)
+        {
+            Contract.Requires(b != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitChar(Char c)
+        {
+            Contract.Requires(c != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitIf(If iff)
+        {
+            Contract.Requires(iff != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitImport(Import imp)
+        {
+            Contract.Requires(imp != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        T IAsiVisitor<T>.VisitAssign(Assign a)
+        {
+            Contract.Requires(a != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+    }
+
+
+    [ContractClass(typeof (IAsiContract))]
     public interface IAsi
     {
-        T Accept<T>(IAsiVisitor<T> v);
+        T Accept<T>(IAsiVisitor<T> v) where T : class;
         Int32 Line { get; }
 
         Int32 Column { get; }
     }
+
+
+    [ContractClassFor(typeof (IAsi))]
+    internal abstract class IAsiContract : IAsi
+    {
+        T IAsi.Accept<T>(IAsiVisitor<T> v)
+        {
+            Contract.Requires(v != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        Int32 IAsi.Line
+        {
+            get
+            {
+                Contract.Ensures(Contract.Result<Int32>() >= 1);
+                return 1;
+            }
+        }
+
+        Int32 IAsi.Column
+        {
+            get
+            {
+                Contract.Ensures(Contract.Result<Int32>() >= 1);
+                return 1;
+            }
+        }
+    }
+
 
     public interface IHasEnv
     {
@@ -77,7 +251,7 @@ namespace Efekt
 
     public abstract class Asi : IAsi
     {
-        public abstract T Accept<T>(IAsiVisitor<T> v);
+        public abstract T Accept<T>(IAsiVisitor<T> v) where T : class;
         public Int32 Line { get; set; }
         public Int32 Column { get; set; }
         public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);

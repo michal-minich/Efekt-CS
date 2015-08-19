@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Linq;
 
 
@@ -11,6 +12,8 @@ namespace Efekt
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public static IExp Call(String fnName, IReadOnlyList<IExp> args)
         {
+            Contract.Ensures(Contract.Result<IExp>() != null);
+
             var err = args.FirstOrDefault(a => a is IErr);
             if (err != null)
                 return err;

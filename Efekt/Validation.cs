@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
@@ -113,6 +114,8 @@ namespace Efekt
                 if (String.IsNullOrWhiteSpace(l))
                     continue;
                 var split = l.Split('=');
+                if (split.Length != 2)
+                    throw new Exception("Error reading line: '" + l + "'.");
                 var left = split[0].Trim();
                 var right = split[1].Trim();
                 dict.Add(left, right);
@@ -125,6 +128,7 @@ namespace Efekt
         {
             var v = new Validation(types[code], new Object[] { item });
             validations.Add(v);
+            Contract.Assume(v.Items.OfType<IAsi>().Any());
             handle(v);
             return v;
         }
@@ -134,6 +138,7 @@ namespace Efekt
         {
             var v = new Validation(types[code], items);
             validations.Add(v);
+            Contract.Assume(v.Items.OfType<IAsi>().Any());
             handle(v);
             return v;
         }
@@ -141,7 +146,7 @@ namespace Efekt
 
         static void handle(Validation v)
         {
-            Console.Write(v.Type.Severity + " at ");
+            Console.Write(v.Type.Severity + " " + v.Type.Code + " at ");
             var firstAsi = v.Items.OfType<IAsi>().First();
             Console.Write(firstAsi.Line /* + ":" + v.AffectedItem.Column*/+ " : ");
             Console.WriteLine(v.Text);

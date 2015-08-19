@@ -4,7 +4,6 @@ var S = struct {
     --var op+ = fn (a, b) { __plus(a, b) }
     var f1 = fn (b) { a = a + b }
     var f2 = fn (c) { a = a + c }
-    var x = 1
 }
 var s = new S(1)
 print(s.a)
@@ -14,4 +13,6 @@ s.f2(100)
 print(s.a)
 s.a = 3
 s.a
---print(global.S)
+--env(global)
+print(mod.m)
+1

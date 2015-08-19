@@ -77,12 +77,12 @@ namespace Efekt
                 foreach (var d in e.Dict)
                     Console.WriteLine("  var " + d.Key + " = " +
                                       d.Value.Accept(Program.DefaultPrinter));
-                e = env.Parent;
+                e = e.Parent;
             } while (e != null);
         }
 
 
-        Env getEnvDeclaring(String name, Env env)
+        static Env getEnvDeclaring(String name, Env env)
         {
             var e = getEnvDeclaringOrNull(name, env);
             if (e == null)
@@ -92,7 +92,7 @@ namespace Efekt
 
 
         [CanBeNull]
-        Env getEnvDeclaringOrNull(String name, Env env)
+        static Env getEnvDeclaringOrNull(String name, Env env)
         {
             if (env.Dict.ContainsKey(name))
                 return env;

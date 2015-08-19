@@ -342,11 +342,13 @@ namespace Efekt
             var str = strParsed as Arr;
             if (str == null)
                 str = (Arr)((Err)strParsed).Item;
-            if (!str.Items.Any())
+            Contract.Assume(str != null);
+            Contract.Assume(str.Items != null);
+            if (str.Items.Count == 0)
                 throw new EfektException("char must have exactly one character, it has 0");
-            if (str.Items.Count() != 1)
+            if (str.Items.Count != 1)
                 Console.WriteLine("char must have exactly one character, it has " +
-                                  str.Items.Count());
+                                  str.Items.Count);
             return (Char)str.Items.First();
         }
 
@@ -412,8 +414,7 @@ namespace Efekt
 
         Ident parseIdent()
         {
-            var isLetterMatched = matchUntil(isLetter);
-            if (!isLetterMatched)
+            if (!matchUntil(isLetter))
                 return null;
 
             if (matched != "op")
@@ -423,7 +424,7 @@ namespace Efekt
                 var name = m1 + matched;
                 return a(new Ident(
                     name,
-                    System.Char.IsUpper(name[0]) ? IdentCategory.Type : IdentCategory.Value));
+                    System.Char.IsUpper(m1[0]) ? IdentCategory.Type : IdentCategory.Value));
             }
 
             var isOpMatched = matchUntil(isOp);
@@ -491,6 +492,8 @@ namespace Efekt
 
         internal static Ident GetIdentFromDeclrLikeAsi(IAsi asi)
         {
+            Contract.Ensures(Contract.Result<Ident>() != null);
+
             var i = asi as Ident;
             if (i != null)
                 return i;
@@ -535,6 +538,7 @@ namespace Efekt
                 --index;
                 --columnNumber;
                 var args = parseBracedList('(', ')');
+                Contract.Assume(args != null);
                 asi = a(new FnApply(asi, args.Cast<IExp>().ToList()));
                 skipWhite();
             }
@@ -711,6 +715,9 @@ namespace Efekt
 
         Boolean matchUntil(Func<Boolean> isMatch)
         {
+            Contract.Requires(isMatch != null);
+            Contract.Ensures(Contract.Result<Boolean>() == matched.Length > 0);
+            Contract.Assume(index >= 0);
             if (index > code.Length)
                 return false;
 
@@ -738,6 +745,9 @@ namespace Efekt
 
         T a<T>(T asi) where T : Asi
         {
+            Contract.Requires(asi != null);
+            Contract.Ensures(Contract.Result<T>() == asi);
+
             asi.Line = lineNumber;
             asi.Column = columnNumber;
             return asi;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -10,6 +11,9 @@ namespace Efekt
         public static Printer DefaultPrinter;
         public static ValidationList ValidationList;
 
+        static readonly String basePath = AppDomain.CurrentDomain.BaseDirectory;
+        static readonly String resPath = basePath + @"Resources\";
+        static readonly String libPath = basePath + @"Lib\";
 
         internal static void Main(String[] args)
         {
@@ -19,21 +23,25 @@ namespace Efekt
 
                 Tests.Test();
 
-                if (args.Length != 1)
+                if (args.Length == 0)
                 {
-                    Console.WriteLine("Usage: Efekt <file>");
+                    Console.WriteLine("Usage: Efekt <file> [<file>] ... ");
                     return;
                 }
 
-                run(args[0]);
+                run(args);
             }
             catch (ValidationException)
             {
                 // do nothing, it should be printed already
             }
+            catch (EfektException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.GetType().Name + ": " + ex.Message);
+                Console.WriteLine("Unexpected " + ex.GetType().Name + ": " + ex.Message);
             }
         }
 
@@ -41,51 +49,38 @@ namespace Efekt
         static void init()
         {
             DefaultPrinter = new Printer();
-
-            var basePath = AppDomain.CurrentDomain.BaseDirectory + @"Resources\";
-
+            
             ValidationList = ValidationList.InitFrom(
-                File.ReadAllLines(basePath + "validations.en-US.ef"));
+                File.ReadAllLines(resPath + "validations.en-US.ef"));
 
             var severities = ValidationList.LoadSeverities(
-                File.ReadAllLines(basePath + "severity-light.ef"));
+                File.ReadAllLines(resPath + "severity-light.ef"));
 
             ValidationList.UseSeverities(severities);
         }
 
 
-        static void run(String filePath)
+        static void run(IEnumerable<String> filePaths)
         {
             var p = new Parser();
-            var txt = File.ReadAllText(filePath);
-            var al = p.Parse(txt, ValidationList);
+            var modules = new Dictionary<String, IReadOnlyList<IAsi>>();
+            foreach (var path in filePaths.Reverse())
+            {
+                var txt = File.ReadAllText(path);
+                var al = p.Parse(txt, ValidationList);
+                modules.Add(Path.GetFileNameWithoutExtension(path), al.Items);
+            }
 
-            var prelude = p.Parse(preludeCode, ValidationList);
-            var code = new AsiList(prelude.Items.Concat(al.Items).ToList());
+            var preludeTxt = File.ReadAllText(libPath + "prelude.ef");
+            var preludeTxtAl = p.Parse(preludeTxt, ValidationList);
 
-            Console.WriteLine("Running...");
+            var rw = new Rewriter();
+            var prog = rw.MakeProgram(preludeTxtAl.Items, modules);
 
             var i = new Interpreter();
-            var res = i.Run(code, ValidationList);
-
-            var str = res.Accept(DefaultPrinter);
-            Console.WriteLine(str);
+            var res = i.Run(prog, ValidationList);
+            Console.Write("Result: ");
+            Console.WriteLine(res.Accept(DefaultPrinter));
         }
-
-
-        const String preludeCode =
-            "var id = fn (a) { a }\n"
-            + "var op+ = fn(a, b) { __plus(a, b) }\n"
-            + "var op* = fn(a, b) { __multiply(a, b) }\n"
-            + "var inc = fn(a, b) { __plus(a, 1) }\n"
-                //+ "var dec = fn(a, b) { __plus(a, -1) }\n"
-            + "var and = fn(a, b) { __and(a, b) }\n"
-            + "var or = fn(a, b) { __or(a, b) }\n"
-            + "var first = fn(a) { __at(a, 0) }\n"
-            + "var rest = fn(a) { __rest(a) }\n"
-            + "var at = fn(a, ix) { __at(a, ix) }\n"
-            + "var add = fn(a, item) { __add(a, item) }\n"
-            + "var env = fn(a) { __env(a) }\n"
-            + "var print = fn(a) { __print(a) }\n";
     }
 }

@@ -27,7 +27,17 @@ namespace Efekt
         T VisitIf(If iff);
         T VisitImport(Import imp);
         T VisitAssign(Assign a);
+        T VisitGoto(Goto gt);
+        T VisitLabel(Label lbl);
+        T VisitBreak(Break br);
+        T VisitContinue(Continue ct);
+        T VisitReturn(Return r);
+        T VisitLoop(Loop lp);
+        T VisitWhile(While w);
+        T VisitDoWhile(DoWhile dw);
+        T VisitForEach(ForEach fe);
     }
+
 
     [ContractClassFor(typeof (IAsiVisitor<>))]
     internal abstract class IAsiVisitorContract<T> : IAsiVisitor<T> where T : class
@@ -163,6 +173,78 @@ namespace Efekt
         T IAsiVisitor<T>.VisitAssign(Assign a)
         {
             Contract.Requires(a != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitGoto(Goto gt)
+        {
+            Contract.Requires(gt != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitLabel(Label lbl)
+        {
+            Contract.Requires(lbl != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitBreak(Break br)
+        {
+            Contract.Requires(br != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitContinue(Continue ct)
+        {
+            Contract.Requires(ct != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitReturn(Return r)
+        {
+            Contract.Requires(r != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitLoop(Loop lp)
+        {
+            Contract.Requires(lp != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitWhile(While w)
+        {
+            Contract.Requires(w != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitDoWhile(DoWhile dw)
+        {
+            Contract.Requires(dw != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitForEach(ForEach fe)
+        {
+            Contract.Requires(fe != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -567,5 +649,161 @@ namespace Efekt
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitImport(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "GoTo")]
+    public sealed class Goto : Stm
+    {
+        public Ident LabelName { get; }
+
+
+        public Goto(Ident labelName)
+        {
+            LabelName = labelName;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitGoto(this);
+    }
+
+
+    public sealed class Label : Stm
+    {
+        public Ident LabelName { get; }
+
+
+        public Label(Ident labelName)
+        {
+            LabelName = labelName;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitLabel(this);
+    }
+
+
+    public sealed class Break : Stm
+    {
+        [CanBeNull]
+        public Ident LabelName { get; }
+
+
+        public Break([CanBeNull] Ident labelName)
+        {
+            LabelName = labelName;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitBreak(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "Continue")]
+    public sealed class Continue : Stm
+    {
+        [CanBeNull]
+        public Ident LabelName { get; }
+
+
+        public Continue([CanBeNull] Ident labelName)
+        {
+            LabelName = labelName;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitContinue(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "Return")]
+    public sealed class Return : Stm
+    {
+        [CanBeNull]
+        public IAsi Value { get; }
+
+
+        public Return([CanBeNull] IAsi value)
+        {
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitReturn(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "Loop")]
+    public sealed class Loop : Stm
+    {
+        public IReadOnlyList<IAsi> Items { get; }
+
+
+        public Loop(IReadOnlyList<IAsi> items)
+        {
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitLoop(this);
+    }
+
+
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "While")]
+    public sealed class While : Stm
+    {
+        public IAsi Test { get; }
+        public IReadOnlyList<IAsi> Items { get; }
+
+
+        public While(IAsi test, IReadOnlyList<IAsi> items)
+        {
+            Test = test;
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitWhile(this);
+    }
+
+
+    public sealed class DoWhile : Stm
+    {
+        public IReadOnlyList<IAsi> Items { get; }
+
+        public IAsi Test { get; }
+
+
+        public DoWhile(IReadOnlyList<IAsi> items, IAsi test)
+        {
+            Test = test;
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitDoWhile(this);
+    }
+
+    public sealed class ForEach : Stm
+    {
+        public Ident Ident { get; }
+        public IAsi Iterable { get; }
+        public IReadOnlyCollection<IAsi> Items { get; }
+
+
+        public ForEach(Ident ident, IAsi iterable, IReadOnlyCollection<IAsi> items)
+        {
+            Ident = ident;
+            Iterable = iterable;
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitForEach(this);
     }
 }

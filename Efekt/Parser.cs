@@ -188,6 +188,7 @@ namespace Efekt
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
                       ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
                       ?? parseChar() ?? parseString('"') ?? parseImport()
+                      ?? parseSimpleKeywords()
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
             if (asi != null && !skipFnApply)
@@ -409,6 +410,67 @@ namespace Efekt
         }
 
 
+        IAsi parseSimpleKeywords()
+        {
+            if (matchWord("goto"))
+                return new Goto(skipWhiteButNoNewLineAnd(parseIdent));
+
+            if (matchWord("label"))
+                return new Label(skipWhiteButNoNewLineAnd(parseIdent));
+
+            if (matchWord("break"))
+                return new Break(skipWhiteButNoNewLineAnd(parseIdent));
+
+            if (matchWord("continue"))
+                return new Continue(skipWhiteButNoNewLineAnd(parseIdent));
+
+            if (matchWord("return"))
+                return new Return(skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
+
+            if (matchWord("loop"))
+                return new Loop(skipWhiteAnd(() => parseBracedList('{', '}')));
+
+            if (matchWord("while"))
+                return new While(skipWhiteAnd(() => parseCombinedAsi()),
+                    skipWhiteAnd(() => parseBracedList('{', '}')));
+
+            if (matchWord("do"))
+            {
+                skipWhite();
+                var items = parseBracedList('{', '}');
+                Contract.Assume(items != null);
+                skipWhite();
+                var isWhile = matchWord("while");
+                Contract.Assume(isWhile);
+                skipWhite();
+                var test = parseCombinedAsi();
+                Contract.Assume(test != null);
+                var dw = new DoWhile(items, test);
+                return dw;
+            }
+
+            if (matchWord("foreach"))
+            {
+                skipWhite();
+                var ident = parseIdent();
+                Contract.Assume(ident != null);
+                skipWhite();
+                var isIn = matchWord("in");
+                Contract.Assume(isIn);
+                skipWhite();
+                var iterable = parseCombinedAsi();
+                Contract.Assume(iterable != null);
+                skipWhite();
+                var items = parseBracedList('{', '}');
+                Contract.Assume(items != null);
+                var fe = new ForEach(ident, iterable, items);
+                return fe;
+            }
+
+            return null;
+        }
+
+
         Void parseVoid() => matchWord("void") ? a(new Void()) : null;
 
 
@@ -596,6 +658,22 @@ namespace Efekt
                    ch == '&' || ch == '/' || ch == '|' || ch == '<' ||
                    ch == '>' || ch == '?' || ch == ',' || ch == '$' ||
                    ch == ';' || ch == '`' || ch == '\\';
+        }
+
+
+        T skipWhiteAnd<T>(Func<T> parseFn)
+        {
+            skipWhite();
+            return parseFn();
+        }
+
+
+        T skipWhiteButNoNewLineAnd<T>(Func<T> parseFn) where T : class, IAsi
+        {
+            skipWhite();
+            if (wasNewLine)
+                return null;
+            return parseFn();
         }
 
 

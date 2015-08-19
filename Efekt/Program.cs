@@ -15,6 +15,7 @@ namespace Efekt
         static readonly String resPath = basePath + @"Resources\";
         static readonly String libPath = basePath + @"Lib\";
 
+
         internal static void Main(String[] args)
         {
             try
@@ -49,7 +50,7 @@ namespace Efekt
         static void init()
         {
             DefaultPrinter = new Printer();
-            
+
             ValidationList = ValidationList.InitFrom(
                 File.ReadAllLines(resPath + "validations.en-US.ef"));
 

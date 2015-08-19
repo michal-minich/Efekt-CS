@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using JetBrains.Annotations;
@@ -8,7 +9,7 @@ namespace Efekt
 {
     public sealed class Interpreter : IAsiVisitor<IAsi>
     {
-        private Env env;
+        Env env;
         Asi current;
         Env global;
         ValidationList validations;
@@ -346,6 +347,60 @@ namespace Efekt
                 env.SetValue(i.Name, v);
             }
             return v;
+        }
+
+
+        public IAsi VisitGoto(Goto gt)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitLabel(Label lbl)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitBreak(Break br)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitContinue(Continue ct)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitReturn(Return r)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitLoop(Loop lp)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitWhile(While w)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitDoWhile(DoWhile dw)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public IAsi VisitForEach(ForEach fe)
+        {
+            throw new NotImplementedException();
         }
 
 

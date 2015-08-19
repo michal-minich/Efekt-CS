@@ -1,18 +1,12 @@
-var S = struct {
-    var a = 0
-    var constructor = fn (x) { a = x }
-    --var op+ = fn (a, b) { __plus(a, b) }
-    var f1 = fn (b) { a = a + b }
-    var f2 = fn (c) { a = a + c }
-}
-var s = new S(1)
-print(s.a)
-s.f1(20)
-print(s.a)
-s.f2(100)
-print(s.a)
-s.a = 3
-s.a
---env(global)
-print(mod.m)
-1
+goto a
+label b
+continue
+continue c
+break
+break d
+return
+return e
+loop { }
+while f { }
+do { } while g
+foreach h in i { }

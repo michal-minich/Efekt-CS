@@ -104,5 +104,39 @@ namespace Efekt
 
 
         public String VisitImport(Import imp) => "import " + imp.QualifiedIdent.Accept(this);
+
+
+        public String VisitGoto(Goto gt) => "goto " + gt.LabelName.Name;
+
+
+        public String VisitLabel(Label lbl) => "label " + lbl.LabelName.Name;
+
+
+        public String VisitBreak(Break br)
+            => "break" + (br.LabelName == null ? "" : " " + br.LabelName.Name);
+
+
+        public String VisitContinue(Continue ct)
+            => "continue" + (ct.LabelName == null ? "" : " " + ct.LabelName.Name);
+
+
+        public String VisitReturn(Return r)
+            => "return" + (r.Value == null ? "" : " " + r.Value.Accept(this));
+
+
+        public String VisitLoop(Loop lp) => "loop {" + joinStatements(lp.Items) + "}";
+
+
+        public String VisitWhile(While w)
+            => "while " + w.Test.Accept(this) + " {" + joinStatements(w.Items) + "}";
+
+
+        public String VisitDoWhile(DoWhile dw)
+            => "do {" + joinStatements(dw.Items) + "} while " + dw.Test.Accept(this);
+
+
+        public String VisitForEach(ForEach fe)
+            => "foreach " + fe.Ident.Name + " in " + fe.Iterable.Accept(this)
+               + " {" + joinStatements(fe.Items);
     }
 }

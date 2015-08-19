@@ -20,6 +20,7 @@
             <Word>Dict</Word>
             <Word>Stm</Word>
             <Word>Param</Word>
+            <Word>Iterable</Word>
             <Word>v</Word>
             <Word>n</Word>
             <Word>fna</Word>
@@ -34,6 +35,13 @@
             <Word>e</Word>
             <Word>iff</Word>
             <Word>a</Word>
+            <Word>dw</Word>
+            <Word>w</Word>
+            <Word>lp</Word>
+            <Word>r</Word>
+            <Word>gt</Word>
+            <Word>lbl</Word>
+            <Word>fe</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>

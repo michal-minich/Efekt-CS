@@ -1,4 +1,6 @@
 var id = fn (a) { a }
+var op== = fn(a, b) { __eq(a, b) }
+var op< = fn(a, b) { __lt(a, b) }
 var op+ = fn(a, b) { __plus(a, b) }
 var op* = fn(a, b) { __multiply(a, b) }
 var inc = fn(a, b) { __plus(a, 1) }

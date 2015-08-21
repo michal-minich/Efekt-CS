@@ -13,6 +13,9 @@ namespace Efekt
         Asi current;
         Env global;
         ValidationList validations;
+        Boolean isReturn;
+        Boolean isBreak;
+        Boolean isContinue;
 
 
         public IAsi Run(AsiList al, ValidationList validationList)
@@ -303,16 +306,22 @@ namespace Efekt
             if (items.Count == 0)
                 return new Void();
             env = newEnv;
+            IAsi r = null;
             for (var i = 0; i < items.Count - 1; ++i)
             {
                 if (items[i] is Val)
                     validations.ExpHasNoEffect(items[i]);
                 else
-                    items[i].Accept(this);
+                    r = items[i].Accept(this);
+                if (isReturn)
+                {
+                    isReturn = false;
+                    return r;
+                }
             }
-            var res = items.Last().Accept(this);
+            r = items.Last().Accept(this);
             env = restoreEnv;
-            return copyIfStructInstance(res);
+            return copyIfStructInstance(r);
         }
 
 
@@ -364,31 +373,70 @@ namespace Efekt
 
         public IAsi VisitBreak(Break br)
         {
-            throw new NotImplementedException();
+            isBreak = true;
+            return Void.Instance;
         }
 
 
         public IAsi VisitContinue(Continue ct)
         {
-            throw new NotImplementedException();
+            isContinue = true;
+            return Void.Instance;
         }
 
 
         public IAsi VisitReturn(Return r)
         {
-            throw new NotImplementedException();
+            isReturn = true;
+            return r.Value == null ? Void.Instance : r.Value.Accept(this);
         }
 
 
         public IAsi VisitLoop(Loop lp)
         {
-            throw new NotImplementedException();
+            return loopWhile(() => true, lp.Items);
+        }
+
+
+        IAsi loopWhile(Func<Boolean> condition, IReadOnlyCollection<IAsi> items,
+            String itemName = null)
+        {
+            IAsi r = Void.Instance;
+            var prevEnv = env;
+            env = new Env(env.Owner, env);
+            if (itemName != null)
+                env.Declare(itemName);
+            while (condition())
+            {
+                foreach (var item in items)
+                {
+                    if (isReturn)
+                    {
+                        isReturn = false;
+                        goto exit;
+                    }
+                    else if (isBreak)
+                    {
+                        isBreak = false;
+                        goto exit;
+                    }
+                    else if (isContinue)
+                    {
+                        isContinue = false;
+                        continue;
+                    }
+                    r = item.Accept(this);
+                }
+            }
+            exit:
+            env = prevEnv;
+            return r;
         }
 
 
         public IAsi VisitWhile(While w)
         {
-            throw new NotImplementedException();
+            return loopWhile(() => ((Bool)w.Test.Accept(this)).Value, w.Items);
         }
 
 
@@ -400,7 +448,16 @@ namespace Efekt
 
         public IAsi VisitForEach(ForEach fe)
         {
-            throw new NotImplementedException();
+            var iterable = fe.Iterable.Accept(this);
+            var arr = (Arr)iterable;
+            var en = arr.Items.GetEnumerator();
+
+            return loopWhile(() =>
+            {
+                var hasItem = en.MoveNext();
+                env.SetValue(fe.Ident.Name, en.Current);
+                return hasItem;
+            }, fe.Items, fe.Ident.Name);
         }
 
 

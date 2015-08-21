@@ -20,6 +20,11 @@ namespace Efekt
 
             switch (fnName)
             {
+                case "eq":
+                    return new Bool(args[0].toString() == args[1].toString());
+                case "lt":
+                    return new Bool(args[0].asInt() < args[1].asInt());
+
                 case "plus":
                     return new Int((args[0].asInt() + args[1].asInt()).ToString());
                 case "multiply":

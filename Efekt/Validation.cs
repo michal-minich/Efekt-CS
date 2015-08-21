@@ -115,7 +115,7 @@ namespace Efekt
                     continue;
                 var split = l.Split('=');
                 if (split.Length != 2)
-                    throw new Exception("Error reading line: '" + l + "'.");
+                    throw new EfektException("Error reading line: '" + l + "'.");
                 var left = split[0].Trim();
                 var right = split[1].Trim();
                 dict.Add(left, right);

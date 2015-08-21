@@ -1,12 +1,56 @@
-goto a
-label b
-continue
-continue c
-break
-break d
-return
-return e
-loop { }
-while f { }
-do { } while g
-foreach h in i { }
+var f1 = fn () {
+    var a = 1
+    return 3
+    print(2)
+}
+
+var f2 = fn (arr) {
+    foreach a in arr {
+        if a == 7 then
+            return
+        print(a)
+    }
+}
+
+var f3 = fn () {
+    var n = 10
+    loop {
+        n = n + 1
+        if n == 15 then
+            break
+        print(n)
+    }
+}
+
+var f4 = fn () {
+    var n = 10
+    while n < 70 {
+        print(n)
+        n = n + 10
+    }
+}
+
+var f5 = fn () {
+    var n = 10
+    while (n < 70) {
+        if n == 20 then
+            continue
+        print(n)
+        n = n + 10
+    }
+}
+
+print("-----f1")
+print(f1())
+print("-----f2")
+f2([4, 5, 6, 7 , 8])
+print("-----f3")
+f3()
+print("-----f3")
+f4()
+print("-----f5")
+f5()
+
+
+
+

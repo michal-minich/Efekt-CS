@@ -575,6 +575,9 @@ namespace Efekt
 
     public sealed class Void : Atom
     {
+        [SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
+        public static readonly Void Instance = new Void();
+
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitVoid(this);
     }
 

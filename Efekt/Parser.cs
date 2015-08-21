@@ -213,11 +213,9 @@ namespace Efekt
                 return null;
 
             skipWhite();
-            var p = parseBracedList('(', ')');
-
-            if (p == null)
-                throw new EfektException("expected '(...)' after 'fn'");
-
+            var p = parseComaList('{');
+            --index;
+            
             var p2 = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
 
             skipWhite();
@@ -608,17 +606,14 @@ namespace Efekt
         }
 
 
-        List<IAsi> parseBracedList(System.Char startBrace, System.Char endBrace)
+        List<IAsi> parseComaList(System.Char stopChar)
         {
-            if (!matchChar(startBrace))
-                return null;
-
             var items = new List<IAsi>();
             skipWhite();
-            while (!matchChar(endBrace))
+            while (!matchChar(stopChar))
             {
                 if (!hasChars)
-                    throw new EfektException("missing closing brace " + endBrace +
+                    throw new EfektException("missing closing brace " + stopChar +
                                              " and source end reached");
 
                 wasNewLine = false;
@@ -627,6 +622,15 @@ namespace Efekt
                 skipWhite();
             }
             return items;
+        }
+
+
+        List<IAsi> parseBracedList(System.Char startBrace, System.Char endBrace)
+        {
+            if (!matchChar(startBrace))
+                return null;
+
+            return parseComaList(endBrace);
         }
 
 

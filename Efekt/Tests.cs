@@ -300,7 +300,7 @@ namespace Efekt
             //eval("var a = 1\"abc\na=2 a", "2");
 
             eval("if true then 1 else 2", "1");
-            eval(id + " var a = true if id(a) then a = false else a = true a", "false");
+            eval(id + " var a = true if id(a) { a = false } else { a = true } a", "false");
 
             eval(plus + mul + "var a = fn { 10 } var b = fn { 2 } var c = fn " +
                  "{ 3 } a() * b() + c()", "23");

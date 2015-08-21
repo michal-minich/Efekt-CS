@@ -326,17 +326,24 @@ namespace Efekt
             {
                 iff.Then = parseCombinedAsi();
                 if (iff.Then == null)
-                    throw new EfektException("expected expression after then");
+                    throw new EfektException("expected expression after 'then'");
+                if (iff.Then is AsiList)
+                    throw new EfektException("when block { } used 'then' must be omited.");
+            }
+            else if (matchWord("{"))
+            {
+                --index;
+                iff.Then = a(new AsiList(parseBracedList('{', '}')));
             }
             else
-                throw new EfektException("expected then after if");
+                throw new EfektException("expected 'then' or '{' after if");
 
-
+            skipWhite();
             if (matchWord("else"))
             {
                 iff.Otherwise = parseCombinedAsi();
                 if (iff.Otherwise == null)
-                    throw new EfektException("expected expression after else");
+                    throw new EfektException("expected expression after 'else'");
             }
 
             return iff;

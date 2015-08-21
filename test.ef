@@ -6,7 +6,7 @@ var f1 = fn {
 
 var f2 = fn arr {
     foreach a in arr {
-        if a == 7 then {
+        if a == 7 {
             return
         }
         print(a)
@@ -17,7 +17,7 @@ var f3 = fn {
     var n = 10
     loop {
         n = n + 1
-        if n == 15 then {
+        if n == 15 {
             break
         }
         print(n)
@@ -35,7 +35,7 @@ var f4 = fn {
 var f5 = fn {
     var n = 10
     while n < 70 {
-        if n == 20 then {
+        if n == 20 {
             continue
         }
         print(n)

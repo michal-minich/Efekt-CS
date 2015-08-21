@@ -106,6 +106,11 @@ namespace Efekt
                 if (matchUntil(isOp) || matchSpecialOp())
                 {
                     var op = matched;
+                    if (op == "=>")
+                    {
+                        index -= 2;
+                        return asi;
+                    }
 
                     if (context == "new" && op == ".")
                     {
@@ -117,6 +122,9 @@ namespace Efekt
                     if (op == "." && ident != null && ident.Name == "this")
                         validations.ThisMemberAccess(ident);
 
+                    if (!opPrecedence.ContainsKey(op))
+                        throw new EfektException(
+                            "Operator '" + op + "' precedence is not defined.");
                     var curOpPrecedence = opPrecedence[op];
                     if (rightAssociativeOps.Contains(op))
                     {
@@ -215,16 +223,25 @@ namespace Efekt
             skipWhite();
             var p = parseComaList('{');
             --index;
-            
+
             var p2 = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
-
+        
+            Fn fn;
             skipWhite();
-            var b = parseBracedList('{', '}');
+            if (matchWord("=>"))
+            {
+                var b = parseCombinedAsi();
+                fn = a(new Fn(p2, new List<IAsi> { b }));
+            }
+            else
+            {
+                var b = parseBracedList('{', '}');
 
-            if (b == null)
-                throw new EfektException("expected '{...}' after 'fn (...)'");
+                if (b == null)
+                    throw new EfektException("expected '{...}' or '=>' after 'fn ...'");
+                fn = a(new Fn(p2, b));
+            }
 
-            var fn = a(new Fn(p2, b));
             validateParamsOrder(fn);
             return fn;
         }
@@ -620,6 +637,11 @@ namespace Efekt
                 var asi = parseCombinedAsi();
                 items.Add(asi);
                 skipWhite();
+                if (matchWord("=>"))
+                {
+                    index -= 1;
+                    break;
+                }
             }
             return items;
         }

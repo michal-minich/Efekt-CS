@@ -434,18 +434,6 @@ namespace Efekt
         }
 
 
-        public IAsi VisitWhile(While w)
-        {
-            return repeatWhile(() => ((Bool)w.Test.Accept(this)).Value, w.Items);
-        }
-
-
-        public IAsi VisitDoWhile(DoWhile dw)
-        {
-            throw new NotImplementedException();
-        }
-
-
         public IAsi VisitForEach(ForEach fe)
         {
             var iterable = fe.Iterable.Accept(this);

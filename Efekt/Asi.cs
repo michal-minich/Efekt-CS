@@ -33,8 +33,6 @@ namespace Efekt
         T VisitContinue(Continue ct);
         T VisitReturn(Return r);
         T VisitRepeat(Repeat rp);
-        T VisitWhile(While w);
-        T VisitDoWhile(DoWhile dw);
         T VisitForEach(ForEach fe);
     }
 
@@ -221,22 +219,6 @@ namespace Efekt
         public T VisitRepeat(Repeat rp)
         {
             Contract.Requires(rp != null);
-            Contract.Ensures(Contract.Result<T>() != null);
-            return null;
-        }
-
-
-        public T VisitWhile(While w)
-        {
-            Contract.Requires(w != null);
-            Contract.Ensures(Contract.Result<T>() != null);
-            return null;
-        }
-
-
-        public T VisitDoWhile(DoWhile dw)
-        {
-            Contract.Requires(dw != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -753,42 +735,6 @@ namespace Efekt
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitRepeat(this);
     }
 
-
-    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
-        MessageId = "While")]
-    public sealed class While : Stm
-    {
-        public IAsi Test { get; }
-        public IReadOnlyList<IAsi> Items { get; }
-
-
-        public While(IAsi test, IReadOnlyList<IAsi> items)
-        {
-            Test = test;
-            Items = items;
-        }
-
-
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitWhile(this);
-    }
-
-
-    public sealed class DoWhile : Stm
-    {
-        public IReadOnlyList<IAsi> Items { get; }
-
-        public IAsi Test { get; }
-
-
-        public DoWhile(IReadOnlyList<IAsi> items, IAsi test)
-        {
-            Test = test;
-            Items = items;
-        }
-
-
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitDoWhile(this);
-    }
 
     public sealed class ForEach : Stm
     {

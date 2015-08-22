@@ -328,7 +328,7 @@ namespace Efekt
                 if (iff.Then == null)
                     throw new EfektException("expected expression after 'then'");
                 if (iff.Then is AsiList)
-                    throw new EfektException("when block { } used 'then' must be omited.");
+                    throw new EfektException("when block { } used 'then' must be omitted.");
             }
             else if (matchWord("{"))
             {
@@ -451,25 +451,6 @@ namespace Efekt
 
             if (matchWord("repeat"))
                 return new Repeat(skipWhiteAnd(() => parseBracedList('{', '}')));
-
-            if (matchWord("while"))
-                return new While(skipWhiteAnd(() => parseCombinedAsi()),
-                    skipWhiteAnd(() => parseBracedList('{', '}')));
-
-            if (matchWord("do"))
-            {
-                skipWhite();
-                var items = parseBracedList('{', '}');
-                Contract.Assume(items != null);
-                skipWhite();
-                var isWhile = matchWord("while");
-                Contract.Assume(isWhile);
-                skipWhite();
-                var test = parseCombinedAsi();
-                Contract.Assume(test != null);
-                var dw = new DoWhile(items, test);
-                return dw;
-            }
 
             if (matchWord("foreach"))
             {

@@ -55,7 +55,7 @@ namespace Efekt
         {
             var b = joinStatementsOneLine(fn.Items);
             return "fn " + joinList(fn.Params) + (fn.Params.Count == 0 ? "" : " ")
-                + (b.Length == 0 ? "{ }" : "{ " + b + " }");
+                   + (b.Length == 0 ? "{ }" : "{ " + b + " }");
         }
 
 
@@ -126,14 +126,6 @@ namespace Efekt
 
 
         public String VisitRepeat(Repeat rp) => "repeat {" + joinStatements(rp.Items) + "}";
-
-
-        public String VisitWhile(While w)
-            => "while " + w.Test.Accept(this) + " {" + joinStatements(w.Items) + "}";
-
-
-        public String VisitDoWhile(DoWhile dw)
-            => "do {" + joinStatements(dw.Items) + "} while " + dw.Test.Accept(this);
 
 
         public String VisitForEach(ForEach fe)

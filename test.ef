@@ -26,7 +26,10 @@ var f3 = fn {
 
 var f4 = fn {
     var n = 10
-    while n < 70 {
+    repeat {
+        if n < 70 {
+            break
+        }
         print(n)
         n = n + 10
     }
@@ -34,14 +37,22 @@ var f4 = fn {
 
 var f5 = fn {
     var n = 10
-    while n < 70 {
+    repeat {
+        if n < 70 {
+            break
+        }
         if n == 20 {
             continue
         }
+        continue if n == 20
+        break if n == 20
+        return if a == 1
+        break 3
         print(n)
         n = n + 10
     }
 }
+
 
 print("-----f1")
 print(f1())

@@ -672,12 +672,12 @@ namespace Efekt
     public sealed class Break : Stm
     {
         [CanBeNull]
-        public Ident LabelName { get; }
+        public IExp Test { get; }
 
 
-        public Break([CanBeNull] Ident labelName)
+        public Break([CanBeNull]  IExp test)
         {
-            LabelName = labelName;
+            Test = test;
         }
 
 
@@ -690,12 +690,12 @@ namespace Efekt
     public sealed class Continue : Stm
     {
         [CanBeNull]
-        public Ident LabelName { get; }
+        public IExp Test { get; }
 
 
-        public Continue([CanBeNull] Ident labelName)
+        public Continue([CanBeNull] IExp test)
         {
-            LabelName = labelName;
+            Test = test;
         }
 
 

@@ -27,7 +27,7 @@ var f3 = fn {
 var f4 = fn {
     var n = 10
     repeat {
-        if n < 70 {
+        if n == 70 {
             break
         }
         print(n)
@@ -38,16 +38,8 @@ var f4 = fn {
 var f5 = fn {
     var n = 10
     repeat {
-        if n < 70 {
-            break
-        }
-        if n == 20 {
-            continue
-        }
+        break if n == 70
         continue if n == 20
-        break if n == 20
-        return if a == 1
-        break 3
         print(n)
         n = n + 10
     }
@@ -60,7 +52,7 @@ print("-----f2")
 f2([4, 5, 6, 7 , 8])
 print("-----f3")
 f3()
-print("-----f3")
+print("-----f4")
 f4()
 print("-----f5")
 f5()

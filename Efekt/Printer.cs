@@ -114,11 +114,11 @@ namespace Efekt
 
 
         public String VisitBreak(Break br)
-            => "break" + (br.LabelName == null ? "" : " " + br.LabelName.Name);
+            => "break" + (br.Test == null ? "" : " if " + br.Test.Accept(this));
 
 
         public String VisitContinue(Continue ct)
-            => "continue" + (ct.LabelName == null ? "" : " " + ct.LabelName.Name);
+            => "continue" + (ct.Test == null ? "" : " if " + ct.Test.Accept(this));
 
 
         public String VisitReturn(Return r)

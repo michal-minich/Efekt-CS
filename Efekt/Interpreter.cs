@@ -373,14 +373,20 @@ namespace Efekt
 
         public IAsi VisitBreak(Break br)
         {
-            isBreak = true;
+            if (br.Test != null)
+                isBreak = ((Bool)br.Test.Accept(this)).Value;
+            else
+                isBreak = true;
             return Void.Instance;
         }
 
 
         public IAsi VisitContinue(Continue ct)
         {
-            isContinue = true;
+            if (ct.Test != null)
+                isContinue = ((Bool)ct.Test.Accept(this)).Value;
+            else
+                isContinue = true;
             return Void.Instance;
         }
 

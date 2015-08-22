@@ -440,11 +440,17 @@ namespace Efekt
             if (matchWord("label"))
                 return new Label(skipWhiteButNoNewLineAnd(parseIdent));
 
+            if (matchWord("break if"))
+                return new Break((IExp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
+
             if (matchWord("break"))
-                return new Break(skipWhiteButNoNewLineAnd(parseIdent));
+                return new Break(null);
+
+            if (matchWord("continue if"))
+                return new Continue((IExp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
 
             if (matchWord("continue"))
-                return new Continue(skipWhiteButNoNewLineAnd(parseIdent));
+                return new Continue(null);
 
             if (matchWord("return"))
                 return new Return(skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));

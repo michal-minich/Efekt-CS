@@ -69,10 +69,36 @@ namespace Efekt
             switch (opa.Op.Name)
             {
                 case ".":
-                    return getStructEnvOfMember(opa).GetValue(((Ident)opa.Op2).Name);
+                    return accessMember(opa);
                 default:
                     return VisitFnApply(new FnApply(opa.Op, new List<IExp> { opa.Op1, opa.Op2 }));
             }
+        }
+
+
+        IAsi accessMember(BinOpApply opa)
+        {
+            var bag = getStructEnvOfMember(opa);
+            var memberName = ((Ident)opa.Op2).Name;
+            var m = bag.GetOwnValueOrNull(memberName);
+            if (m != null)
+                return m;
+            var mExt = env.GetValue(memberName);
+            var mFn = mExt as Fn;
+            if (mFn == null)
+                throw new EfektException("member extension must be a func");
+            var @params = mFn.Params.Skip(1).ToList();
+            var e = new Env(mFn.Env.Owner, mFn.Env);
+            var i = declare(e, mFn.Params[0]);
+            e.SetValue(i.Name, opa.Op1.Accept(this));
+            var extFn = new Fn(@params, mFn.Items)
+            {
+                Env = e,
+                CountMandatoryParams = mFn.CountMandatoryParams - 1,
+                Column = mFn.Column,
+                Line = mFn.Line
+            };
+            return extFn;
         }
 
 
@@ -118,7 +144,7 @@ namespace Efekt
         }
 
 
-        Ident declare(IAsi declrOrIdent)
+        Ident declare(Env e, IAsi declrOrIdent)
         {
             Contract.Ensures(Contract.Result<Ident>() != null);
 
@@ -130,11 +156,14 @@ namespace Efekt
                 {
                     validations.DeclrExpected(declrOrIdent);
                     i = new Ident("__error", IdentCategory.Value);
-                    env.Declare(i.Name);
+                    e.Declare(i.Name);
                 }
                 return i;
             }
+            var prevEnv = env;
+            env = e;
             d.Accept(this);
+            env = prevEnv;
             return d.Ident;
         }
 
@@ -360,7 +389,7 @@ namespace Efekt
             }
             else
             {
-                var i = declare(a.Target);
+                var i = declare(env, a.Target);
                 env.SetValue(i.Name, v);
             }
             return v;

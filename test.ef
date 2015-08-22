@@ -1,22 +1,14 @@
-var f1 = fn {
-    try
-    {
-        print("t1")
-        assert 1 == 2
-        print("t2")
-    }
-    catch ex
-    {
-        print("c")
-        print(ex)
-    }
-    finally
-    {
-        print("f")
-    }
-    print("x")
+var S = struct {
+    var a = 1
 }
-
-f1()
-
-
+var getA = fn (b) { b.a = b.a + 1 b.a }
+var s = new S
+var x = s.getA
+print(s.getA)
+print(s.getA())
+var s2 = s
+s2.a = 100
+print(s2.getA())
+print(s.getA())
+print(x())
+print(s2.getA())

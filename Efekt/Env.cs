@@ -67,6 +67,8 @@ namespace Efekt
 
         public IAsi GetValueOrNull(String name) => getEnvDeclaringOrNull(name, this)?.Dict[name];
 
+        public IAsi GetOwnValueOrNull(String name) => Dict.ContainsKey(name) ? Dict[name] : null;
+
 
         public static void PrintEnv(Env env)
         {

@@ -32,7 +32,7 @@ namespace Efekt
         T VisitBreak(Break br);
         T VisitContinue(Continue ct);
         T VisitReturn(Return r);
-        T VisitLoop(Loop lp);
+        T VisitRepeat(Repeat rp);
         T VisitWhile(While w);
         T VisitDoWhile(DoWhile dw);
         T VisitForEach(ForEach fe);
@@ -218,9 +218,9 @@ namespace Efekt
         }
 
 
-        public T VisitLoop(Loop lp)
+        public T VisitRepeat(Repeat rp)
         {
-            Contract.Requires(lp != null);
+            Contract.Requires(rp != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -739,20 +739,18 @@ namespace Efekt
     }
 
 
-    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
-        MessageId = "Loop")]
-    public sealed class Loop : Stm
+    public sealed class Repeat : Stm
     {
         public IReadOnlyList<IAsi> Items { get; }
 
 
-        public Loop(IReadOnlyList<IAsi> items)
+        public Repeat(IReadOnlyList<IAsi> items)
         {
             Items = items;
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitLoop(this);
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitRepeat(this);
     }
 
 

@@ -125,7 +125,7 @@ namespace Efekt
             => "return" + (r.Value == null ? "" : " " + r.Value.Accept(this));
 
 
-        public String VisitLoop(Loop lp) => "loop {" + joinStatements(lp.Items) + "}";
+        public String VisitRepeat(Repeat rp) => "repeat {" + joinStatements(rp.Items) + "}";
 
 
         public String VisitWhile(While w)

@@ -225,7 +225,7 @@ namespace Efekt
             --index;
 
             var p2 = p.Select(e => expToDeclrOrAssign(e, false)).ToList();
-        
+
             Fn fn;
             skipWhite();
             if (matchWord("=>"))
@@ -449,8 +449,8 @@ namespace Efekt
             if (matchWord("return"))
                 return new Return(skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
 
-            if (matchWord("loop"))
-                return new Loop(skipWhiteAnd(() => parseBracedList('{', '}')));
+            if (matchWord("repeat"))
+                return new Repeat(skipWhiteAnd(() => parseBracedList('{', '}')));
 
             if (matchWord("while"))
                 return new While(skipWhiteAnd(() => parseCombinedAsi()),

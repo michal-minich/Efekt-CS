@@ -392,13 +392,13 @@ namespace Efekt
         }
 
 
-        public IAsi VisitLoop(Loop lp)
+        public IAsi VisitRepeat(Repeat rp)
         {
-            return loopWhile(() => true, lp.Items);
+            return repeatWhile(() => true, rp.Items);
         }
 
 
-        IAsi loopWhile(Func<Boolean> condition, IReadOnlyCollection<IAsi> items,
+        IAsi repeatWhile(Func<Boolean> condition, IReadOnlyCollection<IAsi> items,
             String itemName = null)
         {
             IAsi r = Void.Instance;
@@ -436,7 +436,7 @@ namespace Efekt
 
         public IAsi VisitWhile(While w)
         {
-            return loopWhile(() => ((Bool)w.Test.Accept(this)).Value, w.Items);
+            return repeatWhile(() => ((Bool)w.Test.Accept(this)).Value, w.Items);
         }
 
 
@@ -452,7 +452,7 @@ namespace Efekt
             var arr = (Arr)iterable;
             var en = arr.Items.GetEnumerator();
 
-            return loopWhile(() =>
+            return repeatWhile(() =>
             {
                 var hasItem = en.MoveNext();
                 env.SetValue(fe.Ident.Name, en.Current);

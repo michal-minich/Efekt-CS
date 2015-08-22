@@ -40,6 +40,12 @@ namespace Efekt
             {
                 Console.WriteLine(ex.Message);
             }
+            catch (InterpretedThrowException ex)
+            {
+                Console.Write("Application Exception: ");
+                Console.WriteLine(ex.Message);
+            }
+
             catch (Exception ex)
             {
                 Console.WriteLine("Unexpected " + ex.GetType().Name + ": " + ex.Message);

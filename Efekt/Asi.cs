@@ -34,6 +34,10 @@ namespace Efekt
         T VisitReturn(Return r);
         T VisitRepeat(Repeat rp);
         T VisitForEach(ForEach fe);
+        T VisitThrow(Throw th);
+        T VisitTry(Try tr);
+        T VisitAssume(Assume asm);
+        T VisitAssert(Assert ast);
     }
 
 
@@ -227,6 +231,38 @@ namespace Efekt
         public T VisitForEach(ForEach fe)
         {
             Contract.Requires(fe != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitThrow(Throw th)
+        {
+            Contract.Requires(th != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitTry(Try tr)
+        {
+            Contract.Requires(tr != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitAssume(Assume asm)
+        {
+            Contract.Requires(asm != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitAssert(Assert ast)
+        {
+            Contract.Requires(ast != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -675,7 +711,7 @@ namespace Efekt
         public IExp Test { get; }
 
 
-        public Break([CanBeNull]  IExp test)
+        public Break([CanBeNull] IExp test)
         {
             Test = test;
         }
@@ -752,5 +788,81 @@ namespace Efekt
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitForEach(this);
+    }
+
+
+    public sealed class Throw : Stm
+    {
+        public IAsi Ex { get; }
+
+
+        public Throw(IAsi ex)
+        {
+            Ex = ex;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitThrow(this);
+    }
+
+
+    public sealed class Try : Stm
+    {
+        public IReadOnlyList<IAsi> TryItems { get; }
+
+        [CanBeNull]
+        public IReadOnlyList<IAsi> CatchItems { get; }
+
+        [CanBeNull]
+        public Ident ExVar { get; }
+
+        [CanBeNull]
+        public IReadOnlyList<IAsi> FinallyItems { get; }
+
+
+        public Try(
+            IReadOnlyList<IAsi> tryItems,
+            [CanBeNull] IReadOnlyList<IAsi> catchItems,
+            [CanBeNull] Ident exVar,
+            [CanBeNull] IReadOnlyList<IAsi> finallyItems)
+        {
+            TryItems = tryItems;
+            CatchItems = catchItems;
+            ExVar = exVar;
+            FinallyItems = finallyItems;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitTry(this);
+    }
+
+
+    public sealed class Assume : Stm
+    {
+        public IAsi Exp { get; }
+
+
+        public Assume(IAsi exp)
+        {
+            Exp = exp;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitAssume(this);
+    }
+
+
+    public sealed class Assert : Stm
+    {
+        public IAsi Exp { get; }
+
+
+        public Assert(IAsi exp)
+        {
+            Exp = exp;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitAssert(this);
     }
 }

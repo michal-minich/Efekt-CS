@@ -1,62 +1,22 @@
 var f1 = fn {
-    var a = 1
-    return 3
-    print(2)
-}
-
-var f2 = fn arr {
-    foreach a in arr {
-        if a == 7 {
-            return
-        }
-        print(a)
+    try
+    {
+        print("t1")
+        assert 1 == 2
+        print("t2")
     }
-}
-
-var f3 = fn {
-    var n = 10
-    repeat {
-        n = n + 1
-        if n == 15 {
-            break
-        }
-        print(n)
+    catch ex
+    {
+        print("c")
+        print(ex)
     }
-}
-
-var f4 = fn {
-    var n = 10
-    repeat {
-        if n == 70 {
-            break
-        }
-        print(n)
-        n = n + 10
+    finally
+    {
+        print("f")
     }
+    print("x")
 }
 
-var f5 = fn {
-    var n = 10
-    repeat {
-        break if n == 70
-        continue if n == 20
-        print(n)
-        n = n + 10
-    }
-}
-
-
-print("-----f1")
-print(f1())
-print("-----f2")
-f2([4, 5, 6, 7 , 8])
-print("-----f3")
-f3()
-print("-----f4")
-f4()
-print("-----f5")
-f5()
-
-
+f1()
 
 

@@ -196,7 +196,7 @@ namespace Efekt
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
                       ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
                       ?? parseChar() ?? parseString('"') ?? parseImport()
-                      ?? parseSimpleKeywords()
+                      ?? parseIterationKeywords() ?? parseExceptionRelated()
                       ?? parseVoid() ?? parseIdent() ?? parseBraced();
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
             if (asi != null && !skipFnApply)
@@ -432,7 +432,7 @@ namespace Efekt
         }
 
 
-        IAsi parseSimpleKeywords()
+        IAsi parseIterationKeywords()
         {
             if (matchWord("goto"))
                 return new Goto(skipWhiteButNoNewLineAnd(parseIdent));
@@ -474,6 +474,57 @@ namespace Efekt
                 Contract.Assume(items != null);
                 var fe = new ForEach(ident, iterable, items);
                 return fe;
+            }
+
+            if (matchWord("assume"))
+                return new Assume((IExp)parseCombinedAsi());
+
+            if (matchWord("assert"))
+                return new Assert((IExp)parseCombinedAsi());
+
+            return null;
+        }
+
+
+        IAsi parseExceptionRelated()
+        {
+            if (matchWord("throw"))
+            {
+                skipWhite();
+                IAsi ex = null;
+                if (!wasNewLine)
+                {
+                    ex = parseCombinedAsi();
+                }
+                return new Throw((IExp)ex);
+            }
+
+            if (matchWord("try"))
+            {
+                List<IAsi> c = null;
+                List<IAsi> f = null;
+                Ident exVar = null;
+
+                skipWhite();
+                var t = parseBracedList('{', '}');
+
+                skipWhite();
+                if (matchWord("catch"))
+                {
+                    skipWhite();
+                    exVar = parseIdent();
+                    skipWhite();
+                    c = parseBracedList('{', '}');
+                }
+
+                skipWhite();
+                if (matchWord("finally"))
+                {
+                    skipWhite();
+                    f = parseBracedList('{', '}');
+                }
+
+                return new Try(t, c, exVar, f);
             }
 
             return null;
@@ -789,10 +840,9 @@ namespace Efekt
         }
 
 
-        Boolean matchWord(String w)
+        Boolean lookWord(String w)
         {
-            Contract.Ensures(Contract.Result<Boolean>() == (Contract.OldValue(index) < index));
-            Contract.Ensures(Contract.Result<Boolean>() != (Contract.OldValue(index) == index));
+            Contract.Ensures(Contract.OldValue(index) == index);
 
             if (index + w.Length > code.Length)
                 return false;
@@ -803,9 +853,19 @@ namespace Efekt
                 if (isLetter(code[index + w.Length]))
                     return false;
             }
+            return true;
+        }
+
+
+        Boolean matchWord(String w)
+        {
+            Contract.Ensures(Contract.Result<Boolean>() == (Contract.OldValue(index) < index));
+            Contract.Ensures(Contract.Result<Boolean>() != (Contract.OldValue(index) == index));
+
+            if (!lookWord(w))
+                return false;
             matched = code.Substring(index, w.Length);
             columnNumber += matched.Length;
-
             index += w.Length;
             return true;
         }

@@ -57,9 +57,7 @@ namespace Efekt
         }
 
 
-        public Validation(
-            ValidationType type,
-            IReadOnlyCollection<Object> items)
+        public Validation(ValidationType type, IReadOnlyCollection<Object> items)
         {
             Type = type;
             Items = items;

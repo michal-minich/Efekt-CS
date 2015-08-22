@@ -70,6 +70,6 @@ namespace Efekt
 
         static Arr asArr(this IExp asi) => (Arr)asi;
 
-        static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter);
+        static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter).Trim('"');
     }
 }

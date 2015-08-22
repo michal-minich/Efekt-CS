@@ -16,6 +16,9 @@ namespace Efekt
         Boolean isReturn;
         Boolean isBreak;
         Boolean isContinue;
+        Boolean isThrow;
+        IExp throwed;
+        readonly List<Try> trys = new List<Try>();
 
 
         public IAsi Run(AsiList al, ValidationList validationList)
@@ -318,6 +321,11 @@ namespace Efekt
                     isReturn = false;
                     return r;
                 }
+                if (isThrow)
+                {
+                    isThrow = false;
+                    return r;
+                }
             }
             r = items.Last().Accept(this);
             env = restoreEnv;
@@ -474,6 +482,98 @@ namespace Efekt
                     to.Env.AddImport(s.Env);
             }
             return new Void();
+        }
+
+
+        public IAsi VisitThrow(Throw th)
+        {
+            IExp throwed;
+            if (th.Ex != null)
+                throwed = (IExp)th.Ex.Accept(this);
+            else
+            {
+                throwed = null;
+            }
+            throw new InterpretedThrowException(throwed);
+        }
+
+
+        public IAsi VisitTry(Try tr)
+        {
+            trys.Add(tr);
+            var prevEnv = env;
+            env = new Env(env.Owner, env);
+            try
+            {
+                visitAsiArray(tr.TryItems, env, prevEnv);
+            }
+            catch (InterpretedThrowException ex)
+            {
+                if (tr.CatchItems != null)
+                {
+                    env = new Env(env.Owner, env);
+                    if (tr.ExVar != null)
+                        env.Declare(tr.ExVar.Name, toCharArr(ex.Message));
+                    visitAsiArray(tr.CatchItems, env, prevEnv);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            finally
+            {
+                if (tr.FinallyItems != null)
+                {
+                    env = new Env(env.Owner, env);
+                    visitAsiArray(tr.FinallyItems, env, prevEnv);
+                }
+            }
+            return Void.Instance;
+        }
+
+
+        static Arr toCharArr(String value)
+            => new Arr(value.Select(ch => new Char(ch)).Cast<IExp>().ToList());
+
+
+        public IAsi VisitAssume(Assume asm)
+        {
+            var t = (Bool)asm.Exp.Accept(this);
+            if (!t.Value)
+            {
+                var th = new Throw(toCharArr(
+                    "Assumption failed: " + asm.Exp.Accept(Program.DefaultPrinter)));
+                th.Accept(this);
+            }
+            return Void.Instance;
+        }
+
+
+        public IAsi VisitAssert(Assert ast)
+        {
+            var t = (Bool)ast.Exp.Accept(this);
+            if (!t.Value)
+            {
+                var th = new Throw(toCharArr(
+                    "Assert failed: " + ast.Exp.Accept(Program.DefaultPrinter)));
+                th.Accept(this);
+            }
+            return Void.Instance;
+        }
+    }
+
+
+    public sealed class InterpretedThrowException : Exception
+    {
+        [CanBeNull]
+        IExp Throwed { get; }
+
+
+        public InterpretedThrowException([CanBeNull] IExp throwed)
+            : base(throwed.Accept(Program.DefaultPrinter))
+        {
+            Throwed = throwed;
         }
     }
 }

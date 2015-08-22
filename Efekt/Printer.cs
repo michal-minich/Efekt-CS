@@ -130,6 +130,27 @@ namespace Efekt
 
         public String VisitForEach(ForEach fe)
             => "foreach " + fe.Ident.Name + " in " + fe.Iterable.Accept(this)
-               + " {" + joinStatements(fe.Items);
+               + " {" + joinStatements(fe.Items) + "}";
+
+
+        public String VisitThrow(Throw th)
+            => "throw" + (th.Ex == null ? "" : " " + th.Ex.Accept(this));
+
+
+        public String VisitTry(Try tr)
+        {
+            var s = "try " + " {" + joinStatements(tr.TryItems) + "}";
+            if (tr.CatchItems != null)
+                s += "\ncatch " + " {" + joinStatements(tr.CatchItems) + "}";
+            if (tr.FinallyItems != null)
+                s += "\nfinally " + " {" + joinStatements(tr.FinallyItems) + "}";
+            return s;
+        }
+
+
+        public String VisitAssume(Assume asm) => "assume " + asm.Exp.Accept(this);
+
+
+        public String VisitAssert(Assert ast) => "assert " + ast.Exp.Accept(this);
     }
 }

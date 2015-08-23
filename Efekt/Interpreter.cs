@@ -75,11 +75,21 @@ namespace Efekt
 
         IAsi accessMember(BinOpApply opa)
         {
-            var bag = getStructEnvOfMember(opa);
+            var argValue = opa.Op1.Accept(this);
             var memberName = ((Ident)opa.Op2).Name;
-            var m = bag.GetOwnValueOrNull(memberName);
-            if (m != null)
-                return m;
+            if (argValue is Struct)
+            {
+                var bag = getStructEnvOfMember(opa, argValue);
+                var m = bag.GetOwnValueOrNull(memberName);
+                if (m != null)
+                    return m;
+            }
+            return createMemberFn(memberName, argValue);
+        }
+
+
+        IAsi createMemberFn(String memberName, IAsi argValue)
+        {
             var mExt = env.GetValue(memberName);
             var mFn = mExt as Fn;
             if (mFn == null)
@@ -87,7 +97,6 @@ namespace Efekt
             var @params = mFn.Params.Skip(1).ToList();
             var e = new Env(mFn.Env.Owner, mFn.Env);
             var i = declare(e, mFn.Params[0]);
-            var argValue = opa.Op1.Accept(this);
             e.SetValue(i.Name, copyIfStructInstance(argValue, mFn.Params[0].Attributes));
             var extFn = new Fn(@params, mFn.Items)
             {
@@ -122,16 +131,15 @@ namespace Efekt
         }
 
 
-        private static Boolean hasSimpleAttr(IEnumerable<IExp> attrs, String name)
+        static Boolean hasSimpleAttr(IEnumerable<IExp> attrs, String name)
         {
             var attrName = "@" + name;
             return attrs.OfType<Ident>().Any(aIdent => aIdent.Name == attrName);
         }
 
 
-        Env getStructEnvOfMember(BinOpApply ma)
+        Env getStructEnvOfMember(BinOpApply ma, IAsi bag)
         {
-            var bag = ma.Op1.Accept(this);
             var m = ma.Op2 as Ident;
             if (m == null)
                 throw new EfektException(
@@ -212,14 +220,19 @@ namespace Efekt
             if (fnIdent != null && fnIdent.Name.StartsWith("__"))
                 return Builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
 
-            var fnAsi = fna.Fn.Accept(this);
-            if (fnAsi is Struct)
-                return new FnApply(fnAsi, fna.Args);
-            var fn = fnAsi as Fn;
-            if (fn == null)
+            var fn = fna.Fn as Fn;
+            if (fn?.Env == null)
             {
-                validations.CannotApply(fna.Fn, fnAsi);
-                return new Err(fna);
+                var fnAsi = fna.Fn.Accept(this);
+
+                if (fnAsi is Struct)
+                    return new FnApply(fnAsi, fna.Args);
+                fn = fnAsi as Fn;
+                if (fn == null)
+                {
+                    validations.CannotApply(fna.Fn, fnAsi);
+                    return new Err(fna);
+                }
             }
 
             current = fn;
@@ -302,31 +315,31 @@ namespace Efekt
             current = instance;
             foreach (var item in s.Items)
                 item.Accept(this);
-            applyConstructor(n, fna);
+            var cons = env.GetValueOrNull("constructor");
             env = prevEnv;
+            applyConstructor(n, fna, cons);
             return instance;
         }
 
 
-        void applyConstructor(New n, [CanBeNull] FnApply fna)
+        void applyConstructor(New n, [CanBeNull] FnApply fna, IAsi cons)
         {
-            var cAsi = env.GetValueOrNull("constructor");
             if (fna != null)
             {
-                if (cAsi == null)
+                if (cons == null)
                 {
                     validations.NoConstructor(n);
                     return;
                 }
-                var c = cAsi as Fn;
+                var c = cons as Fn;
                 if (c == null)
                 {
-                    validations.ConstructorIsNotFn(cAsi);
+                    validations.ConstructorIsNotFn(cons);
                     return;
                 }
-                VisitFnApply(new FnApply(VisitFn(c), fna.Args));
+                VisitFnApply(new FnApply(c, fna.Args));
             }
-            else if (cAsi != null)
+            else if (cons != null)
             {
                 validations.ConstructorNotCalled(n);
             }
@@ -387,7 +400,9 @@ namespace Efekt
             var ma = a.Target as BinOpApply;
             if (ma != null && ma.Op.Name == ".")
             {
-                getStructEnvOfMember(ma).SetValue(((Ident)ma.Op2).Name, v);
+                var bag = ma.Op1.Accept(this);
+                var e = getStructEnvOfMember(ma, bag);
+                e.SetValue(((Ident)ma.Op2).Name, v);
             }
             else
             {
@@ -432,8 +447,9 @@ namespace Efekt
 
         public IAsi VisitReturn(Return r)
         {
+            var res = r.Value == null ? Void.Instance : r.Value.Accept(this);
             isReturn = true;
-            return r.Value == null ? Void.Instance : r.Value.Accept(this);
+            return res;
         }
 
 

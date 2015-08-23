@@ -39,6 +39,8 @@ namespace Efekt
                     return new Arr(args[0].asArr().Items.Skip(1).ToList());
                 case "at":
                     return args[0].asArr().Items.ElementAt(args[1].asInt());
+                case "count":
+                    return new Int(args[0].asArr().Items.Count.ToString());
                 case "add":
                     args[0].asArr().Items.Add(args[1]);
                     return new Void();

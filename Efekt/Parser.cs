@@ -175,13 +175,15 @@ namespace Efekt
                     }
                     else
                     {
-                        Contract.Assume(op != ".");
-                        var op2 = parseAsi(op == ".");
-                        Contract.Assume(op2 != null);
+                        IAsi op3 = null;
+                        op3 = parseAsi(op == ".");
+                        Contract.Assume(op3 != null);
                         var op1 = (BinOpApply)asi;
-                        var opa = a(new BinOpApply(
-                            a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op2));
-                        op1.Op2 = opa;
+                        var opa4 = a(new BinOpApply(
+                            a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op3));
+                        asi = parseFnApply(opa4);
+                        op1.Op2 = (IExp)asi;
+                        asi = op1;
                     }
 
                     found = true;
@@ -712,6 +714,8 @@ namespace Efekt
 
                 wasNewLine = false;
                 var asi = parseCombinedAsi();
+                if (asi == null)
+                    return items;
                 items.Add(asi);
                 skipWhite();
                 if (matchWord("=>"))

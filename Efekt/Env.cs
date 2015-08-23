@@ -88,7 +88,7 @@ namespace Efekt
         {
             var e = getEnvDeclaringOrNull(name, env);
             if (e == null)
-                throw new EfektException("variable '" + name + "' is not declared");
+                throw new EfektException("Env: variable '" + name + "' is not declared");
             return e;
         }
 

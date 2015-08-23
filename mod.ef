@@ -1,1 +1,40 @@
-var m = 123
+var ArrayRange = struct {
+    var items
+    var index = 0
+    var constructor = fn arr => items = arr
+
+    @public @property
+    var isEmpty = fn => index == items.count()
+
+    @public
+    var popFront = fn => index = index + 1
+
+    @public @property
+    var current = fn => items.at(index)
+}
+
+var select = fn range, selector {
+    var S2 = struct {
+        var r = 1
+        var s = 2
+        var constructor = fn ra, se { r = ra s = se }
+        @public @property var isEmpty = fn => r.isEmpty()
+        @public var popFront = fn => r.popFront()
+        @public @property var current = fn => s(r.current())
+    }
+    new S2(range, selector)
+}
+
+var toArray = fn r {
+    var arr = []
+    repeat {
+        break if r.isEmpty()
+        add(arr, r.current())
+        r.popFront()
+    }
+    return arr
+}
+
+var r = new ArrayRange([5, 6, 7, 8, 9])
+var ss = r.select(fn a => a + 10)
+--print(ss.toArray())

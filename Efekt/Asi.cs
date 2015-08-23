@@ -272,9 +272,9 @@ namespace Efekt
     [ContractClass(typeof (IAsiContract))]
     public interface IAsi
     {
+        List<IExp> Attributes { get; set; }
         T Accept<T>(IAsiVisitor<T> v) where T : class;
         Int32 Line { get; }
-
         Int32 Column { get; }
     }
 
@@ -282,6 +282,18 @@ namespace Efekt
     [ContractClassFor(typeof (IAsi))]
     internal abstract class IAsiContract : IAsi
     {
+        public List<IExp> Attributes
+        {
+            get
+            {
+                Contract.Ensures(Contract.Result<List<IExp>>() != null);
+                return null;
+            }
+
+            set { Contract.Requires(value != null); }
+        }
+
+
         T IAsi.Accept<T>(IAsiVisitor<T> v)
         {
             Contract.Requires(v != null);
@@ -351,6 +363,7 @@ namespace Efekt
 
     public abstract class Asi : IAsi
     {
+        public List<IExp> Attributes { get; set; } = new List<IExp>();
         public abstract T Accept<T>(IAsiVisitor<T> v) where T : class;
         public Int32 Line { get; set; }
         public Int32 Column { get; set; }
@@ -442,6 +455,26 @@ namespace Efekt
         public IdentCategory Category { get; }
 
 
+        public Ident(String name)
+        {
+            Contract.Requires(name.Length >= 1);
+
+            Name = name;
+
+            var firstChar = name[0];
+            if (firstChar == '@')
+            {
+                Contract.Assume(name.Length >= 2);
+                Category = IdentCategory.Attribute;
+            }
+            else if (System.Char.IsUpper(firstChar))
+                Category = IdentCategory.Type;
+            else if (System.Char.IsLower(firstChar))
+                Category = IdentCategory.Value;
+            else Category = IdentCategory.Op;
+        }
+
+
         public Ident(String name, IdentCategory category)
         {
             Category = category;
@@ -457,7 +490,8 @@ namespace Efekt
     {
         Value,
         Type,
-        Op
+        Op,
+        Attribute
     }
 
 
@@ -593,8 +627,7 @@ namespace Efekt
 
     public sealed class Void : Atom
     {
-        [SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
-        public static readonly Void Instance = new Void();
+        [SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")] public static readonly Void Instance = new Void();
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitVoid(this);
     }

@@ -1,7 +1,7 @@
 var S = struct {
     var a = 1
 }
-var getA = fn (b) { b.a = b.a + 1 b.a }
+var getA = fn (@byref b) { b.a = b.a + 1 b.a }
 var s = new S
 var x = s.getA
 print(s.getA)

@@ -111,6 +111,11 @@ namespace Efekt
                         index -= 2;
                         return asi;
                     }
+                    if (op == "@")
+                    {
+                        index -= 1;
+                        return asi;
+                    }
 
                     if (context == "new" && op == ".")
                     {
@@ -193,6 +198,7 @@ namespace Efekt
         IAsi parseAsi(Boolean skipFnApply = false)
         {
             skipWhite();
+            var attrs = parseAttributes();
             var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
                       ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
                       ?? parseChar() ?? parseString('"') ?? parseImport()
@@ -201,7 +207,29 @@ namespace Efekt
             //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
             if (asi != null && !skipFnApply)
                 asi = parseFnApply(asi);
+            if (asi != null && attrs.Count != 0)
+            {
+                asi.Attributes = attrs;
+            }
+            else if (attrs.Count != 0)
+            {
+                throw new EfektException("attributes are not followed by expression");
+            }
             return asi;
+        }
+
+
+        List<IExp> parseAttributes()
+        {
+            var attrs = new List<IExp>();
+            while (matchChar('@'))
+            {
+                var i = parseIdent();
+                var i2 = a(new Ident("@" + i.Name));
+                attrs.Add(i2);
+                skipWhite();
+            }
+            return attrs;
         }
 
 
@@ -586,7 +614,7 @@ namespace Efekt
 
             var i = asi as Ident;
             if (i != null)
-                return a(new Declr(i, null) { IsVar = isVar });
+                return a(new Declr(i, null) { IsVar = isVar, Attributes = i.Attributes });
 
             var assign = asi as Assign;
             if (assign != null)
@@ -594,7 +622,11 @@ namespace Efekt
                 var i2 = assign.Target as Ident;
                 if (i2 != null)
                 {
-                    assign.Target = a(new Declr(i2, null) { IsVar = isVar });
+                    assign.Target = a(new Declr(i2, null)
+                    {
+                        IsVar = isVar,
+                        Attributes = i2.Attributes
+                    });
                     return assign;
                 }
                 var d2 = assign.Target as Declr;

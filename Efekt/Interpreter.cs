@@ -16,9 +16,6 @@ namespace Efekt
         Boolean isReturn;
         Boolean isBreak;
         Boolean isContinue;
-        Boolean isThrow;
-        IExp throwed;
-        readonly List<Try> trys = new List<Try>();
 
 
         public IAsi Run(AsiList al, ValidationList validationList)
@@ -90,7 +87,8 @@ namespace Efekt
             var @params = mFn.Params.Skip(1).ToList();
             var e = new Env(mFn.Env.Owner, mFn.Env);
             var i = declare(e, mFn.Params[0]);
-            e.SetValue(i.Name, opa.Op1.Accept(this));
+            var argValue = opa.Op1.Accept(this);
+            e.SetValue(i.Name, copyIfStructInstance(argValue, mFn.Params[0].Attributes));
             var extFn = new Fn(@params, mFn.Items)
             {
                 Env = e,
@@ -102,8 +100,10 @@ namespace Efekt
         }
 
 
-        IAsi copyIfStructInstance(IAsi asi)
+        IAsi copyIfStructInstance(IAsi asi, List<IExp> targetAttrs)
         {
+            if (hasSimpleAttr(targetAttrs, "byref"))
+                return asi;
             var s = asi as Struct;
             if (s?.Env == null || s == global.Owner)
                 return asi;
@@ -113,12 +113,19 @@ namespace Efekt
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             {
-                newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value));
+                newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value, new List<IExp>()));
                 var fn = kvp.Value as Fn;
                 if (fn?.Env != null)
                     fn.Env = newEnv;
             }
             return newStruct;
+        }
+
+
+        private static Boolean hasSimpleAttr(IEnumerable<IExp> attrs, String name)
+        {
+            var attrName = "@" + name;
+            return attrs.OfType<Ident>().Any(aIdent => aIdent.Name == attrName);
         }
 
 
@@ -257,7 +264,7 @@ namespace Efekt
                 }
                 else
                 {
-                    var argValue = copyIfStructInstance(evaluatedArgs[n]);
+                    var argValue = copyIfStructInstance(evaluatedArgs[n], p.Attributes);
                     var i = Parser.GetIdentFromDeclrLikeAsi(p);
                     if (opa != null)
                         env.Declare(i.Name);
@@ -350,15 +357,10 @@ namespace Efekt
                     isReturn = false;
                     return r;
                 }
-                if (isThrow)
-                {
-                    isThrow = false;
-                    return r;
-                }
             }
             r = items.Last().Accept(this);
             env = restoreEnv;
-            return copyIfStructInstance(r);
+            return copyIfStructInstance(r, new List<IExp>());
         }
 
 
@@ -381,7 +383,7 @@ namespace Efekt
         public IAsi VisitAssign(Assign a)
         {
             var v = a.Value.Accept(this);
-            v = copyIfStructInstance(v);
+            v = copyIfStructInstance(v, new List<IExp>());
             var ma = a.Target as BinOpApply;
             if (ma != null && ma.Op.Name == ".")
             {
@@ -529,7 +531,6 @@ namespace Efekt
 
         public IAsi VisitTry(Try tr)
         {
-            trys.Add(tr);
             var prevEnv = env;
             env = new Env(env.Owner, env);
             try

@@ -15,11 +15,12 @@ namespace Efekt
         }
 
 
-        public Assign MakeModule(String moduleName, IReadOnlyList<IAsi> moduleItems)
+        public Declr MakeModule(String moduleName, IReadOnlyList<IAsi> moduleItems)
         {
-            return new Assign(
-                new Declr(new Ident(moduleName, IdentCategory.Value), null) { IsVar = true },
-                new New(new Struct(moduleItems)));
+            return new Declr(
+                new Ident(moduleName, IdentCategory.Value),
+                null,
+                new New(new Struct(moduleItems))) { IsVar = true };
         }
     }
 }

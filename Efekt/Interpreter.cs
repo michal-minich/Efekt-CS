@@ -102,7 +102,6 @@ namespace Efekt
             {
                 Env = e,
                 CountMandatoryParams = mFn.CountMandatoryParams - 1,
-                Column = mFn.Column,
                 Line = mFn.Line
             };
             return extFn;
@@ -185,8 +184,16 @@ namespace Efekt
 
         public IAsi VisitDeclr(Declr d)
         {
-            env.Declare(d.Ident.Name);
-            return new Void();
+            if (d.Value == null)
+            {
+                env.Declare(d.Ident.Name);
+                return new Void();
+            }
+
+            var v = d.Value.Accept(this);
+            v = copyIfStructInstance(v, new List<IExp>());
+            env.Declare(d.Ident.Name, v);
+            return v;
         }
 
 
@@ -209,7 +216,6 @@ namespace Efekt
             {
                 Env = env,
                 CountMandatoryParams = fn.CountMandatoryParams,
-                Column = fn.Column,
                 Line = fn.Line
             };
 

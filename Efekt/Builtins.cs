@@ -26,9 +26,9 @@ namespace Efekt
                     return new Bool(args[0].asInt() < args[1].asInt());
 
                 case "plus":
-                    return new Int((args[0].asInt() + args[1].asInt()).ToString());
+                    return new Int((args[0].asInt() + args[1].asInt()));
                 case "multiply":
-                    return new Int((args[0].asInt() * args[1].asInt()).ToString());
+                    return new Int((args[0].asInt() * args[1].asInt()));
 
                 case "and":
                     return new Bool(args[0].asBool() && args[1].asBool());
@@ -40,7 +40,7 @@ namespace Efekt
                 case "at":
                     return args[0].asArr().Items.ElementAt(args[1].asInt());
                 case "count":
-                    return new Int(args[0].asArr().Items.Count.ToString());
+                    return new Int(args[0].asArr().Items.Count);
                 case "add":
                     args[0].asArr().Items.Add(args[1]);
                     return new Void();
@@ -66,7 +66,7 @@ namespace Efekt
         }
 
 
-        static Int32 asInt(this IExp asi) => ((Int)asi).Value.ToInt();
+        static Int32 asInt(this IExp asi) => ((Int)asi).Value;
 
         static Boolean asBool(this IExp asi) => ((Bool)asi).Value;
 

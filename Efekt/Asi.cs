@@ -275,7 +275,6 @@ namespace Efekt
         List<IExp> Attributes { get; set; }
         T Accept<T>(IAsiVisitor<T> v) where T : class;
         Int32 Line { get; }
-        Int32 Column { get; }
     }
 
 
@@ -306,16 +305,7 @@ namespace Efekt
         {
             get
             {
-                Contract.Ensures(Contract.Result<Int32>() >= 1);
-                return 1;
-            }
-        }
-
-        Int32 IAsi.Column
-        {
-            get
-            {
-                Contract.Ensures(Contract.Result<Int32>() >= 1);
+                //Contract.Ensures(Contract.Result<Int32>() >= 1);
                 return 1;
             }
         }
@@ -366,7 +356,6 @@ namespace Efekt
         public List<IExp> Attributes { get; set; } = new List<IExp>();
         public abstract T Accept<T>(IAsiVisitor<T> v) where T : class;
         public Int32 Line { get; set; }
-        public Int32 Column { get; set; }
         public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);
     }
 
@@ -427,6 +416,7 @@ namespace Efekt
         public Err(IAsi item)
         {
             Item = item;
+            Line = item.Line;
         }
 
 
@@ -436,10 +426,10 @@ namespace Efekt
 
     public sealed class Int : Atom
     {
-        public String Value { get; }
+        public Int32 Value { get; }
 
 
-        public Int(String value)
+        public Int(Int32 value)
         {
             Value = value;
         }
@@ -462,23 +452,23 @@ namespace Efekt
             Name = name;
 
             var firstChar = name[0];
-            if (firstChar == '@')
-            {
-                Contract.Assume(name.Length >= 2);
-                Category = IdentCategory.Attribute;
-            }
+            if (System.Char.IsLower(firstChar) || firstChar == '_')
+                Category = IdentCategory.Value;
             else if (System.Char.IsUpper(firstChar))
                 Category = IdentCategory.Type;
-            else if (System.Char.IsLower(firstChar))
-                Category = IdentCategory.Value;
+            else if (firstChar == '@')
+            {
+                Contract.Assert(name.Length >= 2);
+                Category = IdentCategory.Attribute;
+            }
             else Category = IdentCategory.Op;
         }
 
 
         public Ident(String name, IdentCategory category)
         {
-            Category = category;
             Name = name;
+            Category = category;
         }
 
 
@@ -516,19 +506,22 @@ namespace Efekt
 
     public sealed class Declr : Exp
     {
+        public Boolean IsVar { get; set; }
         public Ident Ident { get; }
 
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         [CanBeNull]
         public IAsi Type { get; }
 
-        public Boolean IsVar { get; set; }
+        [CanBeNull]
+        public IExp Value { get; }
 
 
-        public Declr(Ident ident, [CanBeNull] IAsi type)
+        public Declr(Ident ident, [CanBeNull] IAsi type, [CanBeNull] IExp value)
         {
             Ident = ident;
             Type = type;
+            Value = value;
         }
 
 
@@ -557,9 +550,12 @@ namespace Efekt
 
     public sealed class Struct : Type, IHasEnv
     {
-        public IReadOnlyCollection<IAsi> Items { get; }
+        public IReadOnlyCollection<IAsi> Items { get; set; }
         public Env Env { get; set; }
 
+        public Struct()
+        {
+        }
 
         public Struct(IReadOnlyCollection<IAsi> items)
         {
@@ -612,7 +608,12 @@ namespace Efekt
         MessageId = "New")]
     public sealed class New : Exp
     {
-        public IExp Exp { get; }
+        public IExp Exp { get; set; }
+
+
+        public New()
+        {
+        }
 
 
         public New(IExp exp)

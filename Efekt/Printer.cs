@@ -18,7 +18,7 @@ namespace Efekt
             => "error (" + (err.Item == null ? "" : err.Item.Accept(this)) + ")";
 
 
-        public String VisitInt(Int ii) => ii.Value;
+        public String VisitInt(Int ii) => ii.Value.ToString();
 
 
         public String VisitIdent(Ident i)
@@ -33,7 +33,8 @@ namespace Efekt
 
 
         public String VisitDeclr(Declr d)
-            => (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ");
+            => (d.IsVar ? "var " : "") + VisitIdent(d.Ident) + visitOptional(d.Type, " : ")
+               + visitOptional(d.Value, " = ");
 
 
         public String VisitArr(Arr arr)

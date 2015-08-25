@@ -14,7 +14,6 @@ namespace Efekt
         String matched = "";
         ValidationList validations;
         Int32 lineNumber;
-        Int32 columnNumber;
 
         static readonly List<String> rightAssociativeOps = new List<String>
         { ":", "=", "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", "&==", "^=", "|=" };
@@ -69,9 +68,9 @@ namespace Efekt
 
             code = codeText;
             index = 0;
-            columnNumber = 1;
             lineNumber = 1;
             validations = validationList;
+
             var items = new List<IAsi>();
             while (true)
             {
@@ -82,7 +81,7 @@ namespace Efekt
                 items.Add(asi);
             }
 
-            return a(new AsiList(items));
+            return new AsiList(items) { Line = 1 };
         }
 
 
@@ -119,7 +118,6 @@ namespace Efekt
 
                     if (context == "new" && op == ".")
                     {
-                        columnNumber -= ix - index;
                         index = ix;
                         return asi;
                     }
@@ -135,7 +133,6 @@ namespace Efekt
                     {
                         if (context == "right")
                         {
-                            columnNumber -= ix - index;
                             index = ix;
                             return asi;
                         }
@@ -144,7 +141,7 @@ namespace Efekt
                         Contract.Assume(nextAsi != null);
                         if (op == ":")
                         {
-                            asi = a(new Declr((Ident)asi, nextAsi));
+                            asi = a(new Declr((Ident)asi, nextAsi, null));
                         }
                         else
                         {
@@ -201,21 +198,25 @@ namespace Efekt
         {
             skipWhite();
             var attrs = parseAttributes();
-            var asi = parseInt() ?? parseArr() ?? parseFn() ?? parseVar() ?? parseNew()
-                      ?? parseStruct() ?? parseBool() ?? parseIf() ?? parseAsiList()
-                      ?? parseChar() ?? parseString('"') ?? parseImport()
-                      ?? parseIterationKeywords() ?? parseExceptionRelated()
-                      ?? parseVoid() ?? parseIdent() ?? parseBraced();
-            //Contract.Assume((asi == null) == (index > code.Length || String.IsNullOrWhiteSpace(code)));
-            if (asi != null && !skipFnApply)
-                asi = parseFnApply(asi);
-            if (asi != null && attrs.Count != 0)
+            var asi = tryParseInt() ?? tryParseBool() ?? (IAsi)tryParseVoid();
+
+            asi = asi ?? parseFn() ?? tryParseVar() ?? tryParseNew()
+                  ?? tryParseStruct() ?? parseIf() ?? tryParseImport()
+                  ?? parseIterationKeywords() ?? parseExceptionRelated()
+                  ?? parseChar() ?? parseString('"')
+                  ?? parseAsiList() ?? parseArr() ?? parseBraced() ?? parseIdent();
+
+            if (asi != null)
             {
+                if (!skipFnApply)
+                    asi = parseFnApply(asi);
+
                 asi.Attributes = attrs;
             }
-            else if (attrs.Count != 0)
+            else
             {
-                throw new EfektException("attributes are not followed by expression");
+                if (attrs.Count != 0)
+                    validations.GenericWarning("attributes are not followed by expression", attrs);
             }
             return asi;
         }
@@ -227,22 +228,26 @@ namespace Efekt
             while (matchChar('@'))
             {
                 var i = parseIdent();
-                Contract.Assume(i != null);
-                var i2 = a(new Ident("@" + i.Name));
-                attrs.Add(i2);
+                if (i == null)
+                    validations.GenericWarning("Expected identifier after '@'");
+                var name = i == null ? "__attr" : i.Name;
+                attrs.Add(a(new Ident("@" + name)));
                 skipWhite();
             }
             return attrs;
         }
 
 
-        Int parseInt() => matchUntil(isDigit) ? a(new Int(matched)) : null;
+        Int tryParseInt() => matchUntil(isDigit) ? a(new Int(Convert.ToInt32(matched))) : null;
 
 
         Arr parseArr()
         {
-            var items = parseBracedList('[', ']');
-            return items == null ? null : a(new Arr(items.Cast<IExp>().ToList()));
+            var items = tryParseBracedList('[', ']');
+            if (items == null)
+                return null;
+
+            return a(new Arr(items.Cast<IExp>().ToList()));
         }
 
 
@@ -266,7 +271,7 @@ namespace Efekt
             }
             else
             {
-                var b = parseBracedList('{', '}');
+                var b = tryParseBracedList('{', '}');
 
                 if (b == null)
                     throw new EfektException("expected '{...}' or '=>' after 'fn ...'");
@@ -305,22 +310,25 @@ namespace Efekt
         }
 
 
-        Struct parseStruct()
+        Struct tryParseStruct()
         {
             if (!matchWord("struct"))
                 return null;
-
+            var s = a(new Struct());
             skipWhite();
-
-            var items = parseBracedList('{', '}');
+            var items = tryParseBracedList('{', '}');
             if (items == null)
-                throw new EfektException("missing open curly brace after 'struct'");
-
-            return a(new Struct(items));
+            {
+                validations.GenericWarning("missing open curly brace after 'struct'");
+                items = new List<IAsi>();
+            }
+            // todo validate items if they are only vars
+            s.Items = items;
+            return s;
         }
 
 
-        Bool parseBool()
+        Bool tryParseBool()
         {
             if (matchWord("true"))
                 return a(new Bool(true));
@@ -364,7 +372,7 @@ namespace Efekt
             else if (matchWord("{"))
             {
                 --index;
-                iff.Then = a(new AsiList(parseBracedList('{', '}')));
+                iff.Then = a(new AsiList(tryParseBracedList('{', '}')));
             }
             else
                 throw new EfektException("expected 'then' or '{' after if");
@@ -383,7 +391,7 @@ namespace Efekt
 
         Asi parseAsiList()
         {
-            var b = parseBracedList('{', '}');
+            var b = tryParseBracedList('{', '}');
             return b == null ? null : a(new AsiList(b));
         }
 
@@ -427,7 +435,6 @@ namespace Efekt
                 }
                 var ch = code[index];
                 ++index;
-                ++columnNumber;
                 if (ch == quote)
                     break;
                 if (firstNewLineAt == 0 && isNewLine(ch))
@@ -453,12 +460,16 @@ namespace Efekt
         }
 
 
-        Import parseImport()
+        Import tryParseImport()
         {
             if (!matchWord("import"))
                 return null;
             var imp = a(new Import());
-            imp.QualifiedIdent = (IExp)parseAsi();
+            var asi = parseAsi();
+            if (asi == null)
+                validations.GenericWarning("Expected qualified identifier after import");
+            // todo validate if it is qualified ident (after member access op is here...) 
+            imp.QualifiedIdent = (IExp)asi;
             return imp;
         }
 
@@ -487,7 +498,7 @@ namespace Efekt
                 return new Return(skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
 
             if (matchWord("repeat"))
-                return new Repeat(skipWhiteAnd(() => parseBracedList('{', '}')));
+                return new Repeat(skipWhiteAnd(() => tryParseBracedList('{', '}')));
 
             if (matchWord("foreach"))
             {
@@ -501,7 +512,7 @@ namespace Efekt
                 var iterable = parseCombinedAsi();
                 Contract.Assume(iterable != null);
                 skipWhite();
-                var items = parseBracedList('{', '}');
+                var items = tryParseBracedList('{', '}');
                 Contract.Assume(items != null);
                 var fe = new ForEach(ident, iterable, items);
                 return fe;
@@ -537,7 +548,7 @@ namespace Efekt
                 Ident exVar = null;
 
                 skipWhite();
-                var t = parseBracedList('{', '}');
+                var t = tryParseBracedList('{', '}');
 
                 skipWhite();
                 if (matchWord("catch"))
@@ -545,14 +556,14 @@ namespace Efekt
                     skipWhite();
                     exVar = parseIdent();
                     skipWhite();
-                    c = parseBracedList('{', '}');
+                    c = tryParseBracedList('{', '}');
                 }
 
                 skipWhite();
                 if (matchWord("finally"))
                 {
                     skipWhite();
-                    f = parseBracedList('{', '}');
+                    f = tryParseBracedList('{', '}');
                 }
 
                 return new Try(t, c, exVar, f);
@@ -562,7 +573,7 @@ namespace Efekt
         }
 
 
-        Void parseVoid() => matchWord("void") ? a(new Void()) : null;
+        Void tryParseVoid() => matchWord("void") ? a(new Void()) : null;
 
 
         Ident parseIdent()
@@ -599,14 +610,40 @@ namespace Efekt
         }
 
 
-        Exp parseVar()
-        {
-            if (!matchWord("var"))
-                return null;
-            skipWhite();
-            var asi = parseCombinedAsi();
+        Exp tryParseVar() => !matchWord("var") ? null : tryParseDeclr(true);
 
-            return expToDeclrOrAssign(asi, true);
+
+        Exp tryParseDeclr(Boolean isVar = false)
+        {
+            skipWhite();
+            var i = parseIdent();
+
+            skipWhite();
+            IExp t = null;
+            if (matchText(":"))
+            {
+                skipWhite();
+                t = parseIdent();
+            }
+
+            skipWhite();
+            IExp v = null;
+            if (matchText("="))
+            {
+                v = toExp(parseCombinedAsi());
+            }
+
+            return a(new Declr(i, t, v) { IsVar = isVar });
+        }
+
+
+        IExp toExp(IAsi asi)
+        {
+            var e = asi as IExp;
+            if (e != null)
+                return e;
+            validations.GenericWarning("Expected expression instead of statement ", asi);
+            return new Err(asi);
         }
 
 
@@ -617,7 +654,7 @@ namespace Efekt
 
             var i = asi as Ident;
             if (i != null)
-                return a(new Declr(i, null) { IsVar = isVar, Attributes = i.Attributes });
+                return a(new Declr(i, null, null) { IsVar = isVar, Attributes = i.Attributes });
 
             var assign = asi as Assign;
             if (assign != null)
@@ -625,7 +662,7 @@ namespace Efekt
                 var i2 = assign.Target as Ident;
                 if (i2 != null)
                 {
-                    assign.Target = a(new Declr(i2, null)
+                    assign.Target = a(new Declr(i2, null, null)
                     {
                         IsVar = isVar,
                         Attributes = i2.Attributes
@@ -673,15 +710,19 @@ namespace Efekt
         }
 
 
-        New parseNew()
+        New tryParseNew()
         {
             if (!matchWord("new"))
                 return null;
-            skipWhite();
+            var n = a(new New());
             var asi = parseCombinedAsi("new");
+            var exp = asi as IExp;
             if (asi == null)
-                throw new EfektException("expression required after new");
-            return a(new New((IExp)asi));
+                validations.GenericWarning("expression required after new");
+            else if (exp == null)
+                validations.GenericWarning("after new should be expression, not statement");
+            n.Exp = exp;
+            return n;
         }
 
 
@@ -693,8 +734,7 @@ namespace Efekt
             while (matchChar('('))
             {
                 --index;
-                --columnNumber;
-                var args = parseBracedList('(', ')');
+                var args = tryParseBracedList('(', ')');
                 Contract.Assume(args != null);
                 asi = a(new FnApply(asi, args.Cast<IExp>().ToList()));
                 skipWhite();
@@ -729,7 +769,7 @@ namespace Efekt
         }
 
 
-        List<IAsi> parseBracedList(System.Char startBrace, System.Char endBrace)
+        List<IAsi> tryParseBracedList(System.Char startBrace, System.Char endBrace)
         {
             if (!matchChar(startBrace))
                 return null;
@@ -800,7 +840,6 @@ namespace Efekt
                 skipCommentMulti();
             } while (prevIndex != index);
             wasNewLine = wasAnyNewLine;
-            columnNumber += index - startIndex;
         }
 
 
@@ -846,7 +885,6 @@ namespace Efekt
             if (ch == '\n')
             {
                 ++lineNumber;
-                columnNumber = 0;
             }
             return ch == ' ' || ch == '\t' || isNewLine(ch);
         }
@@ -860,7 +898,6 @@ namespace Efekt
             if (index >= code.Length || code[index] != ch)
                 return false;
 
-            columnNumber += 1;
             ++index;
             return true;
         }
@@ -872,7 +909,6 @@ namespace Efekt
                           && code.IndexOf(text, index) == index;
             if (isMatch)
                 index += text.Length;
-            columnNumber += text.Length;
             return isMatch;
         }
 
@@ -902,7 +938,6 @@ namespace Efekt
             if (!lookWord(w))
                 return false;
             matched = code.Substring(index, w.Length);
-            columnNumber += matched.Length;
             index += w.Length;
             return true;
         }
@@ -927,7 +962,6 @@ namespace Efekt
                 return false;
             }
             matched = code.Substring(startIndex, length);
-            columnNumber += matched.Length;
             return true;
         }
 
@@ -944,7 +978,6 @@ namespace Efekt
             Contract.Ensures(Contract.Result<T>() == asi);
 
             asi.Line = lineNumber;
-            asi.Column = columnNumber;
             return asi;
         }
     }

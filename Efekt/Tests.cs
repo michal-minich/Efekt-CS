@@ -307,6 +307,22 @@ namespace Efekt
 
             eval("var a = 1 { var a = 2 } a", "1");
             eval("var a = 1 { var a = 2 a }", "2");
+
+            const String eq = "var op== = fn a, b { __eq(a, b)  }";
+            const String lt = "var op< = fn a, b { __lt(a, b)  }";
+
+            eval("var a try { throw 1 } catch ex { a = ex } a", "1");
+            eval(plus + "var a try { throw 1 } catch ex { a = ex } finally { a = a + 2 } a", "3");
+            eval(eq + plus + "var a try { assert 1 == 2 } catch ex { a = ex } a",
+                "\"Assertion failed: 1 == 2\"");
+            eval(eq + plus + "var a try { assume 2 == 3 } catch ex { a = ex } a",
+                "\"Assumption failed: 2 == 3\"");
+            eval(eq + plus + " var c = 1 var a = 5 repeat { if c == 10 { a = 100 break } " +
+                 "c = c + 1 a = 3 } c + a", "110");
+            eval(lt + plus + " var c = 1 var a = 5 repeat { c = c + 1 if c < 10 then continue " +
+                 "  a = 100 break } c + a", "110");
+            eval("fn { return 1 2 }()", "1");
+            eval(plus + "var arr = [1,3,5] var c = 7 foreach a in arr { c = c + a }", "16");
         }
 
 

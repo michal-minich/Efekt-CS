@@ -469,6 +469,7 @@ namespace Efekt
                 env.Declare(itemName);
             while (condition())
             {
+                cont:
                 foreach (var item in items)
                 {
                     if (isReturn)
@@ -484,7 +485,7 @@ namespace Efekt
                     else if (isContinue)
                     {
                         isContinue = false;
-                        continue;
+                        goto cont;
                     }
                     r = item.Accept(this);
                 }
@@ -559,7 +560,7 @@ namespace Efekt
                 {
                     env = new Env(env.Owner, env);
                     if (tr.ExVar != null)
-                        env.Declare(tr.ExVar.Name, toCharArr(ex.Message));
+                        env.Declare(tr.ExVar.Name, ex.Throwed);
                     visitAsiArray(tr.CatchItems, env, prevEnv);
                 }
                 else
@@ -602,7 +603,7 @@ namespace Efekt
             if (!t.Value)
             {
                 var th = new Throw(toCharArr(
-                    "Assert failed: " + ast.Exp.Accept(Program.DefaultPrinter)));
+                    "Assertion failed: " + ast.Exp.Accept(Program.DefaultPrinter)));
                 th.Accept(this);
             }
             return Void.Instance;
@@ -613,7 +614,7 @@ namespace Efekt
     public sealed class InterpretedThrowException : Exception
     {
         [CanBeNull]
-        IExp Throwed { get; }
+        public IExp Throwed { get; }
 
 
         public InterpretedThrowException([CanBeNull] IExp throwed)

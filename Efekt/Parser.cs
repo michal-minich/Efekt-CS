@@ -227,6 +227,7 @@ namespace Efekt
             while (matchChar('@'))
             {
                 var i = parseIdent();
+                Contract.Assume(i != null);
                 var i2 = a(new Ident("@" + i.Name));
                 attrs.Add(i2);
                 skipWhite();

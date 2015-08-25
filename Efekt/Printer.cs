@@ -93,7 +93,7 @@ namespace Efekt
 
 
         public String VisitIf(If iff) =>
-            "if " + iff.Test.Accept(this) + " then " + iff.Test.Accept(this)
+            "if " + iff.Test.Accept(this) + " then " + iff.Then.Accept(this)
             + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
 
 

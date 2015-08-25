@@ -41,9 +41,7 @@ namespace Efekt
 
         public IReadOnlyCollection<Object> Items { get; }
 
-        public String Text => Items.Count == 0
-            ? Type.Template
-            : getShortenedAsiText();
+        public String Text { get; }
 
 
         String getShortenedAsiText()
@@ -61,6 +59,17 @@ namespace Efekt
         {
             Type = type;
             Items = items;
+            Text = Items.Count == 0
+                ? Type.Template
+                : getShortenedAsiText();
+        }
+
+
+        public Validation(ValidationType type, IReadOnlyCollection<Object> items, String text)
+        {
+            Type = type;
+            Items = items;
+            Text = text;
         }
     }
 
@@ -142,6 +151,17 @@ namespace Efekt
         }
 
 
+        Validation add(String text, IReadOnlyCollection<Object> items)
+        {
+            var t = new ValidationType("GenericWarning", null);
+            var v = new Validation(t, items, text);
+            validations.Add(v);
+            Contract.Assume(v.Items.OfType<IAsi>().Any());
+            handle(v);
+            return v;
+        }
+
+
         static void handle(Validation v)
         {
             Console.Write(v.Type.Severity + " " + v.Type.Code + " at ");
@@ -159,6 +179,8 @@ namespace Efekt
                 types[svr.Key].Severity = svr.Value;
         }
 
+
+        public void GenericWarning(String text, params object[] items) => add(text, items);
 
         public void NothingAfterIf(IAsi affectedItem) => add(affectedItem);
         public void IfTestIsNotExp(IAsi affectedItem) => add(affectedItem);

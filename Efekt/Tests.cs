@@ -70,9 +70,9 @@ namespace Efekt
             parseWithBraces("(1 + (2) * 3)", "(1 + (2 * 3))");
 
             parse("struct { }");
-            parse("struct { a }");
-            parse("struct { a b }", "struct { a\nb }");
-            parseWithBraces("struct { a b + c }", "struct { a\n(b + c) }");
+            parse("struct { var a }");
+            parse("struct { var a var b }", "struct { var a\nvar b }");
+            parseWithBraces("struct { var a var d = b + c }", "struct { var a\nvar d = (b + c) }");
 
             parse("fn { }");
             parse("fn a { }");
@@ -81,7 +81,7 @@ namespace Efekt
             parse("fn a { struct { } }");
             parse("fn a = 1 { }");
             parse("fn a, b { }");
-            parseWithBraces("fn a, b = 2 + 3, c = 4 { }", "fn a, (b = (2 + 3)), (c = 4) { }");
+            parseWithBraces("fn a, b = 2 + 3, c = 4 { }", "fn a, b = (2 + 3), c = 4 { }");
             parse("fn { fn a { b } }");
             parse("fn a = fn b { c } { d }");
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using JetBrains.Annotations;
 
 
@@ -389,8 +390,13 @@ namespace Efekt
 
     public sealed class AsiList : Asi
     {
-        public IReadOnlyList<IAsi> Items { get; }
+        public IReadOnlyList<IAsi> Items { get; set; }
 
+
+        public AsiList()
+        {
+            
+        }
 
         public AsiList(IReadOnlyList<IAsi> items)
         {
@@ -426,10 +432,10 @@ namespace Efekt
 
     public sealed class Int : Atom
     {
-        public Int32 Value { get; }
+        public BigInteger Value { get; }
 
 
-        public Int(Int32 value)
+        public Int(BigInteger value)
         {
             Value = value;
         }
@@ -514,7 +520,7 @@ namespace Efekt
         public IAsi Type { get; }
 
         [CanBeNull]
-        public IExp Value { get; }
+        public IExp Value { get; set; }
 
 
         public Declr(Ident ident, [CanBeNull] IAsi type, [CanBeNull] IExp value)
@@ -532,9 +538,14 @@ namespace Efekt
     public sealed class Arr : Exp
     {
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public List<IExp> Items { get; }
+        public List<IExp> Items { get; set; }
 
         public Boolean IsEvaluated { get; set; }
+
+
+        public Arr()
+        {
+            }
 
 
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
@@ -568,16 +579,21 @@ namespace Efekt
 
     public sealed class Fn : Val, IHasEnv
     {
-        public IReadOnlyList<IExp> Params { get; }
-        public IReadOnlyList<IAsi> Items { get; }
+        public IReadOnlyList<Declr> Params { get; set; }
+        public IReadOnlyList<IAsi> BodyItems { get; set; }
         public Env Env { get; set; }
         public Int32 CountMandatoryParams { get; set; }
 
 
-        public Fn(IReadOnlyList<IExp> @params, IReadOnlyList<IAsi> items)
+        public Fn()
+        {
+        }
+
+
+        public Fn(IReadOnlyList<Declr> @params, IReadOnlyList<IAsi> bodyItems)
         {
             Params = @params;
-            Items = items;
+            BodyItems = bodyItems;
             CountMandatoryParams = @params.Count;
         }
 
@@ -589,9 +605,14 @@ namespace Efekt
     public sealed class FnApply : Exp
     {
         public IAsi Fn { get; }
-        public IReadOnlyCollection<IExp> Args { get; }
+        public IReadOnlyCollection<IExp> Args { get; set; }
 
 
+        public FnApply(IAsi fn)
+        {
+            Fn = fn;
+
+        }
         public FnApply(IAsi fn, IReadOnlyCollection<IExp> args)
         {
             Fn = fn;

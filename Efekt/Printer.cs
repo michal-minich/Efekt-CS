@@ -54,7 +54,7 @@ namespace Efekt
 
         public String VisitFn(Fn fn)
         {
-            var b = joinStatementsOneLine(fn.Items);
+            var b = joinStatementsOneLine(fn.BodyItems);
             return "fn " + joinList(fn.Params) + (fn.Params.Count == 0 ? "" : " ")
                    + (b.Length == 0 ? "{ }" : "{ " + b + " }");
         }

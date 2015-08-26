@@ -98,7 +98,7 @@ namespace Efekt
             var e = new Env(mFn.Env.Owner, mFn.Env);
             var i = declare(e, mFn.Params[0]);
             e.SetValue(i.Name, copyIfStructInstance(argValue, mFn.Params[0].Attributes));
-            var extFn = new Fn(@params, mFn.Items)
+            var extFn = new Fn(@params, mFn.BodyItems)
             {
                 Env = e,
                 CountMandatoryParams = mFn.CountMandatoryParams - 1,
@@ -212,7 +212,7 @@ namespace Efekt
 
 
         public IAsi VisitFn(Fn fn)
-            => new Fn(fn.Params, fn.Items)
+            => new Fn(fn.Params, fn.BodyItems)
             {
                 Env = env,
                 CountMandatoryParams = fn.CountMandatoryParams,
@@ -245,7 +245,7 @@ namespace Efekt
             var prevEnv = env;
             var envForParams = new Env(fn.Env.Owner, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
-            return visitAsiArray(fn.Items, envForParams, prevEnv);
+            return visitAsiArray(fn.BodyItems, envForParams, prevEnv);
         }
 
 
@@ -276,7 +276,6 @@ namespace Efekt
             env = envForParams;
             foreach (var p in fn.Params)
             {
-                var opa = p as BinOpApply;
                 if (args2.Count <= n)
                 {
                     p.Accept(this);
@@ -284,12 +283,7 @@ namespace Efekt
                 else
                 {
                     var argValue = copyIfStructInstance(evaluatedArgs[n], p.Attributes);
-                    var i = Parser.GetIdentFromDeclrLikeAsi(p);
-                    if (opa != null)
-                        env.Declare(i.Name);
-                    else
-                        p.Accept(this);
-                    env.SetValue(i.Name, argValue);
+                    env.Declare(p.Ident.Name, argValue);
                 }
                 ++n;
             }

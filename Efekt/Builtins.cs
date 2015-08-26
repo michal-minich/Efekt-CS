@@ -66,7 +66,7 @@ namespace Efekt
         }
 
 
-        static Int32 asInt(this IExp asi) => ((Int)asi).Value;
+        static Int32 asInt(this IExp asi) => (Int32)((Int)asi).Value;
 
         static Boolean asBool(this IExp asi) => ((Bool)asi).Value;
 

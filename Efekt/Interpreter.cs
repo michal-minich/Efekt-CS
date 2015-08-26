@@ -372,6 +372,7 @@ namespace Efekt
                 }
             }
             r = items.Last().Accept(this);
+            isReturn = false;
             env = restoreEnv;
             return copyIfStructInstance(r, new List<IExp>());
         }

@@ -15,15 +15,14 @@ var ArrayRange = struct {
 }
 
 var select = fn range, selector {
-    var S2 = struct {
+    return new struct {
         var r = 1
         var s = 2
         var constructor = fn ra, se { r = ra s = se }
         @public @property var isEmpty = fn => r.isEmpty()
         @public var popFront = fn => r.popFront()
         @public @property var current = fn => s(r.current())
-    }
-    new S2(range, selector)
+    }(range, selector)
 }
 
 @public var select2 = fn range, selector {
@@ -82,5 +81,6 @@ inject listCounter to rangeCount
 rangeCount inject listCounter
 */
 var r = new ArrayRange([5, 6, 7, 8, 9])
-var ss = r.select(fn a => a + 10)
---print(ss.toArray())
+--var ss = r.select(fn a => a + 10)
+var ss = r.select(fn a => a + 20)
+print(ss.toArray())

@@ -352,6 +352,11 @@ namespace Efekt
     }
 
 
+    public interface IDeclrOrErr
+    {
+    }
+
+
     public abstract class Asi : IAsi
     {
         public List<IExp> Attributes { get; set; } = new List<IExp>();
@@ -395,8 +400,8 @@ namespace Efekt
 
         public AsiList()
         {
-            
         }
+
 
         public AsiList(IReadOnlyList<IAsi> items)
         {
@@ -545,7 +550,7 @@ namespace Efekt
 
         public Arr()
         {
-            }
+        }
 
 
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
@@ -564,9 +569,11 @@ namespace Efekt
         public IReadOnlyCollection<IAsi> Items { get; set; }
         public Env Env { get; set; }
 
+
         public Struct()
         {
         }
+
 
         public Struct(IReadOnlyCollection<IAsi> items)
         {
@@ -611,8 +618,9 @@ namespace Efekt
         public FnApply(IAsi fn)
         {
             Fn = fn;
-
         }
+
+
         public FnApply(IAsi fn, IReadOnlyCollection<IExp> args)
         {
             Fn = fn;
@@ -814,7 +822,12 @@ namespace Efekt
 
     public sealed class Repeat : Stm
     {
-        public IReadOnlyList<IAsi> Items { get; }
+        public IReadOnlyList<IAsi> Items { get; set; }
+
+
+        public Repeat()
+        {
+        }
 
 
         public Repeat(IReadOnlyList<IAsi> items)
@@ -829,9 +842,14 @@ namespace Efekt
 
     public sealed class ForEach : Stm
     {
-        public Ident Ident { get; }
-        public IAsi Iterable { get; }
-        public IReadOnlyCollection<IAsi> Items { get; }
+        public Ident Ident { get; set; }
+        public IAsi Iterable { get; set; }
+        public IReadOnlyCollection<IAsi> Items { get; set; }
+
+
+        public ForEach()
+        {
+        }
 
 
         public ForEach(Ident ident, IAsi iterable, IReadOnlyCollection<IAsi> items)
@@ -863,16 +881,21 @@ namespace Efekt
 
     public sealed class Try : Stm
     {
-        public IReadOnlyList<IAsi> TryItems { get; }
+        public IReadOnlyList<IAsi> TryItems { get; set; }
 
         [CanBeNull]
-        public IReadOnlyList<IAsi> CatchItems { get; }
+        public IReadOnlyList<IAsi> CatchItems { get; set; }
 
         [CanBeNull]
-        public Ident ExVar { get; }
+        public Ident ExVar { get; set; }
 
         [CanBeNull]
-        public IReadOnlyList<IAsi> FinallyItems { get; }
+        public IReadOnlyList<IAsi> FinallyItems { get; set; }
+
+
+        public Try()
+        {
+        }
 
 
         public Try(

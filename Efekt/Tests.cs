@@ -323,6 +323,10 @@ namespace Efekt
                  "  a = 100 break } c + a", "110");
             eval("fn { return 1 2 }()", "1");
             eval(plus + "var arr = [1,3,5] var c = 7 foreach a in arr { c = c + a }", "16");
+
+            eval("var S = struct { var a = fn b => b } var s = new S s.a(1)", "1");
+            eval("var S = struct { var a = fn b => b } new S.a(1)", "1");
+            eval("new struct { var a = fn b => b }.a(1)", "1");
         }
 
 

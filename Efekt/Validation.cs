@@ -180,7 +180,9 @@ namespace Efekt
         }
 
 
-        public void GenericWarning(String text, params object[] items) => add(text, items);
+        public void GenericWarning(String text, object item, params object[] items)
+            => add(text, new[] { item }.Concat(items).ToArray());
+
 
         public void NothingAfterIf(IAsi affectedItem) => add(affectedItem);
         public void IfTestIsNotExp(IAsi affectedItem) => add(affectedItem);

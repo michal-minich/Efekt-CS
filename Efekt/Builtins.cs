@@ -7,10 +7,19 @@ using System.Linq;
 
 namespace Efekt
 {
-    public static class Builtins
+    public class Builtins
     {
+        readonly ValidationList validations;
+
+
+        public Builtins(ValidationList validations)
+        {
+            this.validations = validations;
+        }
+
+
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        public static IExp Call(String fnName, IReadOnlyList<IExp> args)
+        public IExp Call(String fnName, IReadOnlyList<IExp> args)
         {
             Contract.Ensures(Contract.Result<IExp>() != null);
 
@@ -21,38 +30,39 @@ namespace Efekt
             switch (fnName)
             {
                 case "eq":
-                    return new Bool(args[0].toString() == args[1].toString());
+                    return new Bool(args[0].AsiToString() == args[1].AsiToString());
                 case "lt":
-                    return new Bool(args[0].asInt() < args[1].asInt());
+                    return new Bool(args[0].AsInt() < args[1].AsInt());
 
                 case "plus":
-                    return new Int((args[0].asInt() + args[1].asInt()));
+                    return new Int((args[0].AsInt() + args[1].AsInt()));
                 case "multiply":
-                    return new Int((args[0].asInt() * args[1].asInt()));
+                    return new Int((args[0].AsInt() * args[1].AsInt()));
 
                 case "and":
-                    return new Bool(args[0].asBool() && args[1].asBool());
+                    return new Bool(args[0].AsBool() && args[1].AsBool());
                 case "or":
-                    return new Bool(args[0].asBool() || args[1].asBool());
+                    return new Bool(args[0].AsBool() || args[1].AsBool());
 
                 case "rest":
-                    return new Arr(args[0].asArr().Items.Skip(1).ToList());
+                    return new Arr(args[0].AsArr().Items.Skip(1).ToList());
                 case "at":
-                    return args[0].asArr().Items.ElementAt(args[1].asInt());
+                    return args[0].AsArr().Items.ElementAt(args[1].AsInt());
                 case "count":
-                    return new Int(args[0].asArr().Items.Count);
+                    return new Int(args[0].AsArr().Items.Count);
                 case "add":
-                    args[0].asArr().Items.Add(args[1]);
-                    return new Void();
+                    args[0].AsArr().Items.Add(args[1]);
+                    return Void.Instance;
 
                 case "env":
                     return printEnvText(args[0]);
                 case "print":
-                    Console.WriteLine(args[0].toString());
-                    return new Void();
+                    Console.WriteLine(args[0].AsiToString());
+                    return Void.Instance;
 
                 default:
-                    throw new EfektException("Unknown builtin: " + fnName);
+                    validations.GenericWarning("Unknown builtin: " + fnName, Void.Instance);
+                    return Void.Instance;
             }
         }
 
@@ -64,14 +74,18 @@ namespace Efekt
                 Env.PrintEnv(he.Env);
             return new Void();
         }
+    }
+
+    public static class BuiltinsExtensions
+    {
+        public static Int32 AsInt(this IExp asi) => (Int32)((Int)asi).Value;
+
+        public static Boolean AsBool(this IExp asi) => ((Bool)asi).Value;
+
+        public static Arr AsArr(this IExp asi) => (Arr)asi;
 
 
-        static Int32 asInt(this IExp asi) => (Int32)((Int)asi).Value;
-
-        static Boolean asBool(this IExp asi) => ((Bool)asi).Value;
-
-        static Arr asArr(this IExp asi) => (Arr)asi;
-
-        static String toString(this IAsi asi) => asi.Accept(Program.DefaultPrinter).Trim('"');
+        public static String AsiToString(this IAsi asi)
+            => asi.Accept(Program.DefaultPrinter).Trim('"');
     }
 }

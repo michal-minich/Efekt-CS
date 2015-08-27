@@ -13,6 +13,7 @@ namespace Efekt
         Asi current;
         Env global;
         ValidationList validations;
+        Builtins builtins;
         Boolean isReturn;
         Boolean isBreak;
         Boolean isContinue;
@@ -22,9 +23,10 @@ namespace Efekt
         {
             if (al.Items.Count == 0)
                 return new Void();
+            builtins = new Builtins(validationList);
             validations = validationList;
             var fileStruct = new Struct(new List<IAsi>());
-            global = env = new Env(fileStruct);
+            global = env = new Env(validations, fileStruct);
             fileStruct.Env = global;
             visitAsiArray(al.Items.DropLast().ToList(), env, env);
             var last = al.Items.Last();
@@ -38,7 +40,7 @@ namespace Efekt
 
 
         public IAsi VisitAsiList(AsiList al)
-            => visitAsiArray(al.Items, new Env(env.Owner, env), env);
+            => visitAsiArray(al.Items, new Env(validations, env.Owner, env), env);
 
 
         public IAsi VisitErr(Err err) => err;
@@ -76,26 +78,28 @@ namespace Efekt
         IAsi accessMember(BinOpApply opa)
         {
             var argValue = opa.Op1.Accept(this);
-            var memberName = ((Ident)opa.Op2).Name;
+            var member = (Ident)opa.Op2;
             if (argValue is Struct)
             {
                 var bag = getStructEnvOfMember(opa, argValue);
-                var m = bag.GetOwnValueOrNull(memberName);
+                var m = bag.GetOwnValueOrNull(member.Name);
                 if (m != null)
                     return m;
             }
-            return createMemberFn(memberName, argValue);
+            return createMemberFn(member, argValue);
         }
 
 
-        IAsi createMemberFn(String memberName, IAsi argValue)
+        IAsi createMemberFn(Ident member, IAsi argValue)
         {
-            var mExt = env.GetValue(memberName);
+            var mExt = env.GetValueOrNull(member.Name);
+            if (mExt == null)
+                validations.GenericWarning("member is unknown", member);
             var mFn = mExt as Fn;
             if (mFn == null)
-                throw new EfektException("member extension must be a func");
+                validations.GenericWarning("member extension must be a func", member);
             var @params = mFn.Params.Skip(1).ToList();
-            var e = new Env(mFn.Env.Owner, mFn.Env);
+            var e = new Env(validations, mFn.Env.Owner, mFn.Env);
             var i = declare(e, mFn.Params[0]);
             e.SetValue(i.Name, copyIfStructInstance(argValue, mFn.Params[0].Attributes));
             var extFn = new Fn(@params, mFn.BodyItems)
@@ -116,7 +120,7 @@ namespace Efekt
             if (s?.Env == null || s == global.Owner)
                 return asi;
             var newStruct = new Struct(new List<IAsi>());
-            var newEnv = new Env(newStruct, global);
+            var newEnv = new Env(validations, newStruct, global);
             newStruct.Env = newEnv;
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
@@ -141,19 +145,21 @@ namespace Efekt
         {
             var m = ma.Op2 as Ident;
             if (m == null)
-                throw new EfektException(
-                    "expected identifier or member access after '.', not "
-                    + ma.Op2.GetType().Name);
+                validations.GenericWarning(
+                    "expected identifier or member access after '.' , not {0} ", ma.Op2);
 
             var s2 = bag as Struct;
             if (s2 == null)
-                throw new EfektException(
-                    "cannot access member '" + ma.Op2.Accept(Program.DefaultPrinter) + "' of " +
-                    bag.GetType().Name);
+            {
+                validations.GenericWarning(
+                    "cannot access member '"
+                    + ma.Op2.Accept(Program.DefaultPrinter) + "' of {0}", bag);
+                return new Env(validations, env.Owner);
+            }
             if (s2.Env == null)
-                throw new EfektException(
+                validations.GenericWarning(
                     "cannot access member '" + ma.Op2.Accept(Program.DefaultPrinter) +
-                    "' of not constructed struct");
+                    "' of not constructed struct", bag);
             return s2.Env;
         }
 
@@ -224,7 +230,7 @@ namespace Efekt
         {
             var fnIdent = fna.Fn as Ident;
             if (fnIdent != null && fnIdent.Name.StartsWith("__"))
-                return Builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
+                return builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
 
             var fn = fna.Fn as Fn;
             if (fn?.Env == null)
@@ -243,7 +249,7 @@ namespace Efekt
 
             current = fn;
             var prevEnv = env;
-            var envForParams = new Env(fn.Env.Owner, fn.Env);
+            var envForParams = new Env(validations, fn.Env.Owner, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
             return visitAsiArray(fn.BodyItems, envForParams, prevEnv);
         }
@@ -310,7 +316,7 @@ namespace Efekt
 
             var prevEnv = env;
             var instance = new Struct(new List<IAsi>());
-            env = new Env(instance, global);
+            env = new Env(validations, instance, global);
             instance.Env = env;
             current = instance;
             foreach (var item in s.Items)
@@ -465,7 +471,7 @@ namespace Efekt
         {
             IAsi r = Void.Instance;
             var prevEnv = env;
-            env = new Env(env.Owner, env);
+            env = new Env(validations, env.Owner, env);
             if (itemName != null)
                 env.Declare(itemName);
             while (condition())
@@ -550,7 +556,7 @@ namespace Efekt
         public IAsi VisitTry(Try tr)
         {
             var prevEnv = env;
-            env = new Env(env.Owner, env);
+            env = new Env(validations, env.Owner, env);
             try
             {
                 visitAsiArray(tr.TryItems, env, prevEnv);
@@ -559,7 +565,7 @@ namespace Efekt
             {
                 if (tr.CatchItems != null)
                 {
-                    env = new Env(env.Owner, env);
+                    env = new Env(validations, env.Owner, env);
                     if (tr.ExVar != null)
                         env.Declare(tr.ExVar.Name, ex.Throwed);
                     visitAsiArray(tr.CatchItems, env, prevEnv);
@@ -573,7 +579,7 @@ namespace Efekt
             {
                 if (tr.FinallyItems != null)
                 {
-                    env = new Env(env.Owner, env);
+                    env = new Env(validations, env.Owner, env);
                     visitAsiArray(tr.FinallyItems, env, prevEnv);
                 }
             }

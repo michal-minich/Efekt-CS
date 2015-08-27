@@ -8,6 +8,7 @@ namespace Efekt
 {
     public sealed class Env
     {
+        readonly ValidationList validations;
         public Struct Owner { get; }
 
         [CanBeNull]
@@ -18,15 +19,18 @@ namespace Efekt
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
 
 
-        public Env(Struct owner)
+        public Env(ValidationList validations, Struct owner)
         {
+            this.validations = validations;
             Owner = owner;
         }
 
 
-        public Env(Struct owner, Env parent)
+        public Env(ValidationList validations, Struct owner, Env parent)
         {
             Contract.Requires(parent != null);
+
+            this.validations = validations;
             Owner = owner;
             Parent = parent;
         }
@@ -52,7 +56,8 @@ namespace Efekt
         public void Declare(String name, IAsi value = null)
         {
             if (Dict.ContainsKey(name))
-                throw new EfektException("variable '" + name + "' is already declared");
+                validations.GenericWarning("variable '" + name + "' is already declared",
+                    Void.Instance);
             Dict.Add(name, value);
         }
 
@@ -62,8 +67,6 @@ namespace Efekt
 
 
         public void AddImport(Env ie) => ImportedEnvs.Insert(0, new Env(ie.Dict));
-
-        public IAsi GetValue(String name) => getEnvDeclaring(name, this).Dict[name];
 
         public IAsi GetValueOrNull(String name) => getEnvDeclaringOrNull(name, this)?.Dict[name];
 
@@ -84,11 +87,12 @@ namespace Efekt
         }
 
 
-        static Env getEnvDeclaring(String name, Env env)
+        Env getEnvDeclaring(String name, Env env)
         {
             var e = getEnvDeclaringOrNull(name, env);
             if (e == null)
-                throw new EfektException("Env: variable '" + name + "' is not declared");
+                validations.GenericWarning("Env: variable '" + name + "' is not declared",
+                    Void.Instance);
             return e;
         }
 

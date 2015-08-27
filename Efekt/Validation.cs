@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
@@ -57,9 +58,13 @@ namespace Efekt
 
         public Validation(ValidationType type, IReadOnlyCollection<Object> items)
         {
+            Contract.Requires(type != null);
+            Contract.Requires(items != null);
+            Contract.Requires(Contract.ForAll(items, i => i != null));
+
             Type = type;
             Items = items;
-            Text = Items.Count == 0
+            Text = items.Count == 0
                 ? Type.Template
                 : getShortenedAsiText();
         }
@@ -94,6 +99,13 @@ namespace Efekt
         readonly Dictionary<String, ValidationType> types;
 
 
+        internal ValidationList()
+        {
+            types = getValidationList(File.ReadAllLines(
+                AppDomain.CurrentDomain.BaseDirectory + @"Resources\" + "validations.en-US.ef"));
+        }
+
+
         ValidationList(Dictionary<String, ValidationType> ts)
         {
             types = ts;
@@ -101,9 +113,15 @@ namespace Efekt
 
 
         public static ValidationList InitFrom(IEnumerable<String> lines)
-            => new ValidationList(extrat(lines).ToDictionary(
+            => new ValidationList(getValidationList(lines));
+
+
+        static Dictionary<String, ValidationType> getValidationList(IEnumerable<String> lines)
+        {
+            return extrat(lines).ToDictionary(
                 kvp => kvp.Key,
-                kvp => new ValidationType(kvp.Key, kvp.Value.Trim('"'))));
+                kvp => new ValidationType(kvp.Key, kvp.Value.Trim('"')));
+        }
 
 
         public static Dictionary<String, ValidationSeverity> LoadSeverities(
@@ -166,7 +184,7 @@ namespace Efekt
         {
             Console.Write(v.Type.Severity + " " + v.Type.Code + " at ");
             var firstAsi = v.Items.OfType<IAsi>().First();
-            Console.Write(firstAsi.Line /* + ":" + v.AffectedItem.Column*/+ " : ");
+            Console.Write(firstAsi.Line + " : ");
             Console.WriteLine(v.Text);
             if (v.Type.Severity == ValidationSeverity.Error)
                 throw new ValidationException(v);

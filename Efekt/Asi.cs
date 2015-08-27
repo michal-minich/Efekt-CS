@@ -352,11 +352,6 @@ namespace Efekt
     }
 
 
-    public interface IDeclrOrErr
-    {
-    }
-
-
     public abstract class Asi : IAsi
     {
         public List<IExp> Attributes { get; set; } = new List<IExp>();
@@ -518,14 +513,19 @@ namespace Efekt
     public sealed class Declr : Exp
     {
         public Boolean IsVar { get; set; }
-        public Ident Ident { get; }
+        public Ident Ident { get; set; }
 
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         [CanBeNull]
-        public IAsi Type { get; }
+        public IAsi Type { get; set; }
 
         [CanBeNull]
         public IExp Value { get; set; }
+
+
+        public Declr()
+        {
+        }
 
 
         public Declr(Ident ident, [CanBeNull] IAsi type, [CanBeNull] IExp value)
@@ -864,8 +864,11 @@ namespace Efekt
     }
 
 
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "Throw")]
     public sealed class Throw : Stm
     {
+        [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix")]
         public IAsi Ex { get; }
 
 
@@ -879,6 +882,8 @@ namespace Efekt
     }
 
 
+    [SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords",
+        MessageId = "Try")]
     public sealed class Try : Stm
     {
         public IReadOnlyList<IAsi> TryItems { get; set; }

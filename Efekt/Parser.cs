@@ -87,7 +87,11 @@ namespace Efekt
 
 
         [CanBeNull]
-        IAsi parseCombinedAsi(String context = null)
+        IAsi parseCombinedAsi() => parseCombinedAsi(null);
+
+
+        [CanBeNull]
+        IAsi parseCombinedAsi(String context)
         {
             var asi = parseAsi();
             if (asi == null)
@@ -253,9 +257,10 @@ namespace Efekt
             var fn = a(new Fn());
 
             skipWhite();
-            var p = parseComaListUntil(fn, () => lookChar('{') || lookOp("=>"));
+            var p = parseComaListUntil(fn, () => lookChar('{') || lookOp("=>"), parseCombinedAsi);
 
             var p2 = p.Select(e => expToDeclr(e, false, fn)).ToList();
+
             fn.Params = p2;
 
             skipWhite();
@@ -430,11 +435,16 @@ namespace Efekt
             Contract.Assume(str != null);
             Contract.Assume(str.Items != null);
             if (str.Items.Count == 0)
-                throw new EfektException("char must have exactly one character, it has 0");
+            {
+                validations.GenericWarning("char must have exactly one character, it has 0", str);
+                return new Char('!');
+            }
             if (str.Items.Count != 1)
-                Console.WriteLine("char must have exactly one character, it has " +
-                                  str.Items.Count);
-            return (Char)str.Items.First();
+            {
+                validations.GenericWarning("char must have exactly one character, it has " +
+                                           str.Items.Count, str);
+            }
+            return (Char)str.Items[0];
         }
 
 
@@ -450,9 +460,8 @@ namespace Efekt
                 if (index >= code.Length)
                 {
                     isUnterminated = true;
-                    /*throw new EfektException*/
-                    Console.WriteLine("Unterminated string constant " +
-                                      "at the end of the file.");
+                    validations.GenericWarning("Unterminated string constant " +
+                                               "at the end of the file.", a(new Void()));
 
                     break;
                 }
@@ -640,30 +649,52 @@ namespace Efekt
         }
 
 
-        Declr tryParseVar() => !matchWord("var") ? null : tryParseDeclr(true);
+        Declr tryParseVar() => !matchWord("var") ? null : parseDeclr(true);
 
 
-        Declr tryParseDeclr(Boolean isVar = false)
+        Declr parseDeclrInList()
         {
             skipWhite();
-            var i = tryParseIdent();
+            var a = parseAttributes();
 
             skipWhite();
-            IExp t = null;
+            matchChar(','); // todo multiple and first before declr should be reported
+            var d = parseDeclr(false);
+            if (a != null)
+                d.Attributes = a;
+            return d;
+        }
+
+
+        Declr parseDeclr(Boolean isVar)
+        {
+            Contract.Ensures(Contract.Result<Declr>() != null);
+
+            var d = a(new Declr { IsVar = isVar });
+
+            skipWhite();
+            d.Ident = tryParseIdent();
+            if (d.Ident == null)
+                validations.GenericWarning("Expected ident (after 'var')", d);
+
+            skipWhite();
             if (matchText(":"))
             {
                 skipWhite();
-                t = tryParseIdent();
+                d.Type = tryParseIdent();
+                if (d.Type == null)
+                    validations.GenericWarning("Expected type after ':'", d);
             }
 
             skipWhite();
-            IExp v = null;
             if (matchText("="))
             {
-                v = toExp(parseCombinedAsi());
+                d.Value = toExp(parseCombinedAsi());
+                if (d.Value == null)
+                    validations.GenericWarning("Expected value after '='", d);
             }
 
-            return a(new Declr(i, t, v) { IsVar = isVar });
+            return d;
         }
 
 
@@ -692,12 +723,16 @@ namespace Efekt
             if (asi == null)
             {
                 validations.GenericWarning("expected ident, declaration or assignment", owner);
-                return a(new Declr(new Ident("__error"), null, null));
+                return a(new Declr(new Ident("__error"), null, null) { IsVar = isVar });
             }
 
             var i = asi as Ident;
             if (i != null)
-                return a(new Declr(i, null, null) { IsVar = isVar, Attributes = i.Attributes });
+            {
+                var d3 = a(new Declr(i, null, null) { IsVar = isVar, Attributes = i.Attributes });
+                i.Attributes = new List<IExp>();
+                return d3;
+            }
 
             var assign = asi as Assign;
             if (assign != null)
@@ -705,15 +740,24 @@ namespace Efekt
                 var i2 = assign.Target as Ident;
                 if (i2 != null)
                 {
-                    return a(new Declr(i2, null, assign.Value)
+                    var d4 = a(new Declr(i2, null, assign.Value)
                     {
                         IsVar = isVar,
                         Attributes = i2.Attributes
                     });
+                    i2.Attributes = new List<IExp>();
+                    return d4;
                 }
                 var d2 = assign.Target as Declr;
                 if (d2 == null)
-                    throw new EfektException("only identifier or declaration can be assigned");
+                {
+                    validations.GenericWarning("only identifier or declaration can be " +
+                                               "assigned here", owner);
+                    return a(new Declr(new Ident("__error"), null, assign.Value)
+                    {
+                        IsVar = isVar
+                    });
+                }
                 d2.IsVar = isVar;
                 d2.Value = assign.Value;
                 return d2;
@@ -721,9 +765,9 @@ namespace Efekt
 
             var d = asi as Declr;
             if (d == null)
-                throw new EfektException("declaration or identifier expected after var");
-            d.IsVar = isVar;
-            return d;
+                validations.GenericWarning(
+                    "declaration or identifier or assign expected after var", owner);
+            return a(new Declr(new Ident("__error"), null, toExp(asi)) { IsVar = isVar });
         }
 
 
@@ -757,9 +801,9 @@ namespace Efekt
         }
 
 
-        List<IAsi> parseComaListUntil(IAsi owner, Func<Boolean> stopCheck)
+        List<T> parseComaListUntil<T>(IAsi owner, Func<Boolean> stopCheck, Func<T> parsingFn)
         {
-            var items = new List<IAsi>();
+            var items = new List<T>();
             skipWhite();
             while (true)
             {
@@ -772,7 +816,8 @@ namespace Efekt
                 if (stopCheck())
                     break;
 
-                var asi = parseCombinedAsi();
+                var asi = parsingFn();
+                ;
                 if (asi == null)
                     break;
                 items.Add(asi);
@@ -787,7 +832,7 @@ namespace Efekt
             if (!matchChar(startBrace))
                 return null;
 
-            return parseComaListUntil(owner, () => matchChar(endBrace));
+            return parseComaListUntil(owner, () => matchChar(endBrace), parseCombinedAsi);
         }
 
 
@@ -808,13 +853,6 @@ namespace Efekt
                ch == '&' || ch == '/' || ch == '|' || ch == '<' ||
                ch == '>' || ch == '?' || ch == ',' || ch == '$' ||
                ch == ';' || ch == '`' || ch == '\\';
-
-
-        T skipWhiteAnd<T>(Func<T> parseFn)
-        {
-            skipWhite();
-            return parseFn();
-        }
 
 
         T skipWhiteButNoNewLineAnd<T>(Func<T> parseFn) where T : class, IAsi

@@ -45,18 +45,18 @@ namespace Efekt
         public String Text { get; }
 
 
-        String getShortenedAsiText()
+        String getShortenedAsiText(String text)
         {
             var res = Items
                 .Select(item => item is IAsi
                     ? ((IAsi)item).Accept(Program.DefaultPrinter)
                     : item.ToString())
                 .Select(af => af.Length > 20 ? af.Substring(0, 20) + "..." : af).ToArray();
-            return String.Format(Type.Template, res);
+            return String.Format(text, res);
         }
 
 
-        public Validation(ValidationType type, IReadOnlyCollection<Object> items)
+        public Validation(ValidationType type, IReadOnlyCollection<Object> items, String text = null)
         {
             Contract.Requires(type != null);
             Contract.Requires(items != null);
@@ -64,17 +64,8 @@ namespace Efekt
 
             Type = type;
             Items = items;
-            Text = items.Count == 0
-                ? Type.Template
-                : getShortenedAsiText();
-        }
-
-
-        public Validation(ValidationType type, IReadOnlyCollection<Object> items, String text)
-        {
-            Type = type;
-            Items = items;
-            Text = text;
+            var t = text ?? Type.Template;
+            Text = items.Count == 0 ? t : getShortenedAsiText(t);
         }
     }
 

@@ -20,7 +20,11 @@ namespace Efekt
             return new Declr(
                 new Ident(moduleName, IdentCategory.Value),
                 null,
-                new New(new Struct(moduleItems))) { IsVar = true };
+                new New(new Struct(moduleItems)))
+            {
+                IsVar = true,
+                Attributes = new List<IExp> { new Ident("public") }
+            };
         }
     }
 }

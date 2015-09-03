@@ -94,10 +94,10 @@ namespace Efekt
         {
             var mExt = env.GetValueOrNull(member.Name);
             if (mExt == null)
-                validations.GenericWarning("member is unknown", member);
+                validations.GenericWarning("member is unknown '{0}'", member);
             var mFn = mExt as Fn;
             if (mFn == null)
-                validations.GenericWarning("member extension must be a func", member);
+                validations.GenericWarning("member extension '{0}' must be a func", member);
             var @params = mFn.Params.Skip(1).ToList();
             var e = new Env(validations, mFn.Env.Owner, mFn.Env);
             var i = declare(e, mFn.Params[0]);
@@ -125,8 +125,8 @@ namespace Efekt
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             {
-                newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value, new List<IExp>()));
-                var fn = kvp.Value as Fn;
+                newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value.Item, new List<IExp>()));
+                var fn = kvp.Value.Item as Fn;
                 if (fn?.Env != null)
                     fn.Env = newEnv;
             }
@@ -164,22 +164,10 @@ namespace Efekt
         }
 
 
-        Ident declare(Env e, IAsi declrOrIdent)
+        Ident declare(Env e, Declr d)
         {
             Contract.Ensures(Contract.Result<Ident>() != null);
 
-            var d = declrOrIdent as Declr;
-            if (d == null)
-            {
-                var i = declrOrIdent as Ident;
-                if (i == null)
-                {
-                    validations.DeclrExpected(declrOrIdent);
-                    i = new Ident("__error", IdentCategory.Value);
-                    e.Declare(i.Name);
-                }
-                return i;
-            }
             var prevEnv = env;
             env = e;
             d.Accept(this);
@@ -190,15 +178,25 @@ namespace Efekt
 
         public IAsi VisitDeclr(Declr d)
         {
+            var acc = (env == global)
+                ? Accessibility.Global
+                : (current is Struct ? Accessibility.Private : Accessibility.Local);
+
             if (d.Value == null)
             {
-                env.Declare(d.Ident.Name);
+                if (hasSimpleAttr(d.Attributes, "public"))
+                    env.Declare(Accessibility.Public, d.Ident.Name);
+                else
+                    env.Declare(acc, d.Ident.Name);
                 return new Void();
             }
 
             var v = d.Value.Accept(this);
             v = copyIfStructInstance(v, new List<IExp>());
-            env.Declare(d.Ident.Name, v);
+            if (hasSimpleAttr(d.Attributes, "public"))
+                env.Declare(Accessibility.Public, d.Ident.Name, v);
+            else
+                env.Declare(acc, d.Ident.Name, v);
             return v;
         }
 
@@ -284,12 +282,13 @@ namespace Efekt
             {
                 if (args2.Count <= n)
                 {
-                    p.Accept(this);
+                    //p.Accept(this);
+                    env.Declare(Accessibility.Local, p.Ident.Name, p.Value?.Accept(this));
                 }
                 else
                 {
                     var argValue = copyIfStructInstance(evaluatedArgs[n], p.Attributes);
-                    env.Declare(p.Ident.Name, argValue);
+                    env.Declare(Accessibility.Local, p.Ident.Name, argValue);
                 }
                 ++n;
             }
@@ -321,7 +320,7 @@ namespace Efekt
             current = instance;
             foreach (var item in s.Items)
                 item.Accept(this);
-            var cons = env.GetValueOrNull("constructor");
+            var cons = env.GetOwnValueOrNull("constructor");
             env = prevEnv;
             applyConstructor(n, fna, cons);
             return instance;
@@ -365,12 +364,12 @@ namespace Efekt
                 return new Void();
             env = newEnv;
             IAsi r = null;
-            for (var i = 0; i < items.Count - 1; ++i)
+            foreach (var item in items.DropLast())
             {
-                if (items[i] is Val)
-                    validations.ExpHasNoEffect(items[i]);
+                if (item is Val)
+                    validations.ExpHasNoEffect(item);
                 else
-                    r = items[i].Accept(this);
+                    r = item.Accept(this);
                 if (isReturn)
                 {
                     isReturn = false;
@@ -409,13 +408,21 @@ namespace Efekt
             {
                 var bag = ma.Op1.Accept(this);
                 var e = getStructEnvOfMember(ma, bag);
-                e.SetValue(((Ident)ma.Op2).Name, v);
+                var name = ((Ident)ma.Op2).Name;
+                env.CheckAccessibility(name, e, "write member");
+                e.SetValue(name, v);
+                return v;
             }
-            else
+
+            var i = a.Target as Ident;
+            if (i != null)
             {
-                var i = declare(env, a.Target);
                 env.SetValue(i.Name, v);
+                return v;
             }
+
+            validations.GenericWarning("Canot assign to '{0}'", a.Target);
+            env.SetValue("__error", v);
             return v;
         }
 
@@ -473,7 +480,7 @@ namespace Efekt
             var prevEnv = env;
             env = new Env(validations, env.Owner, env);
             if (itemName != null)
-                env.Declare(itemName);
+                env.Declare(Accessibility.Local, itemName);
             while (condition())
             {
                 cont:
@@ -567,7 +574,7 @@ namespace Efekt
                 {
                     env = new Env(validations, env.Owner, env);
                     if (tr.ExVar != null)
-                        env.Declare(tr.ExVar.Name, ex.Throwed);
+                        env.Declare(Accessibility.Local, tr.ExVar.Name, ex.Throwed);
                     visitAsiArray(tr.CatchItems, env, prevEnv);
                 }
                 else

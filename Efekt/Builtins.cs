@@ -44,6 +44,8 @@ namespace Efekt
                 case "or":
                     return new Bool(args[0].AsBool() || args[1].AsBool());
 
+                case "concatElements":
+                    return new Arr(new List<IExp> { args[0], args[1] });
                 case "rest":
                     return new Arr(args[0].AsArr().Items.Skip(1).ToList());
                 case "at":

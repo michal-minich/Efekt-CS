@@ -1,0 +1,88 @@
+
+var ArrayRange = struct {
+    var items
+    var index = 0
+    var constructor = fn arr => items = arr
+
+    @public @property
+    var isEmpty = fn => index == items.count()
+
+    @public
+    var popFront = @changes fn => index = index + 1
+
+    @public @property
+    var current = fn => items.at(index)
+}
+
+var select = fn range, selector {
+    return new struct {
+        var r = 1
+        var s = 2
+        var constructor = fn ra, se { r = ra s = se }
+        @public @property var isEmpty = fn => r.isEmpty()
+        @public var popFront = fn => r.popFront()
+        @public @property var current = fn => s(r.current())
+    }(range, selector)
+}
+
+@public var select2 = fn range, selector {
+    foreach item in range {
+        yield return selector(item)
+    }
+}
+
+@public var where = fn range, predicate {
+    foreach item in range {
+        if predicate(item) {
+            yield return item
+        }
+    }
+}
+
+@public var calculateCount = fn range {
+    var count = 0
+    foreach item in range {
+        count = count + 1
+    }
+    return count
+}
+
+@public var calculateCount2 = fn range, rangeCount = inject {
+    /*static if (rangeCount) {
+        pragma warning "range has count, calculateCount is not needed"
+        return rangeCount(range)
+    }
+    else {
+        var c = 0
+        foreach item in range {
+            c = c + 1
+        }
+        return c
+    }*/
+}
+
+var toArray = fn r {
+    var arr = []
+    repeat {
+        break if r.isEmpty()
+        add(arr, r.current())
+        r.popFront()
+    }
+    return arr
+}
+
+var DiContainer = struct { }
+@global var dic = new DiContainer
+--var x = dic.push("aaa", listCounter)
+--dic.get("aaa")
+--scope exit dic.pop("aaa")
+/*
+inject rangeCount with listCounter
+inject listCounter to rangeCount
+rangeCount inject listCounter
+*/
+var r = new ArrayRange([5, 6, 7, 8, 9])
+--var ss = r.select(fn a => a + 10)
+var ss = r.select(fn a => a + 20)
+print(ss.toArray())
+print(1 ++ 2)

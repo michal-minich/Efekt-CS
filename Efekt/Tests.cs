@@ -308,8 +308,8 @@ namespace Efekt
             eval("var a = 1 { var a = 2 } a", "1");
             eval("var a = 1 { var a = 2 a }", "2");
 
-            const String eq = "var op== = fn a, b { __eq(a, b)  }";
-            const String lt = "var op< = fn a, b { __lt(a, b)  }";
+            const String eq = "var op== = fn a, b { __eq(a, b) }";
+            const String lt = "var op< = fn a, b { __lt(a, b) }";
 
             eval("var a try { throw 1 } catch ex { a = ex } a", "1");
             eval(plus + "var a try { throw 1 } catch ex { a = ex } finally { a = a + 2 } a", "3");
@@ -327,6 +327,10 @@ namespace Efekt
             eval("var S = struct { @public var a = fn b => b } var s = new S s.a(1)", "1");
             eval("var S = struct { @public var a = fn b => b } new S.a(1)", "1");
             eval("new struct { @public var a = fn b => b }.a(1)", "1");
+
+            const String at = "var at = fn a, ix { __at(a, ix) }";
+            //eval(at + "var S = struct { @public var b = 1 } var c = [new S] c.at(0).b = 2 " +
+            //     "c.at(0).b", "2");
         }
 
 

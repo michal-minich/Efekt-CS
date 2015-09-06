@@ -590,6 +590,7 @@ namespace Efekt
         public IReadOnlyList<IAsi> BodyItems { get; set; }
         public Env Env { get; set; }
         public Int32 CountMandatoryParams { get; set; }
+        public IExp ExtensionArg { get; set; }
 
 
         public Fn()

@@ -96,6 +96,7 @@ namespace Efekt
             var asi = parseAsi();
             if (asi == null)
                 return null;
+            again:
             Boolean found;
             var prevOpPrecedence = Int32.MaxValue;
             do
@@ -186,7 +187,12 @@ namespace Efekt
             } while (found);
 
             if (asi != null)
+            {
+                var oldAsi = asi;
                 asi = tryParseFnApply(asi);
+                if (oldAsi != asi)
+                    goto again;
+            }
 
             return asi;
         }

@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Efekt
 {
-    public class Builtins
+    public sealed class Builtins
     {
         readonly ValidationList validations;
 

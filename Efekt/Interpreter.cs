@@ -77,7 +77,7 @@ namespace Efekt
 
         IAsi accessMember(BinOpApply opa)
         {
-            var argValue = opa.Op1.Accept(this);
+            var argValue = (IExp)opa.Op1.Accept(this);
             var member = (Ident)opa.Op2;
             if (argValue is Struct)
             {
@@ -90,7 +90,7 @@ namespace Efekt
         }
 
 
-        IAsi createMemberFn(Ident member, IAsi argValue)
+        IAsi createMemberFn(Ident member, IExp argValue)
         {
             var mExt = env.GetValueOrNull(member.Name);
             if (mExt == null)
@@ -98,15 +98,12 @@ namespace Efekt
             var mFn = mExt as Fn;
             if (mFn == null)
                 validations.GenericWarning("member extension '{0}' must be a func", member);
-            var @params = mFn.Params.Skip(1).ToList();
-            var e = new Env(validations, mFn.Env.Owner, mFn.Env);
-            var i = declare(e, mFn.Params[0]);
-            e.SetValue(i.Name, copyIfStructInstance(argValue, mFn.Params[0].Attributes));
-            var extFn = new Fn(@params, mFn.BodyItems)
+            var extFn = new Fn(mFn.Params, mFn.BodyItems)
             {
-                Env = e,
-                CountMandatoryParams = mFn.CountMandatoryParams - 1,
-                Line = mFn.Line
+                Env = mFn.Env,
+                CountMandatoryParams = mFn.CountMandatoryParams,
+                Line = mFn.Line,
+                ExtensionArg = argValue
             };
             return extFn;
         }
@@ -277,10 +274,14 @@ namespace Efekt
             }
             var n = 0;
             var evaluatedArgs = evalArgs(args2);
+
+            if (fn.ExtensionArg != null)
+                evaluatedArgs = new[] { fn.ExtensionArg }.Concat(evaluatedArgs).ToArray();
+
             env = envForParams;
             foreach (var p in fn.Params)
             {
-                if (args2.Count <= n)
+                if (evaluatedArgs.Length <= n)
                 {
                     //p.Accept(this);
                     env.Declare(Accessibility.Local, p.Ident.Name, p.Value?.Accept(this));

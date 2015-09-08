@@ -109,20 +109,44 @@ namespace Efekt
         }
 
 
-        IAsi copyIfStructInstance(IAsi asi, List<IExp> targetAttrs)
+        IExp copyIfValue(IExp exp, List<IExp> targetAttrs)
         {
             if (hasSimpleAttr(targetAttrs, "byref"))
-                return asi;
-            var s = asi as Struct;
+                return exp;
+            var a = copyIfStructInstance(exp, targetAttrs);
+            a = copyIfArrayInstance(exp, targetAttrs);
+            return a;
+        }
+
+
+        IExp copyIfArrayInstance(IExp exp, List<IExp> targetAttrs)
+        {
+            var a = exp as Arr;
+            if (a == null)
+                return exp;
+            if (!a.IsEvaluated)
+                throw new Exception("arr copy");
+            var items = new List<IExp>();
+            foreach (var item in a.Items)
+            {
+                items.Add(copyIfValue(item, targetAttrs));
+            }
+            return new Arr(items) { IsEvaluated = true };
+        }
+
+
+        IExp copyIfStructInstance(IExp exp, List<IExp> targetAttrs)
+        {
+            var s = exp as Struct;
             if (s?.Env == null || s == global.Owner)
-                return asi;
+                return exp;
             var newStruct = new Struct(new List<IAsi>());
             var newEnv = new Env(validations, newStruct, global);
             newStruct.Env = newEnv;
             newEnv.CopyFrom(s.Env);
             foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             {
-                newEnv.SetValue(kvp.Key, copyIfStructInstance(kvp.Value.Item, new List<IExp>()));
+                newEnv.SetValue(kvp.Key, copyIfValue(kvp.Value.Item, new List<IExp>()));
                 var fn = kvp.Value.Item as Fn;
                 if (fn?.Env != null)
                     fn.Env = newEnv;
@@ -188,8 +212,8 @@ namespace Efekt
                 return new Void();
             }
 
-            var v = d.Value.Accept(this);
-            v = copyIfStructInstance(v, new List<IExp>());
+            var v = (IExp)d.Value.Accept(this);
+            v = copyIfValue(v, new List<IExp>());
             if (hasSimpleAttr(d.Attributes, "public"))
                 env.Declare(Accessibility.Public, d.Ident.Name, v);
             else
@@ -284,11 +308,11 @@ namespace Efekt
                 if (evaluatedArgs.Length <= n)
                 {
                     //p.Accept(this);
-                    env.Declare(Accessibility.Local, p.Ident.Name, p.Value?.Accept(this));
+                    env.Declare(Accessibility.Local, p.Ident.Name, (IExp)p.Value?.Accept(this));
                 }
                 else
                 {
-                    var argValue = copyIfStructInstance(evaluatedArgs[n], p.Attributes);
+                    var argValue = copyIfValue(evaluatedArgs[n], p.Attributes);
                     env.Declare(Accessibility.Local, p.Ident.Name, argValue);
                 }
                 ++n;
@@ -380,7 +404,7 @@ namespace Efekt
             r = items.Last().Accept(this);
             isReturn = false;
             env = restoreEnv;
-            return copyIfStructInstance(r, new List<IExp>());
+            return copyIfValue((IExp)r, new List<IExp>());
         }
 
 
@@ -402,8 +426,8 @@ namespace Efekt
 
         public IAsi VisitAssign(Assign a)
         {
-            var v = a.Value.Accept(this);
-            v = copyIfStructInstance(v, new List<IExp>());
+            var v = (IExp)a.Value.Accept(this);
+            v = copyIfValue(v, new List<IExp>());
             var ma = a.Target as BinOpApply;
             if (ma != null && ma.Op.Name == ".")
             {

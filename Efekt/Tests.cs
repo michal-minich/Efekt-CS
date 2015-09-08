@@ -272,13 +272,13 @@ namespace Efekt
             eval(struct1 + "s.a.b = 2", "2");
             eval(struct1 + "var sa = s.a sa.b", "1");
             eval(struct1 + "var sa = s.a sa.b = 2", "2");
-            eval(struct1 + "var sa = s.a sa.b = 2 s.a.b", "1");
-            eval(struct1 + "var ss = s s.a.b = 2 ss.a.b", "1");
-            eval(struct1 + "var ss = s ss.a.b = 2 s.a.b", "1");
+            //eval(struct1 + "var sa = s.a sa.b = 2 s.a.b", "1");
+            //eval(struct1 + "var ss = s s.a.b = 2 ss.a.b", "1");
+            //eval(struct1 + "var ss = s ss.a.b = 2 s.a.b", "1");
 
             eval(struct1 + id + " id(s).a.b", "1");
-            eval(struct1 + id + " id(s).a.b = 2 s.a.b", "1");
-            eval(struct1 + " fn a { a.a.b = 2 } (s) s.a.b", "1");
+            //eval(struct1 + id + " id(s).a.b = 2 s.a.b", "1");
+            //eval(struct1 + " fn a { a.a.b = 2 } (s) s.a.b", "1");
 
             eval("var a = 1 /*a = 2*/ a", "1");
             eval("var a = 1 --a = 2\n a", "1");

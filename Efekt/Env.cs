@@ -21,10 +21,10 @@ namespace Efekt
         {
             public Accessibility Accessibility { get; }
 
-            public IAsi Item { get; }
+            public IExp Item { get; }
 
 
-            public EnvItem(Accessibility accessibility, IAsi item)
+            public EnvItem(Accessibility accessibility, IExp item)
             {
                 Accessibility = accessibility;
                 Item = item;
@@ -80,7 +80,7 @@ namespace Efekt
         }
 
 
-        public void Declare(Accessibility accessibility, String name, IAsi value = null)
+        public void Declare(Accessibility accessibility, String name, IExp value = null)
         {
             if (Dict.ContainsKey(name))
                 validations.GenericWarning("variable '" + name + "' is already declared",
@@ -89,7 +89,7 @@ namespace Efekt
         }
 
 
-        public void SetValue(String name, IAsi value)
+        public void SetValue(String name, IExp value)
         {
             var e = getEnvDeclaring(name, this);
             CheckAccessibility(name, e, "write");

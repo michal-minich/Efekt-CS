@@ -1,4 +1,6 @@
 var id = fn a => a
+var ref = fn @byref a => __ref(a)
+var deref = fn a => __deref(a)
 var op== = fn a, b => __eq(a, b)
 var op< = fn a, b => __lt(a, b)
 var op+ = fn a, b => __plus(a, b)

@@ -10,9 +10,14 @@ print(a.at(0).b)
 print(c.at(0).b)*/
 
 var a = [4, 5, 6]
-var c = a
+var c = ref(a)
 a.add(7)
 print(a)
-print(a.count())
 print(c)
-print(c.count())
+var d = deref(c)
+print(d)
+d.add(8)
+print("----")
+print(a)
+print(c)
+print(d)

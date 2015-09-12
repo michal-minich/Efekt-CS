@@ -45,6 +45,10 @@
             <Word>gt</Word>
             <Word>lbl</Word>
             <Word>fe</Word>
+            <Word>re</Word>
+            <Word>ast</Word>
+            <Word>tr</Word>
+            <Word>th</Word>
         </Recognized>
         <DiscreteExceptions>
             <Term>FnApply</Term>

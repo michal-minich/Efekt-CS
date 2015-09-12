@@ -4,8 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Efekt
 {
-    [SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable")]
     [SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors")]
+    [Serializable]
     public sealed class EfektException : Exception
     {
         public EfektException(String message)

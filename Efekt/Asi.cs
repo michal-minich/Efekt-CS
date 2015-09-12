@@ -39,6 +39,7 @@ namespace Efekt
         T VisitTry(Try tr);
         T VisitAssume(Assume asm);
         T VisitAssert(Assert ast);
+        T VisitRef(Ref rf);
     }
 
 
@@ -264,6 +265,14 @@ namespace Efekt
         public T VisitAssert(Assert ast)
         {
             Contract.Requires(ast != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitRef(Ref rf)
+        {
+            Contract.Requires(rf != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -948,5 +957,20 @@ namespace Efekt
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitAssert(this);
+    }
+
+
+    public sealed class Ref : Val
+    {
+        public IExp Value { get; }
+
+
+        public Ref(IExp value)
+        {
+            Value = value;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitRef(this);
     }
 }

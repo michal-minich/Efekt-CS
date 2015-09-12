@@ -15,26 +15,26 @@ namespace Efekt
         Global
     }
 
-    public sealed class Env
+    public sealed class EnvItem
     {
-        public sealed class EnvItem
+        public Accessibility Accessibility { get; }
+
+        public IExp Item { get; }
+
+
+        public EnvItem(Accessibility accessibility, IExp item)
         {
-            public Accessibility Accessibility { get; }
-
-            public IExp Item { get; }
-
-
-            public EnvItem(Accessibility accessibility, IExp item)
-            {
-                Accessibility = accessibility;
-                Item = item;
-            }
-
-
-            public override String ToString() => Accessibility + " " + Item;
+            Accessibility = accessibility;
+            Item = item;
         }
 
 
+        public override String ToString() => Accessibility + " " + Item;
+    }
+
+
+    public sealed class Env
+    {
         readonly ValidationList validations;
         public Struct Owner { get; }
 

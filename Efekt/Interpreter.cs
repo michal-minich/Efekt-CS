@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using JetBrains.Annotations;
@@ -113,13 +114,13 @@ namespace Efekt
         {
             if (hasSimpleAttr(targetAttrs, "byref"))
                 return exp;
-            var a = copyIfStructInstance(exp, targetAttrs);
-            a = copyIfArrayInstance(exp, targetAttrs);
+            var a = copyIfStructInstance(exp);
+            a = copyIfArrayInstance(exp);
             return a;
         }
 
 
-        IExp copyIfArrayInstance(IExp exp, List<IExp> targetAttrs)
+        IExp copyIfArrayInstance(IExp exp)
         {
             var a = exp as Arr;
             if (a == null)
@@ -129,13 +130,13 @@ namespace Efekt
             var items = new List<IExp>();
             foreach (var item in a.Items)
             {
-                items.Add(copyIfValue(item, targetAttrs));
+                items.Add(copyIfValue(item, new List<IExp>()));
             }
             return new Arr(items) { IsEvaluated = true };
         }
 
 
-        IExp copyIfStructInstance(IExp exp, List<IExp> targetAttrs)
+        IExp copyIfStructInstance(IExp exp)
         {
             var s = exp as Struct;
             if (s?.Env == null || s == global.Owner)
@@ -182,18 +183,6 @@ namespace Efekt
                     "cannot access member '" + ma.Op2.Accept(Program.DefaultPrinter) +
                     "' of not constructed struct", bag);
             return s2.Env;
-        }
-
-
-        Ident declare(Env e, Declr d)
-        {
-            Contract.Ensures(Contract.Result<Ident>() != null);
-
-            var prevEnv = env;
-            env = e;
-            d.Accept(this);
-            env = prevEnv;
-            return d.Ident;
         }
 
 
@@ -446,7 +435,7 @@ namespace Efekt
                 return v;
             }
 
-            validations.GenericWarning("Canot assign to '{0}'", a.Target);
+            validations.GenericWarning("Cannot assign to '{0}'", a.Target);
             env.SetValue("__error", v);
             return v;
         }
@@ -647,9 +636,14 @@ namespace Efekt
             }
             return Void.Instance;
         }
+
+
+        public IAsi VisitRef(Ref rf) => rf;
     }
 
 
+    [SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors")]
+    [Serializable]
     public sealed class InterpretedThrowException : Exception
     {
         [CanBeNull]

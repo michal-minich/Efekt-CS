@@ -29,6 +29,10 @@ namespace Efekt
 
             switch (fnName)
             {
+                case "ref":
+                    return new Ref(args[0]);
+                case "deref":
+                    return args[0].AsRef().Value;
                 case "eq":
                     return new Bool(args[0].AsiToString() == args[1].AsiToString());
                 case "lt":
@@ -85,6 +89,7 @@ namespace Efekt
         public static Boolean AsBool(this IExp asi) => ((Bool)asi).Value;
 
         public static Arr AsArr(this IExp asi) => (Arr)asi;
+        public static Ref AsRef(this IExp asi) => (Ref)asi;
 
 
         public static String AsiToString(this IAsi asi)

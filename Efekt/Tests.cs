@@ -263,11 +263,13 @@ namespace Efekt
                 "struct { var constructor = fn { } }()"); // is "S()" without new valid code?
             eval("var S = struct { @public var constructor = fn { } } new S()", "struct { }");
             eval("var S = struct { @public var a = 1 }\n(new S).a", "1");
-            eval("new struct { @public var a = 1 @public var constructor = fn b { a = b } } (2).a", "2");
+            eval("new struct { @public var a = 1 @public var constructor = fn b { a = b } } (2).a",
+                "2");
             eval("var S = struct {@public  var a = 1 } var s = new S s.a", "1");
             eval("var S = struct { @public var a = 1 } var s = new S.a", "1");
 
-            const String struct1 = "var s = new struct { @public var a = new struct { @public var b = 1 } } ";
+            const String struct1 =
+                "var s = new struct { @public var a = new struct { @public var b = 1 } } ";
             eval(struct1 + "s.a.b", "1");
             eval(struct1 + "s.a.b = 2", "2");
             eval(struct1 + "var sa = s.a sa.b", "1");
@@ -328,9 +330,14 @@ namespace Efekt
             eval("var S = struct { @public var a = fn b => b } new S.a(1)", "1");
             eval("new struct { @public var a = fn b => b }.a(1)", "1");
 
-            const String at = "var at = fn a, ix { __at(a, ix) }";
+            //const String at = "var at = fn a, ix { __at(a, ix) }";
             //eval(at + "var S = struct { @public var b = 1 } var c = [new S] c.at(0).b = 2 " +
             //     "c.at(0).b", "2");
+
+            //const String rf = "var ref = fn @byref a => __ref(a)\n var deref = fn a => __deref(a)";
+            //eval(rf+" var a = 1 var b = ref(a) a = 2 b", "2");
+            //eval(rf + " var a = 1 var b = ref(a) b = 3 a", "3");
+            //eval(plus + rf + " var a = 1 var b = ref(a) a = 3 c = deref(b) a = 5 c = 7 b + c", "8");
         }
 
 

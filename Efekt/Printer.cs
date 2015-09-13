@@ -45,10 +45,16 @@ namespace Efekt
         }
 
 
-        public String VisitStruct(Struct s)
+        public String VisitStruct(Struct s) => printRecord(s, "struct");
+
+
+        public String VisitClass(Class cls) => printRecord(cls, "class");
+
+
+        String printRecord(IRecord r, String name)
         {
-            var b = joinStatements(s.Items);
-            return b.Length == 0 ? "struct { }" : "struct { " + b + " }";
+            var b = joinStatements(r.Items);
+            return b.Length == 0 ? name + " { }" : "struct { " + b + " }";
         }
 
 

@@ -1,23 +1,4 @@
-/*var S = struct { @public var b = 1 }
-var a = [new S, new S, new S]
-var c = a
-at(a, 0).b = 2
-print(at(a, 0).b)
-print(at(c, 0).b)
-
-a.at(0).b = 3
-print(a.at(0).b)
-print(c.at(0).b)*/
-
-var a = [4, 5, 6]
-var c = ref(a)
-a.add(7)
-print(a)
-print(c)
-var d = deref(c)
-print(d)
-d.add(8)
-print("----")
-print(a)
-print(c)
-print(d)
+var o = new class { @public var a = 1 }
+var o2 = o
+o2.a = 2
+print(o.a)

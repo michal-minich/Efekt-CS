@@ -19,6 +19,7 @@ namespace Efekt
         T VisitDeclr(Declr d);
         T VisitArr(Arr arr);
         T VisitStruct(Struct s);
+        T VisitClass(Class cls);
         T VisitFn(Fn fn);
         T VisitFnApply(FnApply fna);
         T VisitNew(New n);
@@ -109,6 +110,14 @@ namespace Efekt
             return null;
         }
 
+
+        public T VisitClass(Class cls)
+        {
+            Contract.Requires(cls != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+        
 
         T IAsiVisitor<T>.VisitFn(Fn fn)
         {
@@ -573,7 +582,13 @@ namespace Efekt
     }
 
 
-    public sealed class Struct : Type, IHasEnv
+    public interface IRecord : IHasEnv, IAsi
+    {
+        IReadOnlyCollection<IAsi> Items { get; set; }
+    }
+
+
+    public sealed class Struct : Type, IRecord
     {
         public IReadOnlyCollection<IAsi> Items { get; set; }
         public Env Env { get; set; }
@@ -592,6 +607,28 @@ namespace Efekt
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitStruct(this);
     }
+
+
+    public sealed class Class : Type, IRecord
+    {
+        public IReadOnlyCollection<IAsi> Items { get; set; }
+        public Env Env { get; set; }
+
+
+        public Class()
+        {
+        }
+
+
+        public Class(IReadOnlyCollection<IAsi> items)
+        {
+            Items = items;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitClass(this);
+    }
+
 
     public sealed class Fn : Val, IHasEnv
     {

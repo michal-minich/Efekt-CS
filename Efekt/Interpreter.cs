@@ -11,7 +11,7 @@ namespace Efekt
     public sealed class Interpreter : IAsiVisitor<IAsi>
     {
         Env env;
-        Asi current;
+        IAsi current;
         Env global;
         ValidationList validations;
         Builtins builtins;
@@ -80,7 +80,7 @@ namespace Efekt
         {
             var argValue = (IExp)opa.Op1.Accept(this);
             var member = (Ident)opa.Op2;
-            if (argValue is Struct)
+            if (argValue is IRecord)
             {
                 var bag = getStructEnvOfMember(opa, argValue);
                 var m = bag.GetOwnValueOrNull(member.Name);
@@ -170,7 +170,7 @@ namespace Efekt
                 validations.GenericWarning(
                     "expected identifier or member access after '.' , not {0} ", ma.Op2);
 
-            var s2 = bag as Struct;
+            var s2 = bag as IRecord;
             if (s2 == null)
             {
                 validations.GenericWarning(
@@ -190,7 +190,7 @@ namespace Efekt
         {
             var acc = (env == global)
                 ? Accessibility.Global
-                : (current is Struct ? Accessibility.Private : Accessibility.Local);
+                : (current is IRecord ? Accessibility.Private : Accessibility.Local);
 
             if (d.Value == null)
             {
@@ -224,6 +224,8 @@ namespace Efekt
 
         public IAsi VisitStruct(Struct s) => s;
 
+        public IAsi VisitClass(Class cls) => cls;
+
 
         public IAsi VisitFn(Fn fn)
             => new Fn(fn.Params, fn.BodyItems)
@@ -245,7 +247,7 @@ namespace Efekt
             {
                 var fnAsi = fna.Fn.Accept(this);
 
-                if (fnAsi is Struct)
+                if (fnAsi is IRecord)
                     return new FnApply(fnAsi, fna.Args);
                 fn = fnAsi as Fn;
                 if (fn == null)
@@ -314,7 +316,7 @@ namespace Efekt
             var expAsi = n.Exp.Accept(this);
             var fna = expAsi as FnApply;
             var sAsi = fna != null ? fna.Fn : expAsi;
-            var s = sAsi as Struct;
+            var s = sAsi as IRecord;
 
             if (s == null)
             {
@@ -328,7 +330,7 @@ namespace Efekt
             }
 
             var prevEnv = env;
-            var instance = new Struct(new List<IAsi>());
+            var instance = s is Struct ? (IRecord)new Struct(new List<IAsi>()) : new Class(new List<IAsi>());
             env = new Env(validations, instance, global);
             instance.Env = env;
             current = instance;
@@ -549,7 +551,7 @@ namespace Efekt
             else
             {
                 var asi = imp.QualifiedIdent.Accept(this);
-                var s = asi as Struct;
+                var s = asi as IRecord;
                 if (s == null)
                     validations.ImportIsNotStruct(imp.QualifiedIdent);
                 else if (s.Env == null)

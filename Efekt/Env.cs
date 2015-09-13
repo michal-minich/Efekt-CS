@@ -36,7 +36,7 @@ namespace Efekt
     public sealed class Env
     {
         readonly ValidationList validations;
-        public Struct Owner { get; }
+        public IRecord Owner { get; }
 
         [CanBeNull]
         public Env Parent { get; }
@@ -46,14 +46,14 @@ namespace Efekt
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
 
 
-        public Env(ValidationList validations, Struct owner)
+        public Env(ValidationList validations, IRecord owner)
         {
             this.validations = validations;
             Owner = owner;
         }
 
 
-        public Env(ValidationList validations, Struct owner, Env parent)
+        public Env(ValidationList validations, IRecord owner, Env parent)
         {
             Contract.Requires(parent != null);
 

@@ -204,7 +204,7 @@ namespace Efekt
             var attrs = parseAttributes();
             var asi = tryParseInt() ?? tryParseBool() ?? tryParseVoid()
                       ?? tryParseFn() ?? tryParseVar() ?? tryParseNew()
-                      ?? tryParseStruct() ?? tryParseIf() ?? tryParseImport()
+                      ?? tryParseStruct() ?? tryParseClass() ?? tryParseIf() ?? tryParseImport()
                       ?? parseIterationKeywords() ?? parseExceptionRelated()
                       ?? parseChar() ?? parseString('"')
                       ?? tryParseAsiList() ?? tryParseArr() ?? tryParseBraced() ?? tryParseIdent();
@@ -324,11 +324,23 @@ namespace Efekt
         }
 
 
+        Class tryParseClass()
+        {
+            return tryParseRecord<Class>("class");
+        }
+
+
         Struct tryParseStruct()
         {
-            if (!matchWord("struct"))
+            return tryParseRecord<Struct>("struct");
+        }
+
+
+        T tryParseRecord<T>(String recType) where T : Asi, IRecord, new()
+        { 
+            if (!matchWord(recType))
                 return null;
-            var s = a(new Struct());
+            var s = a(new T());
             skipWhite();
             var items = tryParseBracedList('{', '}', s);
             if (items == null)

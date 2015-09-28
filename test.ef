@@ -1,4 +1,2 @@
-var o = new class { @public var a = 1 }
-var o2 = o
-o2.a = 2
-print(o.a)
+var a = if false then 1 else "A"
+print(typeof(a))

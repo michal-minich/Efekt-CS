@@ -141,7 +141,7 @@ namespace Efekt
                         Contract.Assume(nextAsi != null);
                         if (op == ":")
                         {
-                            asi = a(new Declr((Ident)asi, nextAsi, null));
+                            asi = a(new Declr((Ident)asi, (IExp)nextAsi, null));
                         }
                         else
                         {
@@ -176,7 +176,7 @@ namespace Efekt
                         Contract.Assume(op3 != null);
                         var op1 = (BinOpApply)asi;
                         var opa4 = a(new BinOpApply(
-                            a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op3));
+                                         a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op3));
                         asi = tryParseFnApply(opa4);
                         op1.Op2 = (IExp)asi;
                         asi = op1;
@@ -276,7 +276,7 @@ namespace Efekt
                 if (asi == null)
                 {
                     validations.GenericWarning("Expected expression or statement after fn ... =>",
-                        fn);
+                                               fn);
                     asi = new Err();
                 }
                 fn.BodyItems = new List<IAsi> { asi };
@@ -337,7 +337,7 @@ namespace Efekt
 
 
         T tryParseRecord<T>(String recType) where T : Asi, IRecord, new()
-        { 
+        {
             if (!matchWord(recType))
                 return null;
             var s = a(new T());
@@ -835,7 +835,7 @@ namespace Efekt
                     break;
 
                 var asi = parsingFn();
-                ;
+
                 if (asi == null)
                     break;
                 items.Add(asi);

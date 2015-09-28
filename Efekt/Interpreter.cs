@@ -56,6 +56,28 @@ namespace Efekt
                 return env.Owner;
             if (i.Name == "global")
                 return global.Owner;
+            if (i.Name.StartsWith("__"))
+            {
+                switch (i.Name)
+                {
+                    case "__Void":
+                        return VoidType.Instance;
+                    case "__Any":
+                        return ArrType.Instance;
+                    case "__Bool":
+                        return BoolType.Instance;
+                    case "__Int":
+                        return IntType.Instance;
+                    case "__Char":
+                        return CharType.Instance;
+                    case "__Arr":
+                        return ArrType.Instance;
+                    case "__Fn":
+                        return FnType.Instance;
+                    case "__Class":
+                        return ClassType.Instance;
+                }
+            }
             var v = env.GetValueOrNull(i.Name);
             if (v != null)
                 return v;
@@ -215,9 +237,9 @@ namespace Efekt
         {
             Contract.Assume(!arr.IsEvaluated);
             return new Arr(arr.Items
-                .Select(i => i.Accept(this))
-                .Cast<IExp>()
-                .ToList())
+                              .Select(i => i.Accept(this))
+                              .Cast<IExp>()
+                              .ToList())
             { IsEvaluated = true };
         }
 
@@ -275,7 +297,7 @@ namespace Efekt
             if (args.Count < fn.CountMandatoryParams)
             {
                 validations.NotEnoughArgs(fn.Params[args.Count], notEvaledFn, fn.Params.Count,
-                    fn.CountMandatoryParams, args.Count);
+                                          fn.CountMandatoryParams, args.Count);
                 var missingArgCount = fn.CountMandatoryParams - args.Count;
                 var errs = fn.Params.Skip(args.Count).Take(missingArgCount).Select(p => new Err(p));
                 args2 = args.Concat(errs).ToList();
@@ -490,7 +512,7 @@ namespace Efekt
 
 
         IAsi repeatWhile(Func<Boolean> condition, IReadOnlyCollection<IAsi> items,
-            String itemName = null)
+                         String itemName = null)
         {
             IAsi r = Void.Instance;
             var prevEnv = env;
@@ -507,12 +529,12 @@ namespace Efekt
                         isReturn = false;
                         goto exit;
                     }
-                    else if (isBreak)
+                    if (isBreak)
                     {
                         isBreak = false;
                         goto exit;
                     }
-                    else if (isContinue)
+                    if (isContinue)
                     {
                         isContinue = false;
                         goto cont;
@@ -640,7 +662,7 @@ namespace Efekt
         }
 
 
-        public IAsi VisitRef(Ref rf) => rf;
+        public IAsi VisitSimpleType(ISimpleType st) => st;
     }
 
 

@@ -15,6 +15,7 @@ namespace Efekt
         Global
     }
 
+
     public sealed class EnvItem
     {
         public Accessibility Accessibility { get; }
@@ -84,7 +85,7 @@ namespace Efekt
         {
             if (Dict.ContainsKey(name))
                 validations.GenericWarning("variable '" + name + "' is already declared",
-                    Void.Instance);
+                                           Void.Instance);
             Dict.Add(name, new EnvItem(accessibility, value));
         }
 
@@ -108,7 +109,7 @@ namespace Efekt
         }
 
 
-        public IAsi CheckAccessibility(String name, Env e, string accessType)
+        public IAsi CheckAccessibility(String name, Env e, String accessType)
         {
             if (e == null)
                 return null;
@@ -161,7 +162,7 @@ namespace Efekt
             var e = getEnvDeclaringOrNull(name, env);
             if (e == null)
                 validations.GenericWarning("Env: variable '" + name + "' is not declared",
-                    Void.Instance);
+                                           Void.Instance);
             return e;
         }
 

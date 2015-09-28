@@ -1,4 +1,3 @@
-var id = fn a => a
 var ref = fn @byref a => __ref(a)
 var deref = fn a => __deref(a)
 var op== = fn a, b => __eq(a, b)
@@ -9,10 +8,19 @@ var inc = fn a, b => __plus(a, 1)
 var and = fn a, b => __and(a, b)
 var or = fn a, b => __or(a, b)
 var first = fn a => __at(a, 0)
-var op++ = fn a, b => __concatElements(a, b)
-var rest = fn a => __rest(a)
+var op++ = fn a, b => [a, b]
 var at = fn a, ix => __at(a, ix)
 var count = fn a => __count(a)
-var add = fn @byref a, item => __add(a, item)
+--var add = fn @byref a, item => __add(a, item)
 var env = fn a => __env(a)
 var print = fn a => __print(a)
+var typeof = fn a => __typeof(a)
+
+var Void = __Void
+var Any = __Any
+var Bool = __Bool
+var Int = __Int
+var Char = __Char
+var Arr = __Arr
+var Fn = __Fn
+var Class = __Class

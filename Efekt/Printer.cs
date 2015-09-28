@@ -159,6 +159,10 @@ namespace Efekt
 
         public String VisitAssert(Assert ast) => "assert " + ast.Exp.Accept(this);
 
-        public String VisitRef(Ref rf) => "ref " + rf.Value.Accept(this);
+
+        public String VisitSimpleType(ISimpleType st)
+        {
+            return st.Name;
+        }
     }
 }

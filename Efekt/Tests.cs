@@ -246,10 +246,9 @@ namespace Efekt
             eval(plus + " var c = 1 + 2 [c = c + 1, c = c + 1, c = c + 1]", "[4, 5, 6]");
             eval(plus + " var c = 3 var a = [c = c + 1, c = c + 1] c = 5 var b = a a", "[4, 5]");
 
-            eval("__rest([1, 2, 3])", "[2, 3]");
             eval("__at([1, 2, 3], 0)", "1");
             eval("__at([1, 2, 3], 2)", "3");
-            eval("var a = [1, 2] __add(a, 3) a", "[1, 2, 3]");
+            eval("__count([1, 2, 3])", "3");
 
             eval("struct { }");
             eval("struct { var a = 1 }");
@@ -260,11 +259,11 @@ namespace Efekt
             eval("new struct { @public var a = 1 }.a", "1");
 
             eval("var S = struct { @public var constructor = fn { } } S()",
-                "struct { var constructor = fn { } }()"); // is "S()" without new valid code?
+                 "struct { var constructor = fn { } }()"); // is "S()" without new valid code?
             eval("var S = struct { @public var constructor = fn { } } new S()", "struct { }");
             eval("var S = struct { @public var a = 1 }\n(new S).a", "1");
             eval("new struct { @public var a = 1 @public var constructor = fn b { a = b } } (2).a",
-                "2");
+                 "2");
             eval("var S = struct {@public  var a = 1 } var s = new S s.a", "1");
             eval("var S = struct { @public var a = 1 } var s = new S.a", "1");
 
@@ -316,9 +315,9 @@ namespace Efekt
             eval("var a try { throw 1 } catch ex { a = ex } a", "1");
             eval(plus + "var a try { throw 1 } catch ex { a = ex } finally { a = a + 2 } a", "3");
             eval(eq + plus + "var a try { assert 1 == 2 } catch ex { a = ex } a",
-                "\"Assertion failed: 1 == 2\"");
+                 "\"Assertion failed: 1 == 2\"");
             eval(eq + plus + "var a try { assume 2 == 3 } catch ex { a = ex } a",
-                "\"Assumption failed: 2 == 3\"");
+                 "\"Assumption failed: 2 == 3\"");
             eval(eq + plus + " var c = 1 var a = 5 repeat { if c == 10 { a = 100 break } " +
                  "c = c + 1 a = 3 } c + a", "110");
             eval(lt + plus + " var c = 1 var a = 5 repeat { c = c + 1 if c < 10 then continue " +

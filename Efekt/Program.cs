@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Efekt
 {
-    internal static class Program
+    static class Program
     {
         public static Printer DefaultPrinter;
         public static ValidationList ValidationList;

@@ -24,6 +24,7 @@ namespace Efekt
         }
     }
 
+
     [UsedImplicitly(ImplicitUseTargetFlags.Members)]
     public enum ValidationSeverity
     {
@@ -68,6 +69,7 @@ namespace Efekt
             Text = items.Count == 0 ? t : getShortenedAsiText(t);
         }
     }
+
 
     [SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable")]
     [SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors")]
@@ -189,7 +191,7 @@ namespace Efekt
         }
 
 
-        public void GenericWarning(String text, object item, params object[] items)
+        public void GenericWarning(String text, Object item, params Object[] items)
             => add(text, new[] { item }.Concat(items).ToArray());
 
 
@@ -213,7 +215,7 @@ namespace Efekt
 
 
         public void NotEnoughArgs(IAsi missingParam, IAsi fn, Int32 paramsCount,
-            Int32 mandatoryCount, Int32 applyCount)
+                                  Int32 mandatoryCount, Int32 applyCount)
             => add(new Object[] { missingParam, fn, paramsCount, mandatoryCount, applyCount });
 
 

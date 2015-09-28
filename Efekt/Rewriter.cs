@@ -8,7 +8,7 @@ namespace Efekt
     public sealed class Rewriter
     {
         public AsiList MakeProgram(IEnumerable<IAsi> prelude,
-            Dictionary<String, IReadOnlyList<IAsi>> modules)
+                                   Dictionary<String, IReadOnlyList<IAsi>> modules)
         {
             var mods = modules.Select(m => MakeModule(m.Key, m.Value));
             return new AsiList(prelude.Concat(mods).ToList());

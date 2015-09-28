@@ -29,10 +29,6 @@ namespace Efekt
 
             switch (fnName)
             {
-                case "ref":
-                    return new Ref(args[0]);
-                case "deref":
-                    return args[0].AsRef().Value;
                 case "eq":
                     return new Bool(args[0].AsiToString() == args[1].AsiToString());
                 case "lt":
@@ -48,23 +44,18 @@ namespace Efekt
                 case "or":
                     return new Bool(args[0].AsBool() || args[1].AsBool());
 
-                case "concatElements":
-                    return new Arr(new List<IExp> { args[0], args[1] });
-                case "rest":
-                    return new Arr(args[0].AsArr().Items.Skip(1).ToList());
                 case "at":
                     return args[0].AsArr().Items.ElementAt(args[1].AsInt());
                 case "count":
                     return new Int(args[0].AsArr().Items.Count);
-                case "add":
-                    args[0].AsArr().Items.Add(args[1]);
-                    return Void.Instance;
 
                 case "env":
                     return printEnvText(args[0]);
                 case "print":
                     Console.WriteLine(args[0].AsiToString());
                     return Void.Instance;
+                case "typeof":
+                    return args[0].Accept(new TypeInferer());
 
                 default:
                     validations.GenericWarning("Unknown builtin: " + fnName, Void.Instance);
@@ -82,6 +73,7 @@ namespace Efekt
         }
     }
 
+
     public static class BuiltinsExtensions
     {
         public static Int32 AsInt(this IExp asi) => (Int32)((Int)asi).Value;
@@ -89,7 +81,6 @@ namespace Efekt
         public static Boolean AsBool(this IExp asi) => ((Bool)asi).Value;
 
         public static Arr AsArr(this IExp asi) => (Arr)asi;
-        public static Ref AsRef(this IExp asi) => (Ref)asi;
 
 
         public static String AsiToString(this IAsi asi)

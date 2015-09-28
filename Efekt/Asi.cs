@@ -40,12 +40,12 @@ namespace Efekt
         T VisitTry(Try tr);
         T VisitAssume(Assume asm);
         T VisitAssert(Assert ast);
-        T VisitRef(Ref rf);
+        T VisitSimpleType(ISimpleType st);
     }
 
 
     [ContractClassFor(typeof (IAsiVisitor<>))]
-    internal abstract class IAsiVisitorContract<T> : IAsiVisitor<T> where T : class
+    abstract class IAsiVisitorContract<T> : IAsiVisitor<T> where T : class
     {
         T IAsiVisitor<T>.VisitAsiList(AsiList al)
         {
@@ -117,7 +117,7 @@ namespace Efekt
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
-        
+
 
         T IAsiVisitor<T>.VisitFn(Fn fn)
         {
@@ -279,9 +279,9 @@ namespace Efekt
         }
 
 
-        public T VisitRef(Ref rf)
+        public T VisitSimpleType(ISimpleType st)
         {
-            Contract.Requires(rf != null);
+            Contract.Requires(st != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -298,7 +298,7 @@ namespace Efekt
 
 
     [ContractClassFor(typeof (IAsi))]
-    internal abstract class IAsiContract : IAsi
+    abstract class IAsiContract : IAsi
     {
         public List<IExp> Attributes
         {
@@ -359,6 +359,7 @@ namespace Efekt
     public interface IVal : IExp
     {
     }
+
 
     public interface IAtom : IVal
     {
@@ -467,6 +468,8 @@ namespace Efekt
     {
         public String Name { get; }
         public IdentCategory Category { get; }
+        [CanBeNull] public Declr DeclaredBy { get; set; }
+        public List<Ident> UsedBy { get; } = new List<Ident>();
 
 
         public Ident(String name)
@@ -485,7 +488,8 @@ namespace Efekt
                 Contract.Assert(name.Length >= 2);
                 Category = IdentCategory.Attribute;
             }
-            else Category = IdentCategory.Op;
+            else
+                Category = IdentCategory.Op;
         }
 
 
@@ -535,7 +539,7 @@ namespace Efekt
 
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         [CanBeNull]
-        public IAsi Type { get; set; }
+        public IExp Type { get; set; }
 
         [CanBeNull]
         public IExp Value { get; set; }
@@ -546,7 +550,7 @@ namespace Efekt
         }
 
 
-        public Declr(Ident ident, [CanBeNull] IAsi type, [CanBeNull] IExp value)
+        public Declr(Ident ident, [CanBeNull] IExp type, [CanBeNull] IExp value)
         {
             Ident = ident;
             Type = type;
@@ -705,6 +709,7 @@ namespace Efekt
     public sealed class Void : Atom
     {
         [SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")] public static readonly Void Instance = new Void();
+
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitVoid(this);
     }
@@ -997,17 +1002,98 @@ namespace Efekt
     }
 
 
-    public sealed class Ref : Val
+    public interface ISimpleType : IType
     {
-        public IExp Value { get; }
+        String Name { get; }
+    }
 
 
-        public Ref(IExp value)
-        {
-            Value = value;
-        }
+    public sealed class VoidType : Asi, ISimpleType
+    {
+        public String Name => "Void";
+
+        public static VoidType Instance { get; } = new VoidType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitRef(this);
+    public sealed class AnyType : Asi, ISimpleType
+    {
+        public String Name => "Any";
+
+        public static AnyType Instance { get; } = new AnyType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class ErrType : Asi, ISimpleType
+    {
+        public String Name => "Err";
+
+        public static ErrType Instance { get; } = new ErrType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class BoolType : Asi, ISimpleType
+    {
+        public String Name => "Bool";
+
+        public static BoolType Instance { get; } = new BoolType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class IntType : Asi, ISimpleType
+    {
+        public String Name => "Int";
+
+        public static IntType Instance { get; } = new IntType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class CharType : Asi, ISimpleType
+    {
+        public String Name => "Char";
+
+        public static CharType Instance { get; } = new CharType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class ArrType : Asi, ISimpleType
+    {
+        public String Name => "List";
+
+        public static ArrType Instance { get; } = new ArrType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class FnType : Asi, ISimpleType
+    {
+        public String Name => "Fn";
+
+        public static FnType Instance { get; } = new FnType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+    }
+
+
+    public sealed class ClassType : Asi, ISimpleType
+    {
+        public String Name => "Class";
+
+        public static ClassType Instance { get; } = new ClassType();
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
     }
 }

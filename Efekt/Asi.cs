@@ -588,13 +588,13 @@ namespace Efekt
 
     public interface IRecord : IHasEnv, IAsi
     {
-        IReadOnlyCollection<IAsi> Items { get; set; }
+        IReadOnlyList<IAsi> Items { get; set; }
     }
 
 
     public sealed class Struct : Type, IRecord
     {
-        public IReadOnlyCollection<IAsi> Items { get; set; }
+        public IReadOnlyList<IAsi> Items { get; set; }
         public Env Env { get; set; }
 
 
@@ -603,7 +603,7 @@ namespace Efekt
         }
 
 
-        public Struct(IReadOnlyCollection<IAsi> items)
+        public Struct(IReadOnlyList<IAsi> items)
         {
             Items = items;
         }
@@ -615,7 +615,7 @@ namespace Efekt
 
     public sealed class Class : Type, IRecord
     {
-        public IReadOnlyCollection<IAsi> Items { get; set; }
+        public IReadOnlyList<IAsi> Items { get; set; }
         public Env Env { get; set; }
 
 
@@ -624,7 +624,7 @@ namespace Efekt
         }
 
 
-        public Class(IReadOnlyCollection<IAsi> items)
+        public Class(IReadOnlyList<IAsi> items)
         {
             Items = items;
         }
@@ -921,7 +921,7 @@ namespace Efekt
     public sealed class Throw : Stm
     {
         [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix")]
-        public IAsi Ex { get; }
+    [CanBeNull]    public IAsi Ex { get; }
 
 
         public Throw(IAsi ex)

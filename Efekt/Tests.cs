@@ -384,7 +384,7 @@ namespace Efekt
             var p = new Parser();
             var al = p.Parse(code, Program.ValidationList);
             var i = new Interpreter();
-            var asi = i.Run(al, Program.ValidationList);
+            var asi = i.Eval(al, Program.ValidationList);
             check(asi, expected, printer);
         }
     }

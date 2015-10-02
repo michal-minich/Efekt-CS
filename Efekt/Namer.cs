@@ -5,16 +5,16 @@ namespace Efekt
 {
     public sealed class Namer : IAsiVisitor<Void>
     {
-        Env env;
-        Struct currentStruct;
+        SimpleEnv env;
+        IRecord currentStruct;
         ValidationList validations;
 
 
-        public void Name(Struct prog, ValidationList validationsList)
+        public void Name(Prog prog, ValidationList validationsList)
         {
             validations = validationsList;
-            env = new Env(validations, prog);
-            foreach (var item in prog.Items)
+            env = new SimpleEnv();
+            foreach (var item in prog.Modules)
                 item.Accept(this);
             currentStruct = null;
             env = null;
@@ -24,7 +24,7 @@ namespace Efekt
         public Void VisitAsiList(AsiList al)
         {
             var prevEnv = env;
-            env = new Env(validations, currentStruct, env);
+            env = new SimpleEnv(env);
             foreach (var item in al.Items)
                 item.Accept(this);
             env = prevEnv;
@@ -52,7 +52,7 @@ namespace Efekt
             {
                 validations.ImplicitVar(i);
                 var x = new Ident(i.Name, IdentCategory.Value);
-                env.Declare(Accessibility.Public, x.Name, x);
+                env.Declare(x.Name, x);
                 declaredBy = x;
             }
             if (declaredBy is Label)
@@ -76,7 +76,7 @@ namespace Efekt
 
         public Void VisitDeclr(Declr d)
         {
-            env.Declare(Accessibility.Public, d.Ident.Name, d.Ident);
+            env.Declare(d.Ident.Name, d.Ident);
             d.Type?.Accept(this);
             return Void.Instance;
         }
@@ -92,21 +92,27 @@ namespace Efekt
 
         public Void VisitStruct(Struct s)
         {
-            var prevStruct = currentStruct;
-            var prevEnv = env;
-            currentStruct = s;
-            env = new Env(validations, s, env);
-            foreach (var item in s.Items)
-                item.Accept(this);
-            currentStruct = prevStruct;
-            env = prevEnv;
-            return Void.Instance;
+            return visitRecord(s);
         }
 
 
         public Void VisitClass(Class cls)
         {
-            throw new NotImplementedException();
+            return visitRecord(cls);
+        }
+
+
+        Void visitRecord(IRecord r)
+        {
+            var prevStruct = currentStruct;
+            var prevEnv = env;
+            currentStruct = r;
+            env = new SimpleEnv(env);
+            foreach (var item in r.Items)
+                item.Accept(this);
+            currentStruct = prevStruct;
+            env = prevEnv;
+            return Void.Instance;
         }
 
 
@@ -193,7 +199,7 @@ namespace Efekt
 
         public Void VisitLabel(Label lbl)
         {
-           // env.Declare(lbl.LabelName.Name, lbl);
+            // env.Declare(lbl.LabelName.Name, lbl);
             return Void.Instance;
         }
 
@@ -235,7 +241,8 @@ namespace Efekt
 
         public Void VisitThrow(Throw th)
         {
-            throw new NotImplementedException();
+            th.Ex?.Accept(this);
+            return Void.Instance;
         }
 
 
@@ -247,13 +254,15 @@ namespace Efekt
 
         public Void VisitAssume(Assume asm)
         {
-            throw new NotImplementedException();
+            asm.Exp.Accept(this);
+            return Void.Instance;
         }
 
 
         public Void VisitAssert(Assert ast)
         {
-            throw new NotImplementedException();
+            ast.Exp.Accept(this);
+            return Void.Instance;
         }
 
 

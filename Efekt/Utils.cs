@@ -42,5 +42,13 @@ namespace Efekt
                 buffered = true;
             }
         }
+
+
+        public static IEnumerable<T> Append<T>(this T first, IEnumerable<T> rest)
+        {
+            yield return first;
+            foreach (var r in rest)
+                yield return r;
+        }
     }
 }

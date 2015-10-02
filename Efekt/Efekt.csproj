@@ -148,6 +148,7 @@
     <Compile Include="EfektException.cs" />
     <Compile Include="Env.cs" />
     <Compile Include="Namer.cs" />
+    <Compile Include="SimpleEnv.cs" />
     <Compile Include="TypeInferer.cs" />
     <Compile Include="Interpreter.cs" />
     <Compile Include="Parser.cs" />

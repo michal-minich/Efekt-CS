@@ -18,25 +18,29 @@ namespace Efekt
         Boolean isReturn;
         Boolean isBreak;
         Boolean isContinue;
+        IAsi start;
 
 
-        public IAsi Run(AsiList al, ValidationList validationList)
+        public IAsi Eval(AsiList al, ValidationList validationList)
         {
-            if (al.Items.Count == 0)
-                return new Void();
-            builtins = new Builtins(validationList);
             validations = validationList;
-            var fileStruct = new Struct(new List<IAsi>());
-            global = env = new Env(validations, fileStruct);
-            fileStruct.Env = global;
-            visitAsiArray(al.Items.DropLast().ToList(), env, env);
-            var last = al.Items.Last();
-            IAsi res;
-            res = last.Accept(this);
+            builtins = new Builtins(validationList);
+            var prog = new Struct(new List<IAsi>());
+            global = env = new Env(validations, prog);
+            prog.Env = global;
+            var res = visitAsiArray(al.Items, env, env);
             global = env = null;
             current = null;
             validations = null;
             return res;
+        }
+
+
+        public IAsi Run(Prog prog, ValidationList validationList)
+        {
+            if (prog.Modules.Count == 0)
+                return new Void();
+            return Eval(new AsiList(prog.Modules), validationList);
         }
 
 
@@ -229,6 +233,22 @@ namespace Efekt
                 env.Declare(Accessibility.Public, d.Ident.Name, v);
             else
                 env.Declare(acc, d.Ident.Name, v);
+
+            if (d.Ident.Name == "start")
+            {
+                if (start != null)
+                    validations.GenericWarning("Start is present multiple times.", Void.Instance);
+                start = d.Value;
+            }
+
+            if (start != null)
+            {
+                var f = start as Fn;
+                var s = f == null ? start : new FnApply(f, new List<IExp>());
+                var res = s.Accept(this);
+                return res;
+            }
+
             return v;
         }
 

@@ -159,6 +159,7 @@
     <Compile Include="Tests.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Validation.cs" />
+    <Compile Include="Visitors.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

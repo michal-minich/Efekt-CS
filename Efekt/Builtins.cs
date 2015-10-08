@@ -22,7 +22,7 @@ namespace Efekt
         public Exp Call(String fnName, IReadOnlyList<Exp> args)
         {
             Contract.Ensures(Contract.Result<Exp>() != null);
-            
+
             switch (fnName)
             {
                 case "eq":

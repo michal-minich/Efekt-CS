@@ -58,13 +58,10 @@ namespace Efekt
     }
 
 
-
-
-    public abstract  class SimpleType : Type
+    public abstract class SimpleType : Type
     {
-       public abstract String Name { get; }
+        public abstract String Name { get; }
     }
-
 
 
     public abstract class Asi : IAsi
@@ -222,7 +219,6 @@ namespace Efekt
     }
 
 
-
     public sealed class Declr : Exp, IClassItem
     {
         public Boolean IsVar { get; set; }
@@ -279,8 +275,8 @@ namespace Efekt
 
     public interface IClassItem : IAsi
     {
-
     }
+
 
     public sealed class Class : Type, IHasEnv
     {

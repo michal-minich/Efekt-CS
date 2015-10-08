@@ -287,7 +287,7 @@ namespace Efekt
             eval("var a = 1 /*--a = 2*/ a", "1");
             eval("var a = 1 /*/*a = 2*/ a", "1");
             eval(id + " id/*(1)*/(2)", "2");
-            eval(id + " id--(1)\n(2)", "2");
+            eval(id + " var a = id--(1)\n(2)", "2");
             eval(plus + " 1 + --3 +\n 5", "6");
             eval(plus + " 1 + /*--3 +*/ 5", "6");
             eval(plus + " 1 --+ 3\n + 5", "6");

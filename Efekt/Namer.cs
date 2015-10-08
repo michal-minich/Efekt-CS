@@ -22,18 +22,15 @@ namespace Efekt
         }
 
 
-        public Void visitSeq(IReadOnlyList<IAsi> items)
+        public Void VisitSequence(Sequence seq)
         {
             var prevEnv = env;
             env = new SimpleEnv(env);
-            foreach (var item in items)
+            foreach (var item in (IReadOnlyList<IAsi>)seq)
                 item.Accept(this);
             env = prevEnv;
             return Void.Instance;
         }
-
-
-        public Void VisitSequence(Sequence seq) => visitSeq(seq);
 
 
         public Void VisitInt(Int ii)
@@ -148,9 +145,9 @@ namespace Efekt
         public Void VisitIf(If iff)
         {
             iff.Test.Accept(this);
-            visitSeq(iff.Then);
+            VisitSequence(iff.Then);
             if (iff.Otherwise != null)
-                visitSeq(iff.Otherwise);
+                VisitSequence(iff.Otherwise);
             return Void.Instance;
         }
 

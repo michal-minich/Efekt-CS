@@ -1,5 +1,3 @@
-@public var ref = fn @byref a => __ref(a)
-@public var deref = fn a => __deref(a)
 @public var op== = fn a, b => __eq(a, b)
 @public var op< = fn a, b => __lt(a, b)
 @public var op+ = fn a, b => __plus(a, b)
@@ -11,7 +9,6 @@
 @public var op++ = fn a, b => [a, b]
 @public var at = fn a, ix => __at(a, ix)
 @public var count = fn a => __count(a)
-@public --var add = fn @byref a, item => __add(a, item)
 @public var env = fn a => __env(a)
 @public var print = fn a => __print(a)
 @public var typeof = fn a => __typeof(a)

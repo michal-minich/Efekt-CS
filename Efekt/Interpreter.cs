@@ -40,13 +40,20 @@ namespace Efekt
         {
             if (prog.Modules.Count == 0)
                 return new Void();
-            return Eval(prog.Modules, validationList);
+            Eval(prog.Modules, validationList);
+            var f = start as Fn;
+            if (f == null)
+                return start;
+            var s = new FnApply(f, new List<Exp>());
+            var res = s.Accept(this);
+            start = null;
+            return res;
         }
 
 
         public IAsi VisitSequence(Sequence seq)
         {
-            return  visitSeq(seq, new Env(validations, env.Owner), env);
+            return visitSeq(seq, new Env(validations, env.Owner), env);
         }
 
 
@@ -66,7 +73,7 @@ namespace Efekt
                     case "__Void":
                         return VoidType.Instance;
                     case "__Any":
-                        return ArrType.Instance;
+                        return AnyType.Instance;
                     case "__Bool":
                         return BoolType.Instance;
                     case "__Int":
@@ -223,15 +230,7 @@ namespace Efekt
             {
                 if (start != null)
                     validations.GenericWarning("Start is present multiple times.", Void.Instance);
-                start = d.Value;
-            }
-
-            if (start != null)
-            {
-                var f = start as Fn;
-                var s = f == null ? start : new FnApply(f, new List<Exp>());
-                var res = s.Accept(this);
-                return res;
+                start = d.Value.Accept(this);
             }
 
             return v;
@@ -247,6 +246,7 @@ namespace Efekt
                               .ToList())
             { IsEvaluated = true };
         }
+
 
         public IAsi VisitClass(Class cls) => cls;
 

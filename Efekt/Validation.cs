@@ -200,8 +200,8 @@ namespace Efekt
         public void ExpHasNoEffect(IAsi affectedItem) => add(affectedItem);
         public void ImplicitVar(Ident affectedItem) => add(affectedItem);
         public void DeclrExpected(IAsi affectedItem) => add(affectedItem);
-        public void ImportIsNotStruct(IExp affectedItem) => add(affectedItem);
-        public void ImportIsStructType(IExp affectedItem) => add(affectedItem);
+        public void ImportIsNotStruct(Exp affectedItem) => add(affectedItem);
+        public void ImportIsStructType(Exp affectedItem) => add(affectedItem);
         public void CannotImportTo(Import affectedItem) => add(affectedItem);
         public void IfTestIsNotBool(IAsi affectedItem) => add(affectedItem);
 
@@ -225,7 +225,7 @@ namespace Efekt
 
         public void ExpectedIdent(BinOpApply affectedItem) => add(affectedItem);
         public void NoStructAfterNew(IAsi asi, String asiType) => add(new Object[] { asi, asiType });
-        public void InstanceAfterNew(IExp exp) => add(exp);
+        public void InstanceAfterNew(Exp exp) => add(exp);
         public void NoConstructor(New n) => add(n);
         public void ConstructorIsNotFn(IAsi asi) => add(asi);
         public void ConstructorNotCalled(New n) => add(n);

@@ -21,14 +21,14 @@ namespace Efekt
         IAsi start;
 
 
-        public IAsi Eval(AsiList al, ValidationList validationList)
+        public IAsi Eval(IReadOnlyList<IAsi> items, ValidationList validationList)
         {
             validations = validationList;
             builtins = new Builtins(validationList);
-            var prog = new Struct(new List<IAsi>());
+            var prog = new Class(new List<Declr>());
             global = env = new Env(validations, prog);
             prog.Env = global;
-            var res = visitAsiArray(al.Items, env, env);
+            var res = visitSeq(items, env, env);
             global = env = null;
             current = null;
             validations = null;
@@ -40,15 +40,14 @@ namespace Efekt
         {
             if (prog.Modules.Count == 0)
                 return new Void();
-            return Eval(new AsiList(prog.Modules), validationList);
+            return Eval(prog.Modules, validationList);
         }
 
 
-        public IAsi VisitAsiList(AsiList al)
-            => visitAsiArray(al.Items, new Env(validations, env.Owner, env), env);
-
-
-        public IAsi VisitErr(Err err) => err;
+        public IAsi VisitSequence(Sequence seq)
+        {
+            return  visitSeq(seq, new Env(validations, env.Owner), env);
+        }
 
 
         public IAsi VisitInt(Int ii) => ii;
@@ -86,7 +85,7 @@ namespace Efekt
             if (v != null)
                 return v;
             validations.ImplicitVar(i);
-            return new Err(i);
+            throw new UnexpectedException();
         }
 
 
@@ -97,16 +96,16 @@ namespace Efekt
                 case ".":
                     return accessMember(opa);
                 default:
-                    return VisitFnApply(new FnApply(opa.Op, new List<IExp> { opa.Op1, opa.Op2 }));
+                    return VisitFnApply(new FnApply(opa.Op, new List<Exp> { opa.Op1, opa.Op2 }));
             }
         }
 
 
         IAsi accessMember(BinOpApply opa)
         {
-            var argValue = (IExp)opa.Op1.Accept(this);
+            var argValue = (Exp)opa.Op1.Accept(this);
             var member = (Ident)opa.Op2;
-            if (argValue is IRecord)
+            if (argValue is Class)
             {
                 var bag = getStructEnvOfMember(opa, argValue);
                 var m = bag.GetOwnValueOrNull(member.Name);
@@ -117,7 +116,7 @@ namespace Efekt
         }
 
 
-        IAsi createMemberFn(Ident member, IExp argValue)
+        IAsi createMemberFn(Ident member, Exp argValue)
         {
             var mExt = env.GetValueOrNull(member.Name);
             if (mExt == null)
@@ -136,53 +135,39 @@ namespace Efekt
         }
 
 
-        IExp copyIfValue(IExp exp, List<IExp> targetAttrs)
+        Exp copyIfValue(Exp exp, List<Exp> targetAttrs)
         {
             if (hasSimpleAttr(targetAttrs, "byref"))
                 return exp;
-            var a = copyIfStructInstance(exp);
+            var a = copyIfcomplexValue(exp);
             a = copyIfArrayInstance(exp);
             return a;
         }
 
 
-        IExp copyIfArrayInstance(IExp exp)
+        Exp copyIfArrayInstance(Exp exp)
         {
             var a = exp as Arr;
             if (a == null)
                 return exp;
             if (!a.IsEvaluated)
                 throw new Exception("arr copy");
-            var items = new List<IExp>();
+            var items = new List<Exp>();
             foreach (var item in a.Items)
             {
-                items.Add(copyIfValue(item, new List<IExp>()));
+                items.Add(copyIfValue(item, new List<Exp>()));
             }
             return new Arr(items) { IsEvaluated = true };
         }
 
 
-        IExp copyIfStructInstance(IExp exp)
+        static Exp copyIfcomplexValue(Exp exp)
         {
-            var s = exp as Struct;
-            if (s?.Env == null || s == global.Owner)
-                return exp;
-            var newStruct = new Struct(new List<IAsi>());
-            var newEnv = new Env(validations, newStruct, global);
-            newStruct.Env = newEnv;
-            newEnv.CopyFrom(s.Env);
-            foreach (var kvp in newEnv.Dict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
-            {
-                newEnv.SetValue(kvp.Key, copyIfValue(kvp.Value.Item, new List<IExp>()));
-                var fn = kvp.Value.Item as Fn;
-                if (fn?.Env != null)
-                    fn.Env = newEnv;
-            }
-            return newStruct;
+            return exp;
         }
 
 
-        static Boolean hasSimpleAttr(IEnumerable<IExp> attrs, String name)
+        static Boolean hasSimpleAttr(IEnumerable<Exp> attrs, String name)
         {
             var attrName = "@" + name;
             return attrs.OfType<Ident>().Any(aIdent => aIdent.Name == attrName);
@@ -196,7 +181,7 @@ namespace Efekt
                 validations.GenericWarning(
                     "expected identifier or member access after '.' , not {0} ", ma.Op2);
 
-            var s2 = bag as IRecord;
+            var s2 = bag as Class;
             if (s2 == null)
             {
                 validations.GenericWarning(
@@ -207,7 +192,7 @@ namespace Efekt
             if (s2.Env == null)
                 validations.GenericWarning(
                     "cannot access member '" + ma.Op2.Accept(Program.DefaultPrinter) +
-                    "' of not constructed struct", bag);
+                    "' of not constructed class", bag);
             return s2.Env;
         }
 
@@ -216,7 +201,7 @@ namespace Efekt
         {
             var acc = (env == global)
                 ? Accessibility.Global
-                : (current is IRecord ? Accessibility.Private : Accessibility.Local);
+                : (current is Class ? Accessibility.Private : Accessibility.Local);
 
             if (d.Value == null)
             {
@@ -227,8 +212,8 @@ namespace Efekt
                 return new Void();
             }
 
-            var v = (IExp)d.Value.Accept(this);
-            v = copyIfValue(v, new List<IExp>());
+            var v = (Exp)d.Value.Accept(this);
+            v = copyIfValue(v, new List<Exp>());
             if (hasSimpleAttr(d.Attributes, "public"))
                 env.Declare(Accessibility.Public, d.Ident.Name, v);
             else
@@ -244,7 +229,7 @@ namespace Efekt
             if (start != null)
             {
                 var f = start as Fn;
-                var s = f == null ? start : new FnApply(f, new List<IExp>());
+                var s = f == null ? start : new FnApply(f, new List<Exp>());
                 var res = s.Accept(this);
                 return res;
             }
@@ -258,13 +243,10 @@ namespace Efekt
             Contract.Assume(!arr.IsEvaluated);
             return new Arr(arr.Items
                               .Select(i => i.Accept(this))
-                              .Cast<IExp>()
+                              .Cast<Exp>()
                               .ToList())
             { IsEvaluated = true };
         }
-
-
-        public IAsi VisitStruct(Struct s) => s;
 
         public IAsi VisitClass(Class cls) => cls;
 
@@ -289,13 +271,13 @@ namespace Efekt
             {
                 var fnAsi = fna.Fn.Accept(this);
 
-                if (fnAsi is IRecord)
+                if (fnAsi is Class)
                     return new FnApply(fnAsi, fna.Args);
                 fn = fnAsi as Fn;
                 if (fn == null)
                 {
                     validations.CannotApply(fna.Fn, fnAsi);
-                    return new Err(fna);
+                    throw new UnexpectedException();
                 }
             }
 
@@ -303,24 +285,27 @@ namespace Efekt
             var prevEnv = env;
             var envForParams = new Env(validations, fn.Env.Owner, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
-            return visitAsiArray(fn.BodyItems, envForParams, prevEnv);
+            return visitSeq(fn.BodyItems, envForParams, prevEnv);
         }
 
 
-        IExp[] evalArgs(IEnumerable<IExp> args)
-            => args.Select(arg => arg.Accept(this)).Cast<IExp>().ToArray();
+        Exp[] evalArgs(IEnumerable<Exp> args)
+            => args.Select(arg => arg.Accept(this)).Cast<Exp>().ToArray();
 
 
-        void evalParamsAndArgs(Fn fn, IAsi notEvaledFn, IReadOnlyList<IExp> args, Env envForParams)
+        void evalParamsAndArgs(Fn fn, IAsi notEvaledFn, IReadOnlyList<Exp> args, Env envForParams)
         {
-            IReadOnlyList<IExp> args2;
+            IReadOnlyList<Exp> args2;
             if (args.Count < fn.CountMandatoryParams)
             {
                 validations.NotEnoughArgs(fn.Params[args.Count], notEvaledFn, fn.Params.Count,
                                           fn.CountMandatoryParams, args.Count);
                 var missingArgCount = fn.CountMandatoryParams - args.Count;
-                var errs = fn.Params.Skip(args.Count).Take(missingArgCount).Select(p => new Err(p));
-                args2 = args.Concat(errs).ToList();
+                if (missingArgCount != 0)
+                    throw new UnexpectedException("missing arguments count: " + missingArgCount);
+                //var errs = fn.Params.Skip(args.Count).Take(missingArgCount).Select(p => new Err(p));
+                //args2 = args.Concat(errs).ToList();
+                args2 = args;
             }
             else
             {
@@ -341,7 +326,7 @@ namespace Efekt
                 if (evaluatedArgs.Length <= n)
                 {
                     //p.Accept(this);
-                    env.Declare(Accessibility.Local, p.Ident.Name, (IExp)p.Value?.Accept(this));
+                    env.Declare(Accessibility.Local, p.Ident.Name, (Exp)p.Value?.Accept(this));
                 }
                 else
                 {
@@ -358,21 +343,21 @@ namespace Efekt
             var expAsi = n.Exp.Accept(this);
             var fna = expAsi as FnApply;
             var sAsi = fna != null ? fna.Fn : expAsi;
-            var s = sAsi as IRecord;
+            var s = sAsi as Class;
 
             if (s == null)
             {
                 validations.NoStructAfterNew(sAsi, sAsi.GetType().Name);
-                return new Err(n);
+                throw new UnexpectedException();
             }
             if (s.Env != null)
             {
                 validations.InstanceAfterNew(n.Exp);
-                return new Err(n);
+                throw new UnexpectedException();
             }
 
             var prevEnv = env;
-            var instance = s is Struct ? (IRecord)new Struct(new List<IAsi>()) : new Class(new List<IAsi>());
+            var instance = /*s is Struct ? (IRecord)new Struct(new List<IAsi>()) :*/ new Class(new List<Declr>());
             env = new Env(validations, instance, global);
             instance.Env = env;
             current = instance;
@@ -414,7 +399,13 @@ namespace Efekt
         public IAsi VisitBool(Bool b) => b;
 
 
-        IAsi visitAsiArray(IReadOnlyList<IAsi> items, Env newEnv, Env restoreEnv)
+        IAsi visitSeq(IReadOnlyList<IAsi> items)
+        {
+            return visitSeq(items, new Env(validations, env.Owner, env), env);
+        }
+
+
+        IAsi visitSeq(IReadOnlyList<IAsi> items, Env newEnv, Env restoreEnv)
         {
             Contract.Ensures(Contract.Result<IAsi>() != null);
 
@@ -437,7 +428,7 @@ namespace Efekt
             r = items.Last().Accept(this);
             isReturn = false;
             env = restoreEnv;
-            return copyIfValue((IExp)r, new List<IExp>());
+            return copyIfValue((Exp)r, new List<Exp>());
         }
 
 
@@ -452,15 +443,15 @@ namespace Efekt
                 validations.IfTestIsNotBool(t);
             // if 'else' is missing and 'if' is used as stm, then it is and error
             return b != null && b.Value
-                ? iff.Then.Accept(this)
-                : iff.Otherwise == null ? new Void() : iff.Otherwise.Accept(this);
+                ? visitSeq(iff.Then)
+                : iff.Otherwise == null ? new Void() : visitSeq(iff.Otherwise);
         }
 
 
         public IAsi VisitAssign(Assign a)
         {
-            var v = (IExp)a.Value.Accept(this);
-            v = copyIfValue(v, new List<IExp>());
+            var v = (Exp)a.Value.Accept(this);
+            v = copyIfValue(v, new List<Exp>());
             var ma = a.Target as BinOpApply;
             if (ma != null && ma.Op.Name == ".")
             {
@@ -539,6 +530,7 @@ namespace Efekt
             env = new Env(validations, env.Owner, env);
             if (itemName != null)
                 env.Declare(Accessibility.Local, itemName);
+            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
             while (condition())
             {
                 cont:
@@ -593,7 +585,7 @@ namespace Efekt
             else
             {
                 var asi = imp.QualifiedIdent.Accept(this);
-                var s = asi as IRecord;
+                var s = asi as Class;
                 if (s == null)
                     validations.ImportIsNotStruct(imp.QualifiedIdent);
                 else if (s.Env == null)
@@ -607,9 +599,9 @@ namespace Efekt
 
         public IAsi VisitThrow(Throw th)
         {
-            IExp throwed;
+            Exp throwed;
             if (th.Ex != null)
-                throwed = (IExp)th.Ex.Accept(this);
+                throwed = (Exp)th.Ex.Accept(this);
             else
             {
                 throwed = null;
@@ -624,7 +616,7 @@ namespace Efekt
             env = new Env(validations, env.Owner, env);
             try
             {
-                visitAsiArray(tr.TryItems, env, prevEnv);
+                visitSeq(tr.TryItems, env, prevEnv);
             }
             catch (InterpretedThrowException ex)
             {
@@ -633,7 +625,7 @@ namespace Efekt
                     env = new Env(validations, env.Owner, env);
                     if (tr.ExVar != null)
                         env.Declare(Accessibility.Local, tr.ExVar.Name, ex.Throwed);
-                    visitAsiArray(tr.CatchItems, env, prevEnv);
+                    visitSeq(tr.CatchItems, env, prevEnv);
                 }
                 else
                 {
@@ -645,7 +637,7 @@ namespace Efekt
                 if (tr.FinallyItems != null)
                 {
                     env = new Env(validations, env.Owner, env);
-                    visitAsiArray(tr.FinallyItems, env, prevEnv);
+                    visitSeq(tr.FinallyItems, env, prevEnv);
                 }
             }
             return Void.Instance;
@@ -653,7 +645,7 @@ namespace Efekt
 
 
         static Arr toCharArr(String value)
-            => new Arr(value.Select(ch => new Char(ch)).Cast<IExp>().ToList());
+            => new Arr(value.Select(ch => new Char(ch)).Cast<Exp>().ToList());
 
 
         public IAsi VisitAssume(Assume asm)
@@ -682,7 +674,7 @@ namespace Efekt
         }
 
 
-        public IAsi VisitSimpleType(ISimpleType st) => st;
+        public IAsi VisitSimpleType(SimpleType st) => st;
     }
 
 
@@ -691,10 +683,10 @@ namespace Efekt
     public sealed class InterpretedThrowException : Exception
     {
         [CanBeNull]
-        public IExp Throwed { get; }
+        public Exp Throwed { get; }
 
 
-        public InterpretedThrowException([CanBeNull] IExp throwed)
+        public InterpretedThrowException([CanBeNull] Exp throwed)
             : base(throwed.Accept(Program.DefaultPrinter))
         {
             Throwed = throwed;

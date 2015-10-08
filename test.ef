@@ -1,3 +1,3 @@
-var a = if false then 1 else "A"
-print(typeof(a))
-123
+var start = fn {
+    2
+}

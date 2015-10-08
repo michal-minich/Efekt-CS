@@ -4,33 +4,37 @@ using System.Collections.Generic;
 
 namespace Efekt
 {
-    public sealed class TypeInferer : IAsiVisitor<IExp>
+    public sealed class TypeInferer : IAsiVisitor<Exp>
     {
-        public IExp VisitAsiList(AsiList al)
+        Exp visitSeq(IReadOnlyList<IAsi> list)
         {
             throw new NotImplementedException();
         }
 
 
-        public IExp VisitErr(Err err) => ErrType.Instance;
+        public Exp VisitSequence(Sequence seq)
+        {
+            return visitSeq(seq);
+        }
 
-        public IExp VisitInt(Int ii) => IntType.Instance;
+
+        public Exp VisitInt(Int ii) => IntType.Instance;
 
 
-        public IExp VisitIdent(Ident i)
+        public Exp VisitIdent(Ident i)
         {
             throw new NotImplementedException();
         }
 
 
-        public IExp VisitBinOpApply(BinOpApply opa)
+        public Exp VisitBinOpApply(BinOpApply opa)
         {
-            var t = VisitFnApply(new FnApply(opa.Op, new List<IExp> { opa.Op1, opa.Op2 }));
+            var t = VisitFnApply(new FnApply(opa.Op, new List<Exp> { opa.Op1, opa.Op2 }));
             return t;
         }
 
 
-        public IExp VisitDeclr(Declr d)
+        public Exp VisitDeclr(Declr d)
         {
             if (d.Type != null)
                 return d.Type;
@@ -40,73 +44,67 @@ namespace Efekt
         }
 
 
-        public IExp VisitArr(Arr arr) => ArrType.Instance;
+        public Exp VisitArr(Arr arr) => ArrType.Instance;
 
 
-        public IExp VisitStruct(Struct s)
+        public Exp VisitClass(Class cls) => ClassType.Instance;
+
+        public Exp VisitFn(Fn fn) => FnType.Instance;
+
+
+        public Exp VisitFnApply(FnApply fna)
         {
             throw new NotImplementedException();
         }
 
 
-        public IExp VisitClass(Class cls) => ClassType.Instance;
+        public Exp VisitNew(New n) => n.Exp.Accept(this);
 
-        public IExp VisitFn(Fn fn) => FnType.Instance;
+        public Exp VisitVoid(Void v) => VoidType.Instance;
+
+        public Exp VisitBool(Bool b) => BoolType.Instance;
+
+        public Exp VisitChar(Char c) => CharType.Instance;
 
 
-        public IExp VisitFnApply(FnApply fna)
+        public Exp VisitIf(If iff)
         {
-            throw new NotImplementedException();
-        }
-
-
-        public IExp VisitNew(New n) => n.Exp.Accept(this);
-
-        public IExp VisitVoid(Void v) => VoidType.Instance;
-
-        public IExp VisitBool(Bool b) => BoolType.Instance;
-
-        public IExp VisitChar(Char c) => CharType.Instance;
-
-
-        public IExp VisitIf(If iff)
-        {
-            var t = iff.Then.Accept(this);
+            var t = visitSeq(iff.Then);
             if (iff.Otherwise == null)
                 return t;
-            var o = iff.Otherwise.Accept(this);
+            var o = visitSeq(iff.Otherwise);
             return t == o ? t : AnyType.Instance;
         }
 
 
-        public IExp VisitImport(Import imp) => VoidType.Instance;
+        public Exp VisitImport(Import imp) => VoidType.Instance;
 
-        public IExp VisitAssign(Assign a) => a.Value.Accept(this);
+        public Exp VisitAssign(Assign a) => a.Value.Accept(this);
 
-        public IExp VisitGoto(Goto gt) => VoidType.Instance;
+        public Exp VisitGoto(Goto gt) => VoidType.Instance;
 
-        public IExp VisitLabel(Label lbl) => VoidType.Instance;
+        public Exp VisitLabel(Label lbl) => VoidType.Instance;
 
-        public IExp VisitBreak(Break br) => VoidType.Instance;
+        public Exp VisitBreak(Break br) => VoidType.Instance;
 
-        public IExp VisitContinue(Continue ct) => VoidType.Instance;
+        public Exp VisitContinue(Continue ct) => VoidType.Instance;
 
-        public IExp VisitReturn(Return r) => r.Value == null ? VoidType.Instance : r.Value.Accept(this);
+        public Exp VisitReturn(Return r) => r.Value == null ? VoidType.Instance : r.Value.Accept(this);
 
-        public IExp VisitRepeat(Repeat rp) => VoidType.Instance;
+        public Exp VisitRepeat(Repeat rp) => VoidType.Instance;
 
-        public IExp VisitForEach(ForEach fe) => VoidType.Instance;
+        public Exp VisitForEach(ForEach fe) => VoidType.Instance;
 
-        public IExp VisitThrow(Throw th) => VoidType.Instance;
+        public Exp VisitThrow(Throw th) => VoidType.Instance;
 
-        public IExp VisitTry(Try tr) => VoidType.Instance;
+        public Exp VisitTry(Try tr) => VoidType.Instance;
 
-        public IExp VisitAssume(Assume asm) => VoidType.Instance;
+        public Exp VisitAssume(Assume asm) => VoidType.Instance;
 
-        public IExp VisitAssert(Assert ast) => VoidType.Instance;
+        public Exp VisitAssert(Assert ast) => VoidType.Instance;
 
 
-        public IExp VisitSimpleType(ISimpleType st)
+        public Exp VisitSimpleType(SimpleType st)
         {
             throw new NotSupportedException("type of type...");
         }

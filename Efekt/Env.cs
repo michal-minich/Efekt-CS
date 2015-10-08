@@ -20,10 +20,10 @@ namespace Efekt
     {
         public Accessibility Accessibility { get; }
 
-        public IExp Item { get; }
+        public Exp Item { get; }
 
 
-        public EnvItem(Accessibility accessibility, IExp item)
+        public EnvItem(Accessibility accessibility, Exp item)
         {
             Accessibility = accessibility;
             Item = item;
@@ -37,7 +37,7 @@ namespace Efekt
     public sealed class Env
     {
         readonly ValidationList validations;
-        public IRecord Owner { get; }
+        public Class Owner { get; }
 
         [CanBeNull]
         public Env Parent { get; }
@@ -47,14 +47,14 @@ namespace Efekt
         public List<Env> ImportedEnvs { get; set; } = new List<Env>();
 
 
-        public Env(ValidationList validations, IRecord owner)
+        public Env(ValidationList validations, Class owner)
         {
             this.validations = validations;
             Owner = owner;
         }
 
 
-        public Env(ValidationList validations, IRecord owner, Env parent)
+        public Env(ValidationList validations, Class owner, Env parent)
         {
             Contract.Requires(parent != null);
 
@@ -81,7 +81,7 @@ namespace Efekt
         }
 
 
-        public void Declare(Accessibility accessibility, String name, IExp value = null)
+        public void Declare(Accessibility accessibility, String name, Exp value = null)
         {
             if (Dict.ContainsKey(name))
                 validations.GenericWarning("variable '" + name + "' is already declared",
@@ -90,7 +90,7 @@ namespace Efekt
         }
 
 
-        public void SetValue(String name, IExp value)
+        public void SetValue(String name, Exp value)
         {
             var e = getEnvDeclaring(name, this);
             CheckAccessibility(name, e, "write");

@@ -19,14 +19,10 @@ namespace Efekt
 
 
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        public IExp Call(String fnName, IReadOnlyList<IExp> args)
+        public Exp Call(String fnName, IReadOnlyList<Exp> args)
         {
-            Contract.Ensures(Contract.Result<IExp>() != null);
-
-            var err = args.FirstOrDefault(a => a is IErr);
-            if (err != null)
-                return err;
-
+            Contract.Ensures(Contract.Result<Exp>() != null);
+            
             switch (fnName)
             {
                 case "eq":
@@ -64,7 +60,7 @@ namespace Efekt
         }
 
 
-        static Void printEnvText(IExp asi)
+        static Void printEnvText(Exp asi)
         {
             var he = asi as IHasEnv;
             if (he != null)
@@ -76,11 +72,11 @@ namespace Efekt
 
     public static class BuiltinsExtensions
     {
-        public static Int32 AsInt(this IExp asi) => (Int32)((Int)asi).Value;
+        public static Int32 AsInt(this Exp asi) => (Int32)((Int)asi).Value;
 
-        public static Boolean AsBool(this IExp asi) => ((Bool)asi).Value;
+        public static Boolean AsBool(this Exp asi) => ((Bool)asi).Value;
 
-        public static Arr AsArr(this IExp asi) => (Arr)asi;
+        public static Arr AsArr(this Exp asi) => (Arr)asi;
 
 
         public static String AsiToString(this IAsi asi)

@@ -145,7 +145,7 @@
   <ItemGroup>
     <Compile Include="Asi.cs" />
     <Compile Include="Builtins.cs" />
-    <Compile Include="EfektException.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="Env.cs" />
     <Compile Include="Namer.cs" />
     <Compile Include="SimpleEnv.cs" />
@@ -171,9 +171,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\severity-normal.ef">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\severity-light.ef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

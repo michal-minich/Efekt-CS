@@ -62,10 +62,10 @@ namespace Efekt
         Boolean wasNewLine;
 
 
-        public AsiList Parse(String codeText, ValidationList validationList)
+        public IReadOnlyList<IAsi> Parse(String codeText, ValidationList validationList)
         {
             Contract.Requires(codeText != null);
-            Contract.Ensures(Contract.Result<AsiList>() != null);
+            Contract.Ensures(Contract.Result<IReadOnlyList<IAsi>>() != null);
 
             code = codeText;
             index = 0;
@@ -82,7 +82,7 @@ namespace Efekt
                 items.Add(asi);
             }
 
-            return new AsiList(items) { Line = 1 };
+            return items;
         }
 
 
@@ -141,15 +141,15 @@ namespace Efekt
                         Contract.Assume(nextAsi != null);
                         if (op == ":")
                         {
-                            asi = a(new Declr((Ident)asi, (IExp)nextAsi, null));
+                            asi = a(new Declr((Ident)asi, (Exp)nextAsi, null));
                         }
                         else
                         {
                             Contract.Assume(op != ".");
                             var i = a(new Ident(op, IdentCategory.Op));
                             asi = op == "="
-                                ? (IAsi)new Assign((IExp)asi, (IExp)nextAsi)
-                                : a(new BinOpApply(i, (IExp)asi, (IExp)nextAsi));
+                                ? (IAsi)new Assign((Exp)asi, (Exp)nextAsi)
+                                : a(new BinOpApply(i, (Exp)asi, (Exp)nextAsi));
                         }
                     }
                     else if (curOpPrecedence <= prevOpPrecedence)
@@ -157,7 +157,7 @@ namespace Efekt
                         var op2 = parseAsi(op == ".");
                         Contract.Assume(op2 != null);
                         var i = a(new Ident(op, IdentCategory.Op));
-                        var opa = a(new BinOpApply(i, (IExp)asi, (IExp)op2));
+                        var opa = a(new BinOpApply(i, (Exp)asi, (Exp)op2));
                         asi = opa;
                         if (op == ".")
                         {
@@ -176,9 +176,9 @@ namespace Efekt
                         Contract.Assume(op3 != null);
                         var op1 = (BinOpApply)asi;
                         var opa4 = a(new BinOpApply(
-                                         a(new Ident(op, IdentCategory.Op)), op1.Op2, (IExp)op3));
+                                         a(new Ident(op, IdentCategory.Op)), op1.Op2, (Exp)op3));
                         asi = tryParseFnApply(opa4);
-                        op1.Op2 = (IExp)asi;
+                        op1.Op2 = (Exp)asi;
                         asi = op1;
                     }
 
@@ -204,10 +204,10 @@ namespace Efekt
             var attrs = parseAttributes();
             var asi = tryParseInt() ?? tryParseBool() ?? tryParseVoid()
                       ?? tryParseFn() ?? tryParseVar() ?? tryParseNew()
-                      ?? tryParseStruct() ?? tryParseClass() ?? tryParseIf() ?? tryParseImport()
+                      ?? tryParseClass() ?? tryParseIf() ?? tryParseImport()
                       ?? parseIterationKeywords() ?? parseExceptionRelated()
                       ?? parseChar() ?? parseString('"')
-                      ?? tryParseAsiList() ?? tryParseArr() ?? tryParseBraced() ?? tryParseIdent();
+                      ?? tryParseSequence() ?? tryParseArr() ?? tryParseBraced() ?? tryParseIdent();
 
             if (asi != null)
             {
@@ -225,9 +225,9 @@ namespace Efekt
         }
 
 
-        List<IExp> parseAttributes()
+        List<Exp> parseAttributes()
         {
-            var attrs = new List<IExp>();
+            var attrs = new List<Exp>();
             while (matchChar('@'))
             {
                 var i = tryParseIdent();
@@ -277,9 +277,10 @@ namespace Efekt
                 {
                     validations.GenericWarning("Expected expression or statement after fn ... =>",
                                                fn);
-                    asi = new Err();
+                    //asi = new Err();
+                    throw new UnexpectedException();
                 }
-                fn.BodyItems = new List<IAsi> { asi };
+                fn.BodyItems = new Sequence(new List<IAsi> { asi });
             }
             else
             {
@@ -287,12 +288,10 @@ namespace Efekt
                 if (b == null)
                 {
                     validations.GenericWarning("expected '{...}' or '=>' after 'fn ...'", fn);
-                    fn.BodyItems = new List<IAsi> { new Err() };
+                    //fn.BodyItems = new List<IAsi> { new Err() };
+                    throw new UnexpectedException();
                 }
-                else
-                {
-                    fn.BodyItems = b;
-                }
+                fn.BodyItems = new Sequence(b);
             }
 
             validateParamsOrder(fn);
@@ -326,37 +325,31 @@ namespace Efekt
 
         Class tryParseClass()
         {
-            return tryParseRecord<Class>("class");
+            return tryParseRecord("class");
         }
 
 
-        Struct tryParseStruct()
-        {
-            return tryParseRecord<Struct>("struct");
-        }
-
-
-        T tryParseRecord<T>(String recType) where T : Asi, IRecord, new()
+        Class tryParseRecord(String recType)
         {
             if (!matchWord(recType))
                 return null;
-            var s = a(new T());
+            var s = a(new Class());
             skipWhite();
             var items = tryParseBracedList('{', '}', s);
             if (items == null)
             {
-                validations.GenericWarning("missing open curly brace after 'struct'", s);
+                validations.GenericWarning("missing open curly brace after '" + recType + "'", s);
                 items = new List<IAsi>();
             }
             foreach (var item in items)
             {
                 var d = item as Declr;
                 if (d == null)
-                    validations.GenericWarning("Struct can contain only variables", item);
+                    validations.GenericWarning("Class can contain only variables", item);
                 else if (!d.IsVar)
                     validations.GenericWarning("Keyword 'var' is missing", item);
             }
-            s.Items = items;
+            s.Items = items.Cast<IClassItem>().ToList();
             return s;
         }
 
@@ -378,52 +371,54 @@ namespace Efekt
             var iff = a(new If());
             var t = parseCombinedAsi();
 
-            var tIExp = t as IExp;
+            var tIExp = t as Exp;
             if (t == null)
             {
                 validations.NothingAfterIf(iff);
-                iff.Test = a(new Err());
+                //iff.Test = a(new Err());
+                throw new UnexpectedException();
             }
-            else if (tIExp == null)
+            if (tIExp == null)
             {
                 validations.IfTestIsNotExp(t);
-                iff.Test = a(new Err(t));
+                //iff.Test = a(new Err(t));
+                throw new UnexpectedException();
             }
-            else
-            {
-                iff.Test = tIExp;
-            }
+            iff.Test = tIExp;
 
             if (matchWord("then"))
             {
-                iff.Then = parseCombinedAsi();
+                iff.Then = toSequence(parseCombinedAsi());
                 if (iff.Then == null)
                 {
                     validations.GenericWarning("expected expression after 'then'", iff);
-                    iff.Then = a(new Err());
+                    //iff.Then = a(new Err());
+                    throw new UnexpectedException();
                 }
-                if (iff.Then is AsiList)
-                    validations.GenericWarning("when block { } used 'then' should be omitted.", iff);
+                //if (iff.Then.Count == 1)
+                //    validations.GenericWarning("when block {{ }} used 'then' should be omitted.", iff);
             }
             else if (lookChar('{'))
             {
-                iff.Then = a(new AsiList(tryParseBracedList('{', '}', iff)));
+                iff.Then = a(new Sequence(tryParseBracedList('{', '}', iff)));
             }
             else
             {
-                validations.GenericWarning("expected 'then' or '{' after if", iff);
-                iff.Then = a(new Err());
+                validations.GenericWarning("expected 'then' or '{{' after if", iff);
+                //iff.Then = a(new Err());
+                throw new UnexpectedException();
             }
 
 
             skipWhite();
             if (matchWord("else"))
             {
-                iff.Otherwise = parseCombinedAsi();
+                iff.Otherwise = toSequence(parseCombinedAsi());
                 if (iff.Otherwise == null)
                 {
                     validations.GenericWarning("expected expression after 'else'", iff);
-                    iff.Otherwise = a(new Err());
+                    //iff.Otherwise = a(new Err());
+                    throw new UnexpectedException();
                 }
             }
 
@@ -431,14 +426,21 @@ namespace Efekt
         }
 
 
-        AsiList tryParseAsiList()
+        static Sequence toSequence(IAsi asi)
         {
-            var al = a(new AsiList());
-            var b = tryParseBracedList('{', '}', al);
+            var seq = asi as Sequence;
+            return seq ?? new Sequence(new List<IAsi> { asi });
+        }
+
+
+        Sequence tryParseSequence()
+        {
+            var seq = a(new Sequence());
+            var b = tryParseBracedList('{', '}', seq);
             if (b == null)
                 return null;
-            al.Items = b;
-            return al;
+            seq.Init(b);
+            return seq;
         }
 
 
@@ -449,7 +451,10 @@ namespace Efekt
                 return null;
             var str = strParsed as Arr;
             if (str == null)
-                str = (Arr)((Err)strParsed).Item;
+            {
+                //str = (Arr)((Err)strParsed).Item;
+                throw new UnexpectedException();
+            }
             Contract.Assume(str != null);
             Contract.Assume(str.Items != null);
             if (str.Items.Count == 0)
@@ -466,7 +471,7 @@ namespace Efekt
         }
 
 
-        IExp parseString(System.Char quote)
+        Exp parseString(System.Char quote)
         {
             if (!matchChar(quote))
                 return null;
@@ -502,11 +507,14 @@ namespace Efekt
                 if (to > code.Length)
                     to = code.Length;
             }
-            var chars = new List<IExp>();
+            var chars = new List<Exp>();
             for (var i = startAt; i < to; ++i)
                 chars.Add(a(new Char(code[i])));
             var arr = a(new Arr(chars));
-            return isUnterminated ? a(new Err(arr)) : (IExp)arr;
+            if (isUnterminated)
+                //return a(new Err(arr));
+                throw new UnexpectedException();
+            return arr;
         }
 
 
@@ -519,7 +527,7 @@ namespace Efekt
             if (asi == null)
                 validations.GenericWarning("Expected qualified identifier after import", imp);
             // todo validate if it is qualified ident (after member access op is here...) 
-            imp.QualifiedIdent = (IExp)asi;
+            imp.QualifiedIdent = (Exp)asi;
             return imp;
         }
 
@@ -533,13 +541,13 @@ namespace Efekt
                 return new Label(skipWhiteButNoNewLineAnd(tryParseIdent));
 
             if (matchWord("break if"))
-                return new Break((IExp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
+                return new Break((Exp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
 
             if (matchWord("break"))
                 return new Break(null);
 
             if (matchWord("continue if"))
-                return new Continue((IExp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
+                return new Continue((Exp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
 
             if (matchWord("continue"))
                 return new Continue(null);
@@ -580,10 +588,10 @@ namespace Efekt
             }
 
             if (matchWord("assume"))
-                return new Assume((IExp)parseCombinedAsi());
+                return new Assume((Exp)parseCombinedAsi());
 
             if (matchWord("assert"))
-                return new Assert((IExp)parseCombinedAsi());
+                return new Assert((Exp)parseCombinedAsi());
 
             return null;
         }
@@ -599,7 +607,7 @@ namespace Efekt
                 {
                     ex = parseCombinedAsi();
                 }
-                return new Throw((IExp)ex);
+                return new Throw((Exp)ex);
             }
 
             if (matchWord("try"))
@@ -716,23 +724,25 @@ namespace Efekt
         }
 
 
-        IExp toMandatoryExp(IAsi asi, IAsi owner)
+        Exp toMandatoryExp(IAsi asi, IAsi owner)
         {
-            var e = asi as IExp;
+            var e = asi as Exp;
             if (e != null)
                 return toExp(e);
             validations.GenericWarning("expression is required", owner);
-            return new Err();
+            //return new Err();
+            throw new UnexpectedException();
         }
 
 
-        IExp toExp(IAsi asi)
+        Exp toExp(IAsi asi)
         {
-            var e = asi as IExp;
+            var e = asi as Exp;
             if (e != null)
                 return e;
             validations.GenericWarning("Expected expression instead of statement ", asi);
-            return new Err(asi);
+            //return new Err(asi);
+            throw new UnexpectedException();
         }
 
 
@@ -748,7 +758,7 @@ namespace Efekt
             if (i != null)
             {
                 var d3 = a(new Declr(i, null, null) { IsVar = isVar, Attributes = i.Attributes });
-                i.Attributes = new List<IExp>();
+                i.Attributes = new List<Exp>();
                 return d3;
             }
 
@@ -763,7 +773,7 @@ namespace Efekt
                         IsVar = isVar,
                         Attributes = i2.Attributes
                     });
-                    i2.Attributes = new List<IExp>();
+                    i2.Attributes = new List<Exp>();
                     return d4;
                 }
                 var d2 = assign.Target as Declr;
@@ -795,7 +805,7 @@ namespace Efekt
                 return null;
             var n = a(new New());
             var asi = parseCombinedAsi("new");
-            var exp = asi as IExp;
+            var exp = asi as Exp;
             n.Exp = toMandatoryExp(exp, n);
             return n;
         }

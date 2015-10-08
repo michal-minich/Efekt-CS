@@ -6,14 +6,12 @@ namespace Efekt
     [ContractClass(typeof (IAsiVisitorContract<>))]
     public interface IAsiVisitor<out T> where T : class
     {
-        T VisitAsiList(AsiList al);
-        T VisitErr(Err err);
+        T VisitSequence(Sequence seq);
         T VisitInt(Int ii);
         T VisitIdent(Ident i);
         T VisitBinOpApply(BinOpApply opa);
         T VisitDeclr(Declr d);
         T VisitArr(Arr arr);
-        T VisitStruct(Struct s);
         T VisitClass(Class cls);
         T VisitFn(Fn fn);
         T VisitFnApply(FnApply fna);
@@ -35,24 +33,16 @@ namespace Efekt
         T VisitTry(Try tr);
         T VisitAssume(Assume asm);
         T VisitAssert(Assert ast);
-        T VisitSimpleType(ISimpleType st);
+        T VisitSimpleType(SimpleType st);
     }
 
 
     [ContractClassFor(typeof (IAsiVisitor<>))]
     abstract class IAsiVisitorContract<T> : IAsiVisitor<T> where T : class
     {
-        T IAsiVisitor<T>.VisitAsiList(AsiList al)
+        public T VisitSequence(Sequence seq)
         {
-            Contract.Requires(al != null);
-            Contract.Ensures(Contract.Result<T>() != null);
-            return null;
-        }
-
-
-        T IAsiVisitor<T>.VisitErr(Err err)
-        {
-            Contract.Requires(err != null);
+            Contract.Requires(seq != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -93,14 +83,6 @@ namespace Efekt
         T IAsiVisitor<T>.VisitArr(Arr arr)
         {
             Contract.Requires(arr != null);
-            Contract.Ensures(Contract.Result<T>() != null);
-            return null;
-        }
-
-
-        T IAsiVisitor<T>.VisitStruct(Struct s)
-        {
-            Contract.Requires(s != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
@@ -274,7 +256,7 @@ namespace Efekt
         }
 
 
-        public T VisitSimpleType(ISimpleType st)
+        public T VisitSimpleType(SimpleType st)
         {
             Contract.Requires(st != null);
             Contract.Ensures(Contract.Result<T>() != null);

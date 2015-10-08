@@ -61,7 +61,7 @@ namespace Efekt
                 File.ReadAllLines(resPath + "validations.en-US.ef"));
 
             var severities = ValidationList.LoadSeverities(
-                File.ReadAllLines(resPath + "severity-light.ef"));
+                File.ReadAllLines(resPath + "severity-normal.ef"));
 
             ValidationList.UseSeverities(severities);
         }
@@ -70,19 +70,19 @@ namespace Efekt
         static void run(IEnumerable<String> filePaths)
         {
             var p = new Parser();
-            var modules = new Dictionary<String, IReadOnlyList<IAsi>>();
+            var modules = new Dictionary<String, IReadOnlyList<IClassItem>>();
             foreach (var path in filePaths.Reverse())
             {
                 var txt = File.ReadAllText(path);
-                var al = p.Parse(txt, ValidationList);
-                modules.Add(Path.GetFileNameWithoutExtension(path), al.Items);
+                var items = p.Parse(txt, ValidationList);
+                modules.Add(Path.GetFileNameWithoutExtension(path), items.Cast<IClassItem>().ToList());
             }
 
             var preludeTxt = File.ReadAllText(libPath + "prelude.ef");
-            var preludeTxtAl = p.Parse(preludeTxt, ValidationList);
+            var preludeTxtItems = p.Parse(preludeTxt, ValidationList);
 
             var rw = new Rewriter();
-            var prog = rw.MakeProgram(preludeTxtAl.Items, modules);
+            var prog = rw.MakeProgram(preludeTxtItems.Cast<Declr>().ToList(), modules);
             var n = new Namer();
             n.Name(prog, ValidationList);
 

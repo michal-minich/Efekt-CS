@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 
 namespace Efekt
@@ -6,7 +7,7 @@ namespace Efekt
     public sealed class Namer : IAsiVisitor<Void>
     {
         SimpleEnv env;
-        IRecord currentStruct;
+        Class currentClass;
         ValidationList validations;
 
 
@@ -16,27 +17,23 @@ namespace Efekt
             env = new SimpleEnv();
             foreach (var item in prog.Modules)
                 item.Accept(this);
-            currentStruct = null;
+            currentClass = null;
             env = null;
         }
 
 
-        public Void VisitAsiList(AsiList al)
+        public Void visitSeq(IReadOnlyList<IAsi> items)
         {
             var prevEnv = env;
             env = new SimpleEnv(env);
-            foreach (var item in al.Items)
+            foreach (var item in items)
                 item.Accept(this);
             env = prevEnv;
             return Void.Instance;
         }
 
 
-        public Void VisitErr(Err err)
-        {
-            err.Item?.Accept(this);
-            return Void.Instance;
-        }
+        public Void VisitSequence(Sequence seq) => visitSeq(seq);
 
 
         public Void VisitInt(Int ii)
@@ -90,27 +87,15 @@ namespace Efekt
         }
 
 
-        public Void VisitStruct(Struct s)
-        {
-            return visitRecord(s);
-        }
-
-
         public Void VisitClass(Class cls)
         {
-            return visitRecord(cls);
-        }
-
-
-        Void visitRecord(IRecord r)
-        {
-            var prevStruct = currentStruct;
+            var prevStruct = currentClass;
             var prevEnv = env;
-            currentStruct = r;
+            currentClass = cls;
             env = new SimpleEnv(env);
-            foreach (var item in r.Items)
+            foreach (var item in cls.Items)
                 item.Accept(this);
-            currentStruct = prevStruct;
+            currentClass = prevStruct;
             env = prevEnv;
             return Void.Instance;
         }
@@ -163,8 +148,9 @@ namespace Efekt
         public Void VisitIf(If iff)
         {
             iff.Test.Accept(this);
-            iff.Then.Accept(this);
-            iff.Otherwise?.Accept(this);
+            visitSeq(iff.Then);
+            if (iff.Otherwise != null)
+                visitSeq(iff.Otherwise);
             return Void.Instance;
         }
 
@@ -266,7 +252,7 @@ namespace Efekt
         }
 
 
-        public Void VisitSimpleType(ISimpleType st)
+        public Void VisitSimpleType(SimpleType st)
         {
             throw new NotImplementedException();
         }

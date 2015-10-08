@@ -11,11 +11,13 @@ namespace Efekt
         public Boolean PutBracesAroundBinOpApply { private get; set; }
 
 
-        public String VisitAsiList(AsiList al) => joinStatements(al.Items);
+        String visitSeq(IReadOnlyList<IAsi> items) => joinStatements(items);
 
 
-        public String VisitErr(Err err)
-            => "error (" + (err.Item == null ? "" : err.Item.Accept(this)) + ")";
+        public String VisitSequence(Sequence seq)
+        {
+            return visitSeq(seq);
+        }
 
 
         public String VisitInt(Int ii) => ii.Value.ToString();
@@ -45,16 +47,13 @@ namespace Efekt
         }
 
 
-        public String VisitStruct(Struct s) => printRecord(s, "struct");
-
-
         public String VisitClass(Class cls) => printRecord(cls, "class");
 
 
-        String printRecord(IRecord r, String name)
+        String printRecord(Class r, String name)
         {
             var b = joinStatements(r.Items);
-            return b.Length == 0 ? name + " { }" : "struct { " + b + " }";
+            return b.Length == 0 ? name + " { }" : name + " { " + b + " }";
         }
 
 
@@ -100,8 +99,8 @@ namespace Efekt
 
 
         public String VisitIf(If iff) =>
-            "if " + iff.Test.Accept(this) + " then " + iff.Then.Accept(this)
-            + (iff.Otherwise == null ? "" : " else " + iff.Otherwise.Accept(this));
+            "if " + iff.Test.Accept(this) + " then " + visitSeq(iff.Then)
+            + (iff.Otherwise == null ? "" : " else " + visitSeq(iff.Otherwise));
 
 
         public String VisitAssign(Assign a)
@@ -160,7 +159,7 @@ namespace Efekt
         public String VisitAssert(Assert ast) => "assert " + ast.Exp.Accept(this);
 
 
-        public String VisitSimpleType(ISimpleType st)
+        public String VisitSimpleType(SimpleType st)
         {
             return st.Name;
         }

@@ -6,7 +6,7 @@ namespace Efekt
 {
     public sealed class SimpleEnv
     {
-        Dictionary<String, IAsi> dict;
+        Dictionary<String, IAsi> dict = new Dictionary<String, IAsi>();
 
         public SimpleEnv Parent { get; set; }
 

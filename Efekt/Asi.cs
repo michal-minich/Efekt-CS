@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -8,11 +9,10 @@ using JetBrains.Annotations;
 
 namespace Efekt
 {
-
     [ContractClass(typeof (IAsiContract))]
     public interface IAsi
     {
-        List<IExp> Attributes { get; set; }
+        List<Exp> Attributes { get; set; }
         T Accept<T>(IAsiVisitor<T> v) where T : class;
         Int32 Line { get; }
     }
@@ -21,11 +21,11 @@ namespace Efekt
     [ContractClassFor(typeof (IAsi))]
     abstract class IAsiContract : IAsi
     {
-        public List<IExp> Attributes
+        public List<Exp> Attributes
         {
             get
             {
-                Contract.Ensures(Contract.Result<List<IExp>>() != null);
+                Contract.Ensures(Contract.Result<List<Exp>>() != null);
                 return null;
             }
 
@@ -54,119 +54,88 @@ namespace Efekt
 
     public interface IHasEnv
     {
-        Env Env { get; set; }
+        Env Env { get; }
     }
 
 
-    [SuppressMessage("Microsoft.Design", "CA1040:AvoidEmptyInterfaces")]
-    public interface IExp : IAsi
+
+
+    public abstract  class SimpleType : Type
     {
+       public abstract String Name { get; }
     }
 
-
-    [SuppressMessage("Microsoft.Design", "CA1040:AvoidEmptyInterfaces")]
-    public interface IStm : IAsi
-    {
-    }
-
-
-    public interface IType : IExp
-    {
-    }
-
-
-    [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
-        MessageId = "Val")]
-    public interface IVal : IExp
-    {
-    }
-
-
-    public interface IAtom : IVal
-    {
-    }
-
-
-    public interface IErr : IStm, IType, IAtom
-    {
-    }
 
 
     public abstract class Asi : IAsi
     {
-        public List<IExp> Attributes { get; set; } = new List<IExp>();
+        public List<Exp> Attributes { get; set; } = new List<Exp>();
         public abstract T Accept<T>(IAsiVisitor<T> v) where T : class;
         public Int32 Line { get; set; }
         public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);
     }
 
 
-    public abstract class Exp : Asi, IExp
+    public abstract class Exp : Asi
     {
     }
 
 
-    public abstract class Stm : Asi, IStm
+    public abstract class Stm : Asi
     {
     }
 
 
-    public abstract class Type : Exp, IType
+    public abstract class Type : Exp
     {
     }
 
 
     [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
         MessageId = "Val")]
-    public abstract class Val : Exp, IVal
+    public abstract class Val : Exp
     {
     }
 
 
-    public abstract class Atom : Val, IAtom
+    public abstract class Atom : Val
     {
     }
 
 
-    public sealed class AsiList : Asi
+    public sealed class Sequence : Asi, IReadOnlyList<IAsi>
     {
-        public IReadOnlyList<IAsi> Items { get; set; }
+        List<IAsi> list;
 
 
-        public AsiList()
+        public Sequence()
         {
         }
 
 
-        public AsiList(IReadOnlyList<IAsi> items)
+        public Sequence(List<IAsi> list)
         {
-            Items = items;
+            this.list = list;
         }
 
 
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitAsiList(this);
-    }
+        public IEnumerator<IAsi> GetEnumerator() => list.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => list.GetEnumerator();
+
+        public Int32 Count => list.Count;
+
+        public IAsi this[Int32 index] => list[index];
 
 
-    public sealed class Err : Asi, IErr
-    {
-        [CanBeNull]
-        public IAsi Item { get; }
-
-
-        public Err()
+        public void Init(List<IAsi> items)
         {
+            Contract.Assume(list == null);
+            list = items;
         }
 
 
-        public Err(IAsi item)
-        {
-            Item = item;
-            Line = item.Line;
-        }
-
-
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitErr(this);
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSequence(this);
     }
 
 
@@ -189,7 +158,7 @@ namespace Efekt
     {
         public String Name { get; }
         public IdentCategory Category { get; }
-        [CanBeNull] public Declr DeclaredBy { get; set; }
+        public Declr DeclaredBy { get; set; }
         public List<Ident> UsedBy { get; } = new List<Ident>();
 
 
@@ -237,11 +206,11 @@ namespace Efekt
     public sealed class BinOpApply : Exp
     {
         public Ident Op { get; }
-        public IExp Op1 { get; set; }
-        public IExp Op2 { get; set; }
+        public Exp Op1 { get; }
+        public Exp Op2 { get; set; }
 
 
-        public BinOpApply(Ident op, IExp op1, IExp op2)
+        public BinOpApply(Ident op, Exp op1, Exp op2)
         {
             Op = op;
             Op1 = op1;
@@ -253,17 +222,18 @@ namespace Efekt
     }
 
 
-    public sealed class Declr : Exp
+
+    public sealed class Declr : Exp, IClassItem
     {
         public Boolean IsVar { get; set; }
         public Ident Ident { get; set; }
 
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
         [CanBeNull]
-        public IExp Type { get; set; }
+        public Exp Type { get; set; }
 
         [CanBeNull]
-        public IExp Value { get; set; }
+        public Exp Value { get; set; }
 
 
         public Declr()
@@ -271,7 +241,7 @@ namespace Efekt
         }
 
 
-        public Declr(Ident ident, [CanBeNull] IExp type, [CanBeNull] IExp value)
+        public Declr(Ident ident, [CanBeNull] Exp type, [CanBeNull] Exp value)
         {
             Ident = ident;
             Type = type;
@@ -286,7 +256,7 @@ namespace Efekt
     public sealed class Arr : Exp
     {
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public List<IExp> Items { get; set; }
+        public List<Exp> Items { get; set; }
 
         public Boolean IsEvaluated { get; set; }
 
@@ -297,7 +267,7 @@ namespace Efekt
 
 
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public Arr(List<IExp> items)
+        public Arr(List<Exp> items)
         {
             Items = items;
         }
@@ -307,36 +277,14 @@ namespace Efekt
     }
 
 
-    public interface IRecord : IHasEnv, IAsi
+    public interface IClassItem : IAsi
     {
-        IReadOnlyList<IAsi> Items { get; set; }
+
     }
 
-
-    public sealed class Struct : Type, IRecord
+    public sealed class Class : Type, IHasEnv
     {
-        public IReadOnlyList<IAsi> Items { get; set; }
-        public Env Env { get; set; }
-
-
-        public Struct()
-        {
-        }
-
-
-        public Struct(IReadOnlyList<IAsi> items)
-        {
-            Items = items;
-        }
-
-
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitStruct(this);
-    }
-
-
-    public sealed class Class : Type, IRecord
-    {
-        public IReadOnlyList<IAsi> Items { get; set; }
+        public IReadOnlyList<IClassItem> Items { get; set; }
         public Env Env { get; set; }
 
 
@@ -345,7 +293,7 @@ namespace Efekt
         }
 
 
-        public Class(IReadOnlyList<IAsi> items)
+        public Class(IReadOnlyList<IClassItem> items)
         {
             Items = items;
         }
@@ -358,10 +306,10 @@ namespace Efekt
     public sealed class Fn : Val, IHasEnv
     {
         public IReadOnlyList<Declr> Params { get; set; }
-        public IReadOnlyList<IAsi> BodyItems { get; set; }
+        public Sequence BodyItems { get; set; }
         public Env Env { get; set; }
         public Int32 CountMandatoryParams { get; set; }
-        public IExp ExtensionArg { get; set; }
+        public Exp ExtensionArg { get; set; }
 
 
         public Fn()
@@ -369,7 +317,7 @@ namespace Efekt
         }
 
 
-        public Fn(IReadOnlyList<Declr> @params, IReadOnlyList<IAsi> bodyItems)
+        public Fn(IReadOnlyList<Declr> @params, Sequence bodyItems)
         {
             Params = @params;
             BodyItems = bodyItems;
@@ -384,7 +332,7 @@ namespace Efekt
     public sealed class FnApply : Exp
     {
         public IAsi Fn { get; }
-        public IReadOnlyCollection<IExp> Args { get; set; }
+        public IReadOnlyCollection<Exp> Args { get; set; }
 
 
         public FnApply(IAsi fn)
@@ -393,7 +341,7 @@ namespace Efekt
         }
 
 
-        public FnApply(IAsi fn, IReadOnlyCollection<IExp> args)
+        public FnApply(IAsi fn, IReadOnlyCollection<Exp> args)
         {
             Fn = fn;
             Args = args;
@@ -409,7 +357,7 @@ namespace Efekt
         MessageId = "New")]
     public sealed class New : Exp
     {
-        public IExp Exp { get; set; }
+        public Exp Exp { get; set; }
 
 
         public New()
@@ -417,7 +365,7 @@ namespace Efekt
         }
 
 
-        public New(IExp exp)
+        public New(Exp exp)
         {
             Exp = exp;
         }
@@ -472,11 +420,11 @@ namespace Efekt
         MessageId = "If")]
     public sealed class If : Exp
     {
-        public IExp Test { get; set; }
-        public IAsi Then { get; set; }
+        public Exp Test { get; set; }
+        public Sequence Then { get; set; }
 
         [CanBeNull]
-        public IAsi Otherwise { get; set; }
+        public Sequence Otherwise { get; set; }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitIf(this);
@@ -485,11 +433,11 @@ namespace Efekt
 
     public sealed class Assign : Exp
     {
-        public IExp Target { get; set; }
-        public IExp Value { get; }
+        public Exp Target { get; }
+        public Exp Value { get; }
 
 
-        public Assign(IExp target, IExp value)
+        public Assign(Exp target, Exp value)
         {
             Target = target;
             Value = value;
@@ -500,9 +448,9 @@ namespace Efekt
     }
 
 
-    public sealed class Import : Stm
+    public sealed class Import : Stm, IClassItem
     {
-        public IExp QualifiedIdent { get; set; }
+        public Exp QualifiedIdent { get; set; }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitImport(this);
@@ -544,10 +492,10 @@ namespace Efekt
     public sealed class Break : Stm
     {
         [CanBeNull]
-        public IExp Test { get; }
+        public Exp Test { get; }
 
 
-        public Break([CanBeNull] IExp test)
+        public Break([CanBeNull] Exp test)
         {
             Test = test;
         }
@@ -562,10 +510,10 @@ namespace Efekt
     public sealed class Continue : Stm
     {
         [CanBeNull]
-        public IExp Test { get; }
+        public Exp Test { get; }
 
 
-        public Continue([CanBeNull] IExp test)
+        public Continue([CanBeNull] Exp test)
         {
             Test = test;
         }
@@ -598,17 +546,6 @@ namespace Efekt
         public IReadOnlyList<IAsi> Items { get; set; }
 
 
-        public Repeat()
-        {
-        }
-
-
-        public Repeat(IReadOnlyList<IAsi> items)
-        {
-            Items = items;
-        }
-
-
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitRepeat(this);
     }
 
@@ -620,19 +557,6 @@ namespace Efekt
         public IReadOnlyCollection<IAsi> Items { get; set; }
 
 
-        public ForEach()
-        {
-        }
-
-
-        public ForEach(Ident ident, IAsi iterable, IReadOnlyCollection<IAsi> items)
-        {
-            Ident = ident;
-            Iterable = iterable;
-            Items = items;
-        }
-
-
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitForEach(this);
     }
 
@@ -642,7 +566,8 @@ namespace Efekt
     public sealed class Throw : Stm
     {
         [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix")]
-    [CanBeNull]    public IAsi Ex { get; }
+        [CanBeNull]
+        public IAsi Ex { get; }
 
 
         public Throw(IAsi ex)
@@ -669,24 +594,6 @@ namespace Efekt
 
         [CanBeNull]
         public IReadOnlyList<IAsi> FinallyItems { get; set; }
-
-
-        public Try()
-        {
-        }
-
-
-        public Try(
-            IReadOnlyList<IAsi> tryItems,
-            [CanBeNull] IReadOnlyList<IAsi> catchItems,
-            [CanBeNull] Ident exVar,
-            [CanBeNull] IReadOnlyList<IAsi> finallyItems)
-        {
-            TryItems = tryItems;
-            CatchItems = catchItems;
-            ExVar = exVar;
-            FinallyItems = finallyItems;
-        }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitTry(this);
@@ -723,15 +630,9 @@ namespace Efekt
     }
 
 
-    public interface ISimpleType : IType
+    public sealed class VoidType : SimpleType
     {
-        String Name { get; }
-    }
-
-
-    public sealed class VoidType : Asi, ISimpleType
-    {
-        public String Name => "Void";
+        public override String Name => "Void";
 
         public static VoidType Instance { get; } = new VoidType();
 
@@ -739,9 +640,9 @@ namespace Efekt
     }
 
 
-    public sealed class AnyType : Asi, ISimpleType
+    public sealed class AnyType : SimpleType
     {
-        public String Name => "Any";
+        public override String Name => "Any";
 
         public static AnyType Instance { get; } = new AnyType();
 
@@ -749,19 +650,9 @@ namespace Efekt
     }
 
 
-    public sealed class ErrType : Asi, ISimpleType
+    public sealed class BoolType : SimpleType
     {
-        public String Name => "Err";
-
-        public static ErrType Instance { get; } = new ErrType();
-
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
-    }
-
-
-    public sealed class BoolType : Asi, ISimpleType
-    {
-        public String Name => "Bool";
+        public override String Name => "Bool";
 
         public static BoolType Instance { get; } = new BoolType();
 
@@ -769,9 +660,9 @@ namespace Efekt
     }
 
 
-    public sealed class IntType : Asi, ISimpleType
+    public sealed class IntType : SimpleType
     {
-        public String Name => "Int";
+        public override String Name => "Int";
 
         public static IntType Instance { get; } = new IntType();
 
@@ -779,9 +670,9 @@ namespace Efekt
     }
 
 
-    public sealed class CharType : Asi, ISimpleType
+    public sealed class CharType : SimpleType
     {
-        public String Name => "Char";
+        public override String Name => "Char";
 
         public static CharType Instance { get; } = new CharType();
 
@@ -789,9 +680,9 @@ namespace Efekt
     }
 
 
-    public sealed class ArrType : Asi, ISimpleType
+    public sealed class ArrType : SimpleType
     {
-        public String Name => "List";
+        public override String Name => "List";
 
         public static ArrType Instance { get; } = new ArrType();
 
@@ -799,9 +690,9 @@ namespace Efekt
     }
 
 
-    public sealed class FnType : Asi, ISimpleType
+    public sealed class FnType : SimpleType
     {
-        public String Name => "Fn";
+        public override String Name => "Fn";
 
         public static FnType Instance { get; } = new FnType();
 
@@ -809,9 +700,9 @@ namespace Efekt
     }
 
 
-    public sealed class ClassType : Asi, ISimpleType
+    public sealed class ClassType : SimpleType
     {
-        public String Name => "Class";
+        public override String Name => "Class";
 
         public static ClassType Instance { get; } = new ClassType();
 

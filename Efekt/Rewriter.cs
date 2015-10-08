@@ -19,8 +19,8 @@ namespace Efekt
 
     public sealed class Rewriter
     {
-        public Prog MakeProgram(IReadOnlyList<IAsi> prelude,
-                                Dictionary<String, IReadOnlyList<IAsi>> modules)
+        public Prog MakeProgram(IReadOnlyList<Declr> prelude,
+                                Dictionary<String, IReadOnlyList<IClassItem>> modules)
         {
             var p = MakeModule("prelude", prelude);
             var mods = modules.Select(m => MakeModule(m.Key, m.Value));
@@ -28,9 +28,9 @@ namespace Efekt
         }
 
 
-        public Declr MakeModule(String moduleName, IReadOnlyList<IAsi> moduleItems)
+        public Declr MakeModule(String moduleName, IReadOnlyList<IClassItem> moduleItems)
         {
-            IReadOnlyList<IAsi> modItems;
+            IReadOnlyList<IClassItem> modItems;
             if (moduleName != "prelude")
                 modItems = new Import
                 {
@@ -42,10 +42,10 @@ namespace Efekt
             return new Declr(
                 new Ident(moduleName, IdentCategory.Value),
                 null,
-                new New(new Struct(modItems)))
+                new New(new Class(modItems)))
             {
                 IsVar = true,
-                Attributes = new List<IExp> { new Ident("public") }
+                Attributes = new List<Exp> { new Ident("public") }
             };
         }
     }

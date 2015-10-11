@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 
@@ -45,7 +46,6 @@ namespace Efekt
                 Console.Write("Application Exception: ");
                 Console.WriteLine(ex.Message);
             }
-
             catch (Exception ex)
             {
                 Console.WriteLine("Unexpected " + ex.GetType().Name + ": " + ex.Message);
@@ -73,6 +73,7 @@ namespace Efekt
             var modules = new Dictionary<String, IReadOnlyList<IClassItem>>();
             foreach (var path in filePaths.Reverse())
             {
+                Contract.Assume(path != null);
                 var txt = File.ReadAllText(path);
                 var items = p.Parse(txt, ValidationList);
                 modules.Add(Path.GetFileNameWithoutExtension(path), items.Cast<IClassItem>().ToList());

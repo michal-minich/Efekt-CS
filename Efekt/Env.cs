@@ -40,15 +40,17 @@ namespace Efekt
         public Class Owner { get; }
 
         [CanBeNull]
-        public Env Parent { get; }
+        Env parent { get; }
 
-        public Dictionary<String, EnvItem> Dict { get; } = new Dictionary<String, EnvItem>();
+        readonly Dictionary<String, EnvItem> dict = new Dictionary<String, EnvItem>();
 
-        public List<Env> ImportedEnvs { get; set; } = new List<Env>();
+        readonly List<Env> imports = new List<Env>();
 
 
         public Env(ValidationList validations, Class owner)
         {
+            Contract.Requires(validations != null);
+
             this.validations = validations;
             Owner = owner;
         }
@@ -56,37 +58,30 @@ namespace Efekt
 
         public Env(ValidationList validations, Class owner, Env parent)
         {
+            Contract.Requires(validations != null);
             Contract.Requires(parent != null);
 
             this.validations = validations;
             Owner = owner;
-            Parent = parent;
+            this.parent = parent;
         }
 
 
-        Env(Dictionary<String, EnvItem> dictionary)
+        Env(ValidationList validations, Dictionary<String, EnvItem> dictionary)
         {
-            Dict = dictionary;
-        }
+            Contract.Requires(validations != null);
 
-
-        public void CopyFrom(Env env)
-        {
-            ImportedEnvs = env.ImportedEnvs;
-            foreach (var kvp in env.Dict)
-                if (Dict.ContainsKey(kvp.Key))
-                    Dict[kvp.Key] = kvp.Value;
-                else
-                    Dict.Add(kvp.Key, kvp.Value);
+            this.validations = validations;
+            dict = dictionary;
         }
 
 
         public void Declare(Accessibility accessibility, String name, Exp value = null)
         {
-            if (Dict.ContainsKey(name))
+            if (dict.ContainsKey(name))
                 validations.GenericWarning("variable '" + name + "' is already declared",
                                            Void.Instance);
-            Dict.Add(name, new EnvItem(accessibility, value));
+            dict.Add(name, new EnvItem(accessibility, value));
         }
 
 
@@ -94,11 +89,11 @@ namespace Efekt
         {
             var e = getEnvDeclaring(name, this);
             CheckAccessibility(name, e, "write");
-            e.Dict[name] = new EnvItem(e.Dict[name].Accessibility, value);
+            e.dict[name] = new EnvItem(e.dict[name].Accessibility, value);
         }
 
 
-        public void AddImport(Env ie) => ImportedEnvs.Insert(0, new Env(ie.Dict));
+        public void AddImport(Env ie) => imports.Insert(0, new Env(validations, ie.dict));
 
 
         public IAsi GetValueOrNull(String name)
@@ -114,8 +109,8 @@ namespace Efekt
             if (e == null)
                 return null;
             if (e == this)
-                return e.Dict[name].Item;
-            var i = e.Dict[name];
+                return e.dict[name].Item;
+            var i = e.dict[name];
             if (i.Accessibility == Accessibility.Private)
                 validations.GenericWarning(
                     "Cannot " + accessType + " private variable '" + name + "' from here.",
@@ -126,9 +121,9 @@ namespace Efekt
 
         public IAsi GetOwnValueOrNull(String name)
         {
-            if (Dict.ContainsKey(name))
+            if (dict.ContainsKey(name))
             {
-                var i = Dict[name];
+                var i = dict[name];
                 if (i.Accessibility == Accessibility.Private)
                     validations.GenericWarning(
                         "Cannot read private member variable '" + name + "' from here.",
@@ -146,13 +141,13 @@ namespace Efekt
             var indent = "";
             do
             {
-                foreach (var d in e.Dict)
+                foreach (var d in e.dict)
                 {
                     Console.WriteLine(indent + d.Value.Accessibility + " var " + d.Key + " = " +
                                       d.Value.Item.Accept(Program.DefaultPrinter));
                 }
                 indent += "  ";
-                e = e.Parent;
+                e = e.parent;
             } while (e != null);
         }
 
@@ -170,18 +165,18 @@ namespace Efekt
         [CanBeNull]
         static Env getEnvDeclaringOrNull(String name, Env env)
         {
-            if (env.Dict.ContainsKey(name))
+            if (env.dict.ContainsKey(name))
                 return env;
-            if (env.ImportedEnvs.Count != 0)
+            if (env.imports.Count != 0)
             {
-                foreach (var ie in env.ImportedEnvs)
+                foreach (var ie in env.imports)
                 {
-                    if (ie.Dict.ContainsKey(name))
+                    if (ie.dict.ContainsKey(name))
                         return ie;
                 }
                 return null;
             }
-            return env.Parent == null ? null : getEnvDeclaringOrNull(name, env.Parent);
+            return env.parent == null ? null : getEnvDeclaringOrNull(name, env.parent);
         }
     }
 }

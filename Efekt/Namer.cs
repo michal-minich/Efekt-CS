@@ -1,32 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 
 namespace Efekt
 {
     public sealed class Namer : IAsiVisitor<Void>
     {
-        SimpleEnv env;
-        Class currentClass;
+        SimpleEnv<Declr> env;
         ValidationList validations;
+        String declrName;
+        readonly Dictionary<String, SimpleEnv<Declr>> classEnvs = new Dictionary<String, SimpleEnv<Declr>>();
 
 
         public void Name(Prog prog, ValidationList validationsList)
         {
             validations = validationsList;
-            env = new SimpleEnv();
-            foreach (var item in prog.Modules)
-                item.Accept(this);
-            currentClass = null;
+            env = new SimpleEnv<Declr>();
+            VisitDeclr(prog.GlobalModule);
             env = null;
+            validations = null;
         }
 
 
         public Void VisitSequence(Sequence seq)
         {
             var prevEnv = env;
-            env = new SimpleEnv(env);
-            foreach (var item in (IReadOnlyList<IAsi>)seq)
+            env = new SimpleEnv<Declr>(env);
+            foreach (var item in seq)
                 item.Accept(this);
             env = prevEnv;
             return Void.Instance;
@@ -41,37 +42,45 @@ namespace Efekt
 
         public Void VisitIdent(Ident i)
         {
-            var declaredBy = env.GetValueOrNull(i.Name);
-            if (declaredBy == null)
+            if (i.Name.StartsWith("__"))
+                return Void.Instance;
+            var d = env.GetValueOrNull(i.Name);
+            if (d == null)
             {
                 validations.ImplicitVar(i);
-                var x = new Ident(i.Name, IdentCategory.Value);
-                env.Declare(x.Name, x);
-                declaredBy = x;
+                var x = new Declr(new Ident(i.Name, IdentCategory.Value), null, Void.Instance);
+                env.Declare(x.Ident.Name, x);
+                d = x;
             }
-            if (declaredBy is Label)
-                throw new EfektException(
-                    "expected variable instead of label with the name: " + i.Name);
-            var declaredByIdent = (Ident)declaredBy;
-            i.DeclaredBy = null;
-            declaredByIdent.UsedBy.Add(i);
+            i.DeclaredBy = d;
+            i.DeclaredBy.Ident.UsedBy.Add(i);
             return Void.Instance;
         }
 
 
         public Void VisitBinOpApply(BinOpApply opa)
         {
-            opa.Op.Accept(this);
-            opa.Op1.Accept(this);
-            opa.Op2.Accept(this);
+            switch (opa.Op.Name)
+            {
+                case ".":
+                    opa.Op1.Accept(this);
+                    break;
+                default:
+                    VisitFnApply(new FnApply(opa.Op, new List<Exp> { opa.Op1, opa.Op2 }));
+                    break;
+            }
             return Void.Instance;
         }
 
 
         public Void VisitDeclr(Declr d)
         {
-            env.Declare(d.Ident.Name, d.Ident);
+            var prevDeclrName = declrName;
+            declrName = d.Ident.Name;
             d.Type?.Accept(this);
+            d.Value?.Accept(this);
+            env.Declare(d.Ident.Name, d);
+            declrName = prevDeclrName;
             return Void.Instance;
         }
 
@@ -86,13 +95,28 @@ namespace Efekt
 
         public Void VisitClass(Class cls)
         {
-            var prevStruct = currentClass;
             var prevEnv = env;
-            currentClass = cls;
-            env = new SimpleEnv(env);
-            foreach (var item in cls.Items)
-                item.Accept(this);
-            currentClass = prevStruct;
+            env = new SimpleEnv<Declr>(env);
+
+            if (declrName != null)
+                classEnvs.Add(declrName, env);
+
+            foreach (var imp in cls.Items.TakeWhile(c => c is Import))
+                VisitImport((Import)imp);
+
+            var declrs = cls.Items.OfType<Declr>().ToList();
+
+            foreach (var d in declrs)
+                env.Declare(d.Ident.Name, d);
+
+            var prevDeclrName = declrName;
+            foreach (var d in declrs)
+            {
+                declrName = d.Ident.Name;
+                d.Type?.Accept(this);
+                d.Value?.Accept(this);
+            }
+            declrName = prevDeclrName;
             env = prevEnv;
             return Void.Instance;
         }
@@ -100,10 +124,12 @@ namespace Efekt
 
         public Void VisitFn(Fn fn)
         {
+            var prevEnv = env;
+            env = new SimpleEnv<Declr>(env);
             foreach (var item in fn.Params)
                 item.Accept(this);
-            foreach (var item in fn.BodyItems)
-                item.Accept(this);
+            VisitSequence(fn.Body);
+            env = prevEnv;
             return Void.Instance;
         }
 
@@ -154,7 +180,9 @@ namespace Efekt
 
         public Void VisitImport(Import imp)
         {
-            imp.QualifiedIdent.Accept(this);
+            var name = ((Ident)imp.QualifiedIdent).Name;
+            var d = env.GetValueOrNull(name);
+            env.AddImport(name, classEnvs[d.Ident.Name]);
             return Void.Instance;
         }
 
@@ -169,21 +197,13 @@ namespace Efekt
 
         public Void VisitGoto(Goto gt)
         {
-            var a = env.GetValueOrNull(gt.LabelName.Name);
-            var i = a as Ident;
-            if (i != null)
-                throw new EfektException("expected label, got variable: " + i.Name);
-            var l = (Label)a;
-            //gt.LabelName.DeclaredBy = l.LabelName;
-            l.LabelName.UsedBy.Add(gt.LabelName);
-            return Void.Instance;
+            throw new NotImplementedException();
         }
 
 
         public Void VisitLabel(Label lbl)
         {
-            // env.Declare(lbl.LabelName.Name, lbl);
-            return Void.Instance;
+            throw new NotImplementedException();
         }
 
 
@@ -208,7 +228,8 @@ namespace Efekt
 
         public Void VisitRepeat(Repeat rp)
         {
-            throw new NotImplementedException();
+            VisitSequence(rp.Sequence);
+            return Void.Instance;
         }
 
 
@@ -216,8 +237,7 @@ namespace Efekt
         {
             fe.Ident.Accept(this);
             fe.Iterable.Accept(this);
-            foreach (var item in fe.Items)
-                item.Accept(this);
+            VisitSequence(fe.Sequence);
             return Void.Instance;
         }
 
@@ -231,7 +251,10 @@ namespace Efekt
 
         public Void VisitTry(Try tr)
         {
-            throw new NotImplementedException();
+            VisitSequence(tr.TrySequence);
+            VisitSequence(tr.CatchSequence);
+            VisitSequence(tr.FinallySequence);
+            return Void.Instance;
         }
 
 
@@ -251,7 +274,7 @@ namespace Efekt
 
         public Void VisitSimpleType(SimpleType st)
         {
-            throw new NotImplementedException();
+            return Void.Instance;
         }
     }
 }

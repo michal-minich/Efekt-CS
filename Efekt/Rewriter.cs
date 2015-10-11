@@ -7,12 +7,12 @@ namespace Efekt
 {
     public class Prog
     {
-        public IReadOnlyList<Declr> Modules { get; set; }
+        public Declr GlobalModule { get; }
 
 
-        public Prog(IReadOnlyList<Declr> modules)
+        public Prog(Declr globalModule)
         {
-            Modules = modules;
+            GlobalModule = globalModule;
         }
     }
 
@@ -22,16 +22,16 @@ namespace Efekt
         public Prog MakeProgram(IReadOnlyList<Declr> prelude,
                                 Dictionary<String, IReadOnlyList<IClassItem>> modules)
         {
-            var p = MakeModule("prelude", prelude);
+            var p = MakeModule("prelude", prelude, false);
             var mods = modules.Select(m => MakeModule(m.Key, m.Value));
-            return new Prog(p.Append(mods).ToList());
+            return new Prog(MakeModule("global", p.Append(mods).ToList(), false));
         }
 
 
-        public Declr MakeModule(String moduleName, IReadOnlyList<IClassItem> moduleItems)
+        public Declr MakeModule(String moduleName, IReadOnlyList<IClassItem> moduleItems, bool importPrelude = true)
         {
             IReadOnlyList<IClassItem> modItems;
-            if (moduleName != "prelude")
+            if (importPrelude)
                 modItems = new Import
                 {
                     QualifiedIdent = new Ident("prelude", IdentCategory.Value)
@@ -45,7 +45,7 @@ namespace Efekt
                 new New(new Class(modItems)))
             {
                 IsVar = true,
-                Attributes = new List<Exp> { new Ident("public") }
+                Attributes = new List<Ident> { new Ident("public") }
             };
         }
     }

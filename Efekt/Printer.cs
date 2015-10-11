@@ -59,7 +59,7 @@ namespace Efekt
 
         public String VisitFn(Fn fn)
         {
-            var b = joinStatementsOneLine(fn.BodyItems);
+            var b = joinStatementsOneLine(fn.Body);
             return "fn " + joinList(fn.Params) + (fn.Params.Count == 0 ? "" : " ")
                    + (b.Length == 0 ? "{ }" : "{ " + b + " }");
         }
@@ -131,12 +131,12 @@ namespace Efekt
             => "return" + (r.Value == null ? "" : " " + r.Value.Accept(this));
 
 
-        public String VisitRepeat(Repeat rp) => "repeat {" + joinStatements(rp.Items) + "}";
+        public String VisitRepeat(Repeat rp) => "repeat {" + joinStatements(rp.Sequence) + "}";
 
 
         public String VisitForEach(ForEach fe)
             => "foreach " + fe.Ident.Name + " in " + fe.Iterable.Accept(this)
-               + " {" + joinStatements(fe.Items) + "}";
+               + " {" + joinStatements(fe.Sequence) + "}";
 
 
         public String VisitThrow(Throw th)
@@ -145,11 +145,11 @@ namespace Efekt
 
         public String VisitTry(Try tr)
         {
-            var s = "try " + " {" + joinStatements(tr.TryItems) + "}";
-            if (tr.CatchItems != null)
-                s += "\ncatch " + " {" + joinStatements(tr.CatchItems) + "}";
-            if (tr.FinallyItems != null)
-                s += "\nfinally " + " {" + joinStatements(tr.FinallyItems) + "}";
+            var s = "try " + " {" + joinStatements(tr.TrySequence) + "}";
+            if (tr.CatchSequence != null)
+                s += "\ncatch " + " {" + joinStatements(tr.CatchSequence) + "}";
+            if (tr.FinallySequence != null)
+                s += "\nfinally " + " {" + joinStatements(tr.FinallySequence) + "}";
             return s;
         }
 

@@ -12,7 +12,7 @@ namespace Efekt
     [ContractClass(typeof (IAsiContract))]
     public interface IAsi
     {
-        List<Exp> Attributes { get; set; }
+        IReadOnlyList<Ident> Attributes { get; set; }
         T Accept<T>(IAsiVisitor<T> v) where T : class;
         Int32 Line { get; }
     }
@@ -21,11 +21,11 @@ namespace Efekt
     [ContractClassFor(typeof (IAsi))]
     abstract class IAsiContract : IAsi
     {
-        public List<Exp> Attributes
+        public IReadOnlyList<Ident> Attributes
         {
             get
             {
-                Contract.Ensures(Contract.Result<List<Exp>>() != null);
+                Contract.Ensures(Contract.Result<IReadOnlyList<Ident>>() != null);
                 return null;
             }
 
@@ -66,7 +66,7 @@ namespace Efekt
 
     public abstract class Asi : IAsi
     {
-        public List<Exp> Attributes { get; set; } = new List<Exp>();
+        public IReadOnlyList<Ident> Attributes { get; set; }
         public abstract T Accept<T>(IAsiVisitor<T> v) where T : class;
         public Int32 Line { get; set; }
         public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);
@@ -252,7 +252,7 @@ namespace Efekt
     public sealed class Arr : Exp
     {
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public List<Exp> Items { get; set; }
+        public IReadOnlyList<Exp> Items { get; set; }
 
         public Boolean IsEvaluated { get; set; }
 
@@ -263,7 +263,7 @@ namespace Efekt
 
 
         [SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public Arr(List<Exp> items)
+        public Arr(IReadOnlyList<Exp> items)
         {
             Items = items;
         }
@@ -302,7 +302,7 @@ namespace Efekt
     public sealed class Fn : Val, IHasEnv
     {
         public IReadOnlyList<Declr> Params { get; set; }
-        public Sequence BodyItems { get; set; }
+        public Sequence Body { get; set; }
         public Env Env { get; set; }
         public Int32 CountMandatoryParams { get; set; }
         public Exp ExtensionArg { get; set; }
@@ -313,10 +313,10 @@ namespace Efekt
         }
 
 
-        public Fn(IReadOnlyList<Declr> @params, Sequence bodyItems)
+        public Fn(IReadOnlyList<Declr> @params, Sequence body)
         {
             Params = @params;
-            BodyItems = bodyItems;
+            Body = body;
             CountMandatoryParams = @params.Count;
         }
 
@@ -328,7 +328,7 @@ namespace Efekt
     public sealed class FnApply : Exp
     {
         public IAsi Fn { get; }
-        public IReadOnlyCollection<Exp> Args { get; set; }
+        public IReadOnlyList<Exp> Args { get; set; }
 
 
         public FnApply(IAsi fn)
@@ -337,7 +337,7 @@ namespace Efekt
         }
 
 
-        public FnApply(IAsi fn, IReadOnlyCollection<Exp> args)
+        public FnApply(IAsi fn, IReadOnlyList<Exp> args)
         {
             Fn = fn;
             Args = args;
@@ -524,10 +524,10 @@ namespace Efekt
     public sealed class Return : Stm
     {
         [CanBeNull]
-        public IAsi Value { get; }
+        public Exp Value { get; }
 
 
-        public Return([CanBeNull] IAsi value)
+        public Return([CanBeNull] Exp value)
         {
             Value = value;
         }
@@ -539,7 +539,7 @@ namespace Efekt
 
     public sealed class Repeat : Stm
     {
-        public IReadOnlyList<IAsi> Items { get; set; }
+        public Sequence Sequence { get; set; }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitRepeat(this);
@@ -549,8 +549,8 @@ namespace Efekt
     public sealed class ForEach : Stm
     {
         public Ident Ident { get; set; }
-        public IAsi Iterable { get; set; }
-        public IReadOnlyCollection<IAsi> Items { get; set; }
+        public Exp Iterable { get; set; }
+        public Sequence Sequence { get; set; }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitForEach(this);
@@ -563,10 +563,10 @@ namespace Efekt
     {
         [SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix")]
         [CanBeNull]
-        public IAsi Ex { get; }
+        public Exp Ex { get; }
 
 
-        public Throw(IAsi ex)
+        public Throw(Exp ex)
         {
             Ex = ex;
         }
@@ -580,16 +580,16 @@ namespace Efekt
         MessageId = "Try")]
     public sealed class Try : Stm
     {
-        public IReadOnlyList<IAsi> TryItems { get; set; }
+        public Sequence TrySequence { get; set; }
 
         [CanBeNull]
-        public IReadOnlyList<IAsi> CatchItems { get; set; }
+        public Sequence CatchSequence { get; set; }
 
         [CanBeNull]
         public Ident ExVar { get; set; }
 
         [CanBeNull]
-        public IReadOnlyList<IAsi> FinallyItems { get; set; }
+        public Sequence FinallySequence { get; set; }
 
 
         public override T Accept<T>(IAsiVisitor<T> v) => v.VisitTry(this);
@@ -598,10 +598,10 @@ namespace Efekt
 
     public sealed class Assume : Stm
     {
-        public IAsi Exp { get; }
+        public Exp Exp { get; }
 
 
-        public Assume(IAsi exp)
+        public Assume(Exp exp)
         {
             Exp = exp;
         }
@@ -613,10 +613,10 @@ namespace Efekt
 
     public sealed class Assert : Stm
     {
-        public IAsi Exp { get; }
+        public Exp Exp { get; }
 
 
-        public Assert(IAsi exp)
+        public Assert(Exp exp)
         {
             Exp = exp;
         }

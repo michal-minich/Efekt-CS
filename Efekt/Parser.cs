@@ -225,9 +225,9 @@ namespace Efekt
         }
 
 
-        List<Exp> parseAttributes()
+        List<Ident> parseAttributes()
         {
-            var attrs = new List<Exp>();
+            var attrs = new List<Ident>();
             while (matchChar('@'))
             {
                 var i = tryParseIdent();
@@ -280,7 +280,7 @@ namespace Efekt
                     //asi = new Err();
                     throw new UnexpectedException();
                 }
-                fn.BodyItems = new Sequence(new List<IAsi> { asi });
+                fn.Body = new Sequence(new List<IAsi> { asi });
             }
             else
             {
@@ -288,10 +288,10 @@ namespace Efekt
                 if (b == null)
                 {
                     validations.GenericWarning("expected '{...}' or '=>' after 'fn ...'", fn);
-                    //fn.BodyItems = new List<IAsi> { new Err() };
+                    //fn.Body = new List<IAsi> { new Err() };
                     throw new UnexpectedException();
                 }
-                fn.BodyItems = new Sequence(b);
+                fn.Body = new Sequence(b);
             }
 
             validateParamsOrder(fn);
@@ -553,7 +553,7 @@ namespace Efekt
                 return new Continue(null);
 
             if (matchWord("return"))
-                return new Return(skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
+                return new Return((Exp)skipWhiteButNoNewLineAnd(() => parseCombinedAsi()));
 
             if (matchWord("repeat"))
             {
@@ -565,7 +565,7 @@ namespace Efekt
                     validations.GenericWarning("Expected scoped after repeat", rp);
                     b = new List<IAsi>();
                 }
-                rp.Items = b;
+                rp.Sequence = new Sequence(b);
                 return rp;
             }
 
@@ -579,11 +579,11 @@ namespace Efekt
                 var isIn = matchWord("in");
                 Contract.Assume(isIn);
                 skipWhite();
-                fe.Iterable = parseCombinedAsi();
+                fe.Iterable = (Exp)parseCombinedAsi();
                 Contract.Assume(fe.Iterable != null);
                 skipWhite();
-                fe.Items = tryParseBracedList('{', '}', fe);
-                Contract.Assume(fe.Items != null);
+                fe.Sequence = new Sequence(tryParseBracedList('{', '}', fe));
+                Contract.Assume(fe.Sequence != null);
                 return fe;
             }
 
@@ -616,7 +616,7 @@ namespace Efekt
 
 
                 skipWhite();
-                tr.TryItems = tryParseBracedList('{', '}', tr);
+                tr.TrySequence = new Sequence(tryParseBracedList('{', '}', tr));
 
                 skipWhite();
                 if (matchWord("catch"))
@@ -624,14 +624,14 @@ namespace Efekt
                     skipWhite();
                     tr.ExVar = tryParseIdent();
                     skipWhite();
-                    tr.CatchItems = tryParseBracedList('{', '}', tr);
+                    tr.CatchSequence = new Sequence(tryParseBracedList('{', '}', tr));
                 }
 
                 skipWhite();
                 if (matchWord("finally"))
                 {
                     skipWhite();
-                    tr.FinallyItems = tryParseBracedList('{', '}', tr);
+                    tr.FinallySequence = new Sequence(tryParseBracedList('{', '}', tr));
                 }
 
                 return tr;
@@ -758,7 +758,7 @@ namespace Efekt
             if (i != null)
             {
                 var d3 = a(new Declr(i, null, null) { IsVar = isVar, Attributes = i.Attributes });
-                i.Attributes = new List<Exp>();
+                i.Attributes = new List<Ident>();
                 return d3;
             }
 
@@ -773,7 +773,7 @@ namespace Efekt
                         IsVar = isVar,
                         Attributes = i2.Attributes
                     });
-                    i2.Attributes = new List<Exp>();
+                    i2.Attributes = new List<Ident>();
                     return d4;
                 }
                 var d2 = assign.Target as Declr;

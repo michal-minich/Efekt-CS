@@ -1,3 +1,9 @@
+@public var C = class {
+    var a = 1
+    var b = 2
+    @public var d = fn => a + b
+}
 var start = fn {
-    2 + 1
+    var c = new C
+    c.d()
 }

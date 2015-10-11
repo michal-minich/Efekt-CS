@@ -29,18 +29,13 @@ namespace Efekt
             global = env = new Env(validations, prog);
             prog.Env = global;
             var res = visitSeq(items, env, env);
-            global = env = null;
-            current = null;
-            validations = null;
             return res;
         }
 
 
         public IAsi Run(Prog prog, ValidationList validationList)
         {
-            if (prog.Modules.Count == 0)
-                return new Void();
-            Eval(prog.Modules, validationList);
+            Eval(((Class)((New)prog.GlobalModule.Value).Exp).Items, validationList);
             var f = start as Fn;
             if (f == null)
                 return start;
@@ -131,7 +126,7 @@ namespace Efekt
             var mFn = mExt as Fn;
             if (mFn == null)
                 validations.GenericWarning("member extension '{0}' must be a func", member);
-            var extFn = new Fn(mFn.Params, mFn.BodyItems)
+            var extFn = new Fn(mFn.Params, mFn.Body)
             {
                 Env = mFn.Env,
                 CountMandatoryParams = mFn.CountMandatoryParams,
@@ -142,7 +137,7 @@ namespace Efekt
         }
 
 
-        Exp copyIfValue(Exp exp, List<Exp> targetAttrs)
+        Exp copyIfValue(Exp exp, IEnumerable<Exp> targetAttrs)
         {
             if (hasSimpleAttr(targetAttrs, "byref"))
                 return exp;
@@ -252,7 +247,7 @@ namespace Efekt
 
 
         public IAsi VisitFn(Fn fn)
-            => new Fn(fn.Params, fn.BodyItems)
+            => new Fn(fn.Params, fn.Body)
             {
                 Env = env,
                 CountMandatoryParams = fn.CountMandatoryParams,
@@ -285,7 +280,7 @@ namespace Efekt
             var prevEnv = env;
             var envForParams = new Env(validations, fn.Env.Owner, fn.Env);
             evalParamsAndArgs(fn, fna.Fn, fna.Args.ToArray(), envForParams);
-            return visitSeq(fn.BodyItems, envForParams, prevEnv);
+            return visitSeq(fn.Body, envForParams, prevEnv);
         }
 
 
@@ -518,7 +513,7 @@ namespace Efekt
 
         public IAsi VisitRepeat(Repeat rp)
         {
-            return repeatWhile(() => true, rp.Items);
+            return repeatWhile(() => true, rp.Sequence);
         }
 
 
@@ -571,7 +566,7 @@ namespace Efekt
                 var hasItem = en.MoveNext();
                 env.SetValue(fe.Ident.Name, en.Current);
                 return hasItem;
-            }, fe.Items, fe.Ident.Name);
+            }, fe.Sequence, fe.Ident.Name);
         }
 
 
@@ -616,16 +611,16 @@ namespace Efekt
             env = new Env(validations, env.Owner, env);
             try
             {
-                visitSeq(tr.TryItems, env, prevEnv);
+                visitSeq(tr.TrySequence, env, prevEnv);
             }
             catch (InterpretedThrowException ex)
             {
-                if (tr.CatchItems != null)
+                if (tr.CatchSequence != null)
                 {
                     env = new Env(validations, env.Owner, env);
                     if (tr.ExVar != null)
                         env.Declare(Accessibility.Local, tr.ExVar.Name, ex.Throwed);
-                    visitSeq(tr.CatchItems, env, prevEnv);
+                    visitSeq(tr.CatchSequence, env, prevEnv);
                 }
                 else
                 {
@@ -634,10 +629,10 @@ namespace Efekt
             }
             finally
             {
-                if (tr.FinallyItems != null)
+                if (tr.FinallySequence != null)
                 {
                     env = new Env(validations, env.Owner, env);
-                    visitSeq(tr.FinallyItems, env, prevEnv);
+                    visitSeq(tr.FinallySequence, env, prevEnv);
                 }
             }
             return Void.Instance;

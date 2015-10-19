@@ -15,6 +15,9 @@ namespace Efekt
         IReadOnlyList<Ident> Attributes { get; set; }
         T Accept<T>(IAsiVisitor<T> v) where T : class;
         Int32 Line { get; }
+
+        [CanBeNull]
+        Type InfType { get; }
     }
 
 
@@ -49,6 +52,8 @@ namespace Efekt
                 return 1;
             }
         }
+
+        public abstract Type InfType { get; }
     }
 
 
@@ -69,6 +74,7 @@ namespace Efekt
         public IReadOnlyList<Ident> Attributes { get; set; }
         public abstract T Accept<T>(IAsiVisitor<T> v) where T : class;
         public Int32 Line { get; set; }
+        public Type InfType { get; set; }
         public override String ToString() => GetType().Name + ": " + Accept(Program.DefaultPrinter);
     }
 
@@ -327,17 +333,17 @@ namespace Efekt
 
     public sealed class FnApply : Exp
     {
-        public IAsi Fn { get; }
+        public Exp Fn { get; }
         public IReadOnlyList<Exp> Args { get; set; }
 
 
-        public FnApply(IAsi fn)
+        public FnApply(Exp fn)
         {
             Fn = fn;
         }
 
 
-        public FnApply(IAsi fn, IReadOnlyList<Exp> args)
+        public FnApply(Exp fn, IReadOnlyList<Exp> args)
         {
             Fn = fn;
             Args = args;
@@ -676,32 +682,64 @@ namespace Efekt
     }
 
 
-    public sealed class ArrType : SimpleType
+    public sealed class ArrType : Type
     {
-        public override String Name => "List";
+        public Type ElementType { get; }
 
-        public static ArrType Instance { get; } = new ArrType();
 
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+        public ArrType(Type elementType)
+        {
+            ElementType = elementType;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitArrType(this);
     }
 
 
-    public sealed class FnType : SimpleType
+    public sealed class OrType : Type
     {
-        public override String Name => "Fn";
+        public IReadOnlyList<Type> Choices { get; }
 
-        public static FnType Instance { get; } = new FnType();
 
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+        public OrType(IReadOnlyList<Type> choices)
+        {
+            Choices = choices;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitOrType(this);
     }
 
 
-    public sealed class ClassType : SimpleType
+    public sealed class FnType : Type
     {
-        public override String Name => "Class";
+        public IReadOnlyList<Type> ParamTypes { get; }
+        public Type ReturnType { get; }
 
-        public static ClassType Instance { get; } = new ClassType();
 
-        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitSimpleType(this);
+        public FnType(IReadOnlyList<Type> paramTypes, Type returnType)
+        {
+            ParamTypes = paramTypes;
+            ReturnType = returnType;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitFnType(this);
+    }
+
+
+    public sealed class ClassType : Type
+    {
+        public Declr DeclaredBy { get; }
+
+
+        public ClassType(Declr declaredBy)
+        {
+            DeclaredBy = declaredBy;
+        }
+
+
+        public override T Accept<T>(IAsiVisitor<T> v) => v.VisitClassType(this);
     }
 }

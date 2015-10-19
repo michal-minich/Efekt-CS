@@ -51,4 +51,22 @@ namespace Efekt
                 yield return r;
         }
     }
+
+
+    public class EqComparer<T> : IEqualityComparer<T>
+    {
+        readonly Func<T, T, Boolean> comparer;
+
+
+        public EqComparer(Func<T, T, Boolean> comparer)
+        {
+            this.comparer = comparer;
+        }
+
+
+        public Boolean Equals(T x, T y) => comparer(x, y);
+
+
+        public Int32 GetHashCode(T obj) => obj.GetHashCode();
+    }
 }

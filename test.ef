@@ -5,5 +5,7 @@
 }
 var start = fn {
     var c = new C
-    c.d()
+    --c.d()
+    var x = if true then "A" else 1
+    print(__typeof(x))
 }

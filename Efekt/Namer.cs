@@ -48,12 +48,11 @@ namespace Efekt
             if (d == null)
             {
                 validations.ImplicitVar(i);
-                var x = new Declr(new Ident(i.Name, IdentCategory.Value), null, Void.Instance);
-                env.Declare(x.Ident.Name, x);
-                d = x;
+                d = new Declr(new Ident(i.Name, IdentCategory.Value), null, Void.Instance);
+                env.Declare(d.Ident.Name, d);
             }
+            d.Ident.UsedBy.Add(i);
             i.DeclaredBy = d;
-            i.DeclaredBy.Ident.UsedBy.Add(i);
             return Void.Instance;
         }
 
@@ -252,7 +251,12 @@ namespace Efekt
         public Void VisitTry(Try tr)
         {
             VisitSequence(tr.TrySequence);
+            var prevEnv = env;
+            env = new SimpleEnv<Declr>(env);
+            if (tr.ExVar != null)
+                VisitIdent(tr.ExVar);
             VisitSequence(tr.CatchSequence);
+            env = prevEnv;
             VisitSequence(tr.FinallySequence);
             return Void.Instance;
         }
@@ -274,6 +278,37 @@ namespace Efekt
 
         public Void VisitSimpleType(SimpleType st)
         {
+            return Void.Instance;
+        }
+
+
+        public Void VisitFnType(FnType fnt)
+        {
+            foreach (var pt in fnt.ParamTypes)
+                pt.Accept(this);
+            fnt.ReturnType.Accept(this);
+            return Void.Instance;
+        }
+
+
+        public Void VisitClassType(ClassType clst)
+        {
+            throw new NotImplementedException();
+            return Void.Instance;
+        }
+
+
+        public Void VisitOrType(OrType ort)
+        {
+            foreach (var pt in ort.Choices)
+                pt.Accept(this);
+            return Void.Instance;
+        }
+
+
+        public Void VisitArrType(ArrType arrt)
+        {
+            arrt.ElementType.Accept(this);
             return Void.Instance;
         }
     }

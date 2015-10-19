@@ -207,11 +207,11 @@ namespace Efekt
 
 
         public void CannotApply(IAsi affectedItem, IAsi evaluatedItem)
-            => add(new[] { affectedItem, evaluatedItem });
+            => add(new Object[] { affectedItem, evaluatedItem });
 
 
         public void WrongParamsOrder(IAsi mandatoryParam, IAsi optionalParam)
-            => add(new[] { mandatoryParam, optionalParam });
+            => add(new Object[] { mandatoryParam, optionalParam });
 
 
         public void NotEnoughArgs(IAsi missingParam, IAsi fn, Int32 paramsCount,

@@ -159,9 +159,17 @@ namespace Efekt
         public String VisitAssert(Assert ast) => "assert " + ast.Exp.Accept(this);
 
 
-        public String VisitSimpleType(SimpleType st)
-        {
-            return st.Name;
-        }
+        public String VisitSimpleType(SimpleType st) => st.Name;
+
+
+        public String VisitFnType(FnType fnt)
+            => "Fn(" + joinList(fnt.ParamTypes) + ") -> " + fnt.ReturnType.Accept(this);
+
+
+        public String VisitClassType(ClassType clst) => VisitIdent(clst.DeclaredBy.Ident);
+
+        public String VisitOrType(OrType ort) => "Or(" + joinList(ort.Choices) + ")";
+
+        public String VisitArrType(ArrType arrt) => "Array(" + arrt.ElementType.Accept(this) + ")";
     }
 }

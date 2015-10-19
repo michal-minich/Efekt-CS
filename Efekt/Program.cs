@@ -84,8 +84,12 @@ namespace Efekt
 
             var rw = new Rewriter();
             var prog = rw.MakeProgram(preludeTxtItems.Cast<Declr>().ToList(), modules);
+
             var n = new Namer();
             n.Name(prog, ValidationList);
+
+            var ti = new TypeInferer();
+            ti.VisitDeclr(prog.GlobalModule);
 
             var i = new Interpreter();
             var res = i.Run(prog, ValidationList);

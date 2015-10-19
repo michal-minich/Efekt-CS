@@ -31,9 +31,9 @@ namespace Efekt
                     return new Bool(args[0].AsInt() < args[1].AsInt());
 
                 case "plus":
-                    return new Int((args[0].AsInt() + args[1].AsInt()));
+                    return new Int(args[0].AsInt() + args[1].AsInt());
                 case "multiply":
-                    return new Int((args[0].AsInt() * args[1].AsInt()));
+                    return new Int(args[0].AsInt() * args[1].AsInt());
 
                 case "and":
                     return new Bool(args[0].AsBool() && args[1].AsBool());
@@ -50,8 +50,6 @@ namespace Efekt
                 case "print":
                     Console.WriteLine(args[0].AsiToString());
                     return Void.Instance;
-                case "typeof":
-                    return args[0].Accept(new TypeInferer());
 
                 default:
                     validations.GenericWarning("Unknown builtin: " + fnName, Void.Instance);

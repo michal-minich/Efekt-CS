@@ -11,13 +11,9 @@
 @public var count = fn a => __count(a)
 @public var env = fn a => __env(a)
 @public var print = fn a => __print(a)
-@public var typeof = fn a => __typeof(a)
 
 @public var Void = __Void
 @public var Any = __Any
 @public var Bool = __Bool
 @public var Int = __Int
 @public var Char = __Char
-@public var Arr = __Arr
-@public var Fn = __Fn
-@public var Class = __Class

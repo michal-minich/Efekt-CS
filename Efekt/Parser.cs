@@ -818,7 +818,7 @@ namespace Efekt
                 return asi;
             while (lookChar('('))
             {
-                var fna = a(new FnApply(asi));
+                var fna = a(new FnApply((Exp)asi));
                 var args = tryParseBracedList('(', ')', fna);
                 Contract.Assert(args != null);
                 fna.Args = args.Select(a => toMandatoryExp(a, fna)).ToList();

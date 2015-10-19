@@ -75,12 +75,8 @@ namespace Efekt
                         return IntType.Instance;
                     case "__Char":
                         return CharType.Instance;
-                    case "__Arr":
-                        return ArrType.Instance;
-                    case "__Fn":
-                        return FnType.Instance;
-                    case "__Class":
-                        return ClassType.Instance;
+                    default:
+                        throw new NotSupportedException(i.Name);
                 }
             }
             var v = env.GetValueOrNull(i.Name);
@@ -259,15 +255,20 @@ namespace Efekt
         {
             var fnIdent = fna.Fn as Ident;
             if (fnIdent != null && fnIdent.Name.StartsWith("__"))
+            {
+                if (fnIdent.Name == "__typeof")
+                    return fna.Args[0].InfType;
                 return builtins.Call(fnIdent.Name.Substring(2), evalArgs(fna.Args));
+            }
 
             var fn = fna.Fn as Fn;
             if (fn?.Env == null)
             {
                 var fnAsi = fna.Fn.Accept(this);
 
-                if (fnAsi is Class)
-                    return new FnApply(fnAsi, fna.Args);
+                var c = fnAsi as Class;
+                if (c != null)
+                    return new FnApply(c, fna.Args);
                 fn = fnAsi as Fn;
                 if (fn == null)
                 {
@@ -670,6 +671,14 @@ namespace Efekt
 
 
         public IAsi VisitSimpleType(SimpleType st) => st;
+
+        public IAsi VisitFnType(FnType fnt) => fnt;
+
+        public IAsi VisitClassType(ClassType clst) => clst;
+
+        public IAsi VisitOrType(OrType ort) => ort;
+
+        public IAsi VisitArrType(ArrType arrt) => arrt;
     }
 
 

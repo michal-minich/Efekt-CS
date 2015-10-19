@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.Contracts;
+﻿using System;
+using System.Diagnostics.Contracts;
 
 
 namespace Efekt
@@ -34,6 +35,10 @@ namespace Efekt
         T VisitAssume(Assume asm);
         T VisitAssert(Assert ast);
         T VisitSimpleType(SimpleType st);
+        T VisitFnType(FnType fnt);
+        T VisitClassType(ClassType clst);
+        T VisitOrType(OrType ort);
+        T VisitArrType(ArrType arrt);
     }
 
 
@@ -259,6 +264,36 @@ namespace Efekt
         public T VisitSimpleType(SimpleType st)
         {
             Contract.Requires(st != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitFnType(FnType fnt)
+        {
+            Contract.Requires(fnt != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+
+        public T VisitClassType(ClassType clst)
+        {
+            Contract.Requires(clst != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+        public T VisitOrType(OrType ort)
+        {
+            Contract.Requires(ort != null);
+            Contract.Ensures(Contract.Result<T>() != null);
+            return null;
+        }
+
+        public T VisitArrType(ArrType arrt)
+        {
+            Contract.Requires(arrt != null);
             Contract.Ensures(Contract.Result<T>() != null);
             return null;
         }
